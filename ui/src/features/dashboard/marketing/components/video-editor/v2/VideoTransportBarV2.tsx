@@ -31,22 +31,22 @@ export function VideoTransportBarV2({
 }: Props) {
   const max = Math.max(1, durationInFrames - 1);
   return (
-    <div className="border-border bg-background flex items-center gap-2 border-t px-2 py-1.5">
+    <div className="border-border bg-background flex items-center gap-1.5 border-t px-1.5 py-1 lg:gap-2 lg:px-2 lg:py-1.5">
       <Button
         type="button"
         variant="ghost"
         size="icon"
-        className="size-11 lg:size-9"
+        className="admin-overflow-trigger lg:size-9 lg:before:content-none"
         aria-label={isPlaying ? 'Pause' : 'Play'}
         onClick={onTogglePlay}
       >
         {isPlaying ? (
-          <Pause className="size-5" aria-hidden />
+          <Pause className="size-4 lg:size-5" aria-hidden />
         ) : (
-          <Play className="size-5" aria-hidden />
+          <Play className="size-4 lg:size-5" aria-hidden />
         )}
       </Button>
-      <span className="text-muted-foreground w-[88px] shrink-0 text-xs tabular-nums">
+      <span className="text-muted-foreground w-[76px] shrink-0 text-[11px] tabular-nums lg:w-[88px] lg:text-xs">
         {formatTimecode(currentFrame, fps, true)} / {formatTimecode(durationInFrames, fps)}
       </span>
       <input
@@ -63,15 +63,15 @@ export function VideoTransportBarV2({
         type="button"
         variant="ghost"
         size="icon"
-        className="size-11 lg:size-9"
+        className="admin-overflow-trigger lg:size-9 lg:before:content-none"
         aria-label={muted ? 'Unmute preview' : 'Mute preview'}
         aria-pressed={muted}
         onClick={onToggleMute}
       >
         {muted ? (
-          <VolumeX className="size-4" aria-hidden />
+          <VolumeX className="size-3.5 lg:size-4" aria-hidden />
         ) : (
-          <Volume2 className="size-4" aria-hidden />
+          <Volume2 className="size-3.5 lg:size-4" aria-hidden />
         )}
       </Button>
       <Button

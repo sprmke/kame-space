@@ -264,6 +264,7 @@ export function VideoMusicSettings({ music, onChange }: Props) {
     }
 
     stopPreview();
+    if (!track.streamUrl) return;
     setPreviewLoadingTrackId(track.id);
 
     const audio = new Audio(track.streamUrl);

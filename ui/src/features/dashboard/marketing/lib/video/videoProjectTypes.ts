@@ -52,6 +52,12 @@ export type VideoLayerTypography = {
   shadow?: boolean;
   /** CTA pill fill */
   backgroundColor?: string | null;
+  /** Text look: a solid box behind plain text (labels, captions). */
+  boxColor?: string | null;
+  /** Corner radius of the box in px at 1080 wide (999 = pill). */
+  boxRadius?: number;
+  /** Text look: coloured glow around the letters. */
+  glowColor?: string | null;
 };
 
 export type VideoSceneLayer = {
@@ -104,7 +110,7 @@ export type VideoScene = {
   hiddenElements?: string[];
 };
 
-export type VideoProjectMusicSource = 'jamendo' | 'upload' | 'url';
+export type VideoProjectMusicSource = 'jamendo' | 'audius' | 'upload' | 'url';
 
 export type VideoProjectMusic = {
   url: string | null;

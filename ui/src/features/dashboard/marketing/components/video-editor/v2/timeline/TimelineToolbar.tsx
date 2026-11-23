@@ -4,11 +4,9 @@ import {
   Magnet,
   Maximize2,
   Music,
-  Redo2,
   Scissors,
   Trash2,
   Type,
-  Undo2,
   ZoomIn,
   ZoomOut,
 } from 'lucide-react';
@@ -52,13 +50,9 @@ function Tool({ label, icon: Icon, onClick, disabled, pressed, shortcut }: ToolP
 }
 
 type Props = {
-  canUndo: boolean;
-  canRedo: boolean;
   hasSelection: boolean;
   canSplit: boolean;
   snapEnabled: boolean;
-  onUndo: () => void;
-  onRedo: () => void;
   onSplit: () => void;
   onDelete: () => void;
   onDuplicate: () => void;
@@ -79,23 +73,8 @@ export function TimelineToolbar(props: Props) {
       <div
         role="toolbar"
         aria-label="Timeline tools"
-        className="border-border flex flex-wrap items-center gap-0.5 border-b px-2 py-1"
+        className="border-border flex min-w-0 flex-nowrap items-center gap-0.5 overflow-x-auto border-b px-2 py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
-        <Tool
-          label="Undo"
-          icon={Undo2}
-          onClick={props.onUndo}
-          disabled={!props.canUndo}
-          shortcut="Cmd Z"
-        />
-        <Tool
-          label="Redo"
-          icon={Redo2}
-          onClick={props.onRedo}
-          disabled={!props.canRedo}
-          shortcut="Shift Cmd Z"
-        />
-        <span className="bg-border mx-1 h-5 w-px" aria-hidden />
         {editing ? (
           <>
             <Tool
@@ -122,10 +101,10 @@ export function TimelineToolbar(props: Props) {
             <span className="bg-border mx-1 h-5 w-px" aria-hidden />
             <Tool label="Add text" icon={Type} onClick={props.onAddText} />
             <Tool label="Add media" icon={ImagePlus} onClick={props.onAddMedia} />
-            <Tool label="Add audio" icon={Music} onClick={props.onAddAudio} />
+            <Tool label="Add sound" icon={Music} onClick={props.onAddAudio} />
             <span className="bg-border mx-1 h-5 w-px" aria-hidden />
             <Tool
-              label="Snap"
+              label="Snap to edges"
               icon={Magnet}
               onClick={props.onToggleSnap}
               pressed={props.snapEnabled}
@@ -135,7 +114,7 @@ export function TimelineToolbar(props: Props) {
         <span className="flex-1" />
         <Tool label="Zoom out" icon={ZoomOut} onClick={props.onZoomOut} />
         <Tool label="Zoom in" icon={ZoomIn} onClick={props.onZoomIn} />
-        <Tool label="Fit timeline" icon={Maximize2} onClick={props.onFit} />
+        <Tool label="Fit to screen" icon={Maximize2} onClick={props.onFit} />
       </div>
     </TooltipProvider>
   );

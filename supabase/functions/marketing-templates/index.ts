@@ -26,6 +26,7 @@ import type { TeamPermissionId } from '../_shared/propertyTeamPermissions.ts';
 import { serveAuthenticated } from '../_shared/serveEdge.ts';
 import { logAssetActivity } from '../_shared/assetActivity.ts';
 import { isMarketingThemeKey } from '../_shared/marketingTheme.ts';
+import { validateVideoDesignJson } from '../_shared/marketingVideoProject.ts';
 import {
   copyTemplateThumbnail,
   removeTemplateThumbnail,
@@ -414,6 +415,10 @@ serveAuthenticated('marketing-templates', async (req, user) => {
     if (!isMarketingItemKind(kind)) return jsonError(req, 'kind must be design or template', 400);
     if (designJson === null) return jsonError(req, 'designJson must be an object', 400);
     const split = splitThumbnail(designJson);
+    if (contentType === 'video') {
+      const check = validateVideoDesignJson(split.designJson);
+      if (!check.ok) return jsonError(req, check.message, 400);
+    }
 
     const { data, error } = await sb
       .from('marketing_templates')
@@ -514,6 +519,13 @@ serveAuthenticated('marketing-templates', async (req, user) => {
         410,
         'private'
       );
+    }
+
+    const effectiveContentType =
+      (patch.content_type as string | undefined) ?? currentRow.content_type;
+    if (effectiveContentType === 'video' && patch.design_json !== undefined) {
+      const check = validateVideoDesignJson(patch.design_json);
+      if (!check.ok) return jsonError(req, check.message, 400);
     }
 
     // Optimistic concurrency: autosave sends the updatedAt it last saw. A thumbnail-only

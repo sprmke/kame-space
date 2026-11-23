@@ -280,7 +280,7 @@ export const EDGE_ENV_REGISTRY: EnvDef[] = [
     key: 'GROQ_API_KEY',
     group: AI,
     level: 'recommended',
-    features: ['AI fallback'],
+    features: ['AI fallback', 'Video auto captions'],
     console: 'https://console.groq.com/keys',
   },
   {

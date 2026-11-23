@@ -1,8 +1,9 @@
-import { useCallback, useMemo, useRef, useState, type DragEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from 'react';
 
 import { Check, Film, Loader2, Music, Trash2, Upload } from 'lucide-react';
 
-import { JamendoTrackBrowser } from '@/features/dashboard/marketing/components/media-library/JamendoTrackBrowser';
+import type { InstagramPickerConfig } from '@/features/dashboard/marketing/components/media-library/music/InstagramMusicPanel';
+import { MusicPicker } from '@/features/dashboard/marketing/components/media-library/music/MusicPicker';
 import { MediaStorageMeter } from '@/features/dashboard/marketing/components/media-library/MediaStorageMeter';
 import { MediaUploadRows } from '@/features/dashboard/marketing/components/media-library/MediaUploadRows';
 import {
@@ -43,15 +44,23 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
-type Tab = 'uploads' | 'property' | 'audio' | 'music';
+export type MediaLibraryTab = 'uploads' | 'property' | 'audio' | 'music';
+type Tab = MediaLibraryTab;
 
 type Props = {
   /** Kinds the caller can use. Hides tabs and filters pickers. Default: all. */
   allowedKinds?: MarketingMediaKind[];
   /** Property gallery shown in its own tab. */
   propertyItems?: PropertyMediaItem[];
-  /** Adds a Music tab with free tracks. The video editor sets it; posts do not. */
+  /** Adds a Music tab (trending, genres, moods). The video editor sets it; posts do not. */
   includeMusic?: boolean;
+  /** Also offer Instagram's own music on the Music tab, for Reels. */
+  instagramMusic?: InstagramPickerConfig | null;
+  /**
+   * Opens a tab on demand. A new `nonce` switches to `tab` even if the library is already open,
+   * which is how the Music tool on the phone lands on the right tab.
+   */
+  tabRequest?: { tab: MediaLibraryTab; nonce: number } | null;
   /** Called when a tile is tapped (or Enter). Dragging works regardless. */
   onPick?: (payload: MediaDragPayload) => void;
   className?: string;
@@ -144,6 +153,8 @@ export function MarketingMediaLibrary({
   allowedKinds = ['image', 'video', 'audio'],
   propertyItems,
   includeMusic = false,
+  instagramMusic = null,
+  tabRequest = null,
   onPick,
   className,
 }: Props) {
@@ -160,7 +171,12 @@ export function MarketingMediaLibrary({
     return list;
   }, [showAudio, showVisual, propertyItems, includeMusic]);
 
-  const [tab, setTab] = useState<Tab>(tabs[0]?.id ?? 'uploads');
+  const [tab, setTab] = useState<Tab>(tabRequest?.tab ?? tabs[0]?.id ?? 'uploads');
+  const requestNonce = tabRequest?.nonce;
+  const requestedTab = tabRequest?.tab;
+  useEffect(() => {
+    if (requestedTab) setTab(requestedTab);
+  }, [requestedTab, requestNonce]);
   const activeTab = tabs.some((t) => t.id === tab) ? tab : (tabs[0]?.id ?? 'uploads');
   const [selecting, setSelecting] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -333,7 +349,7 @@ export function MarketingMediaLibrary({
         )}
       >
         {activeTab === 'music' ? (
-          <JamendoTrackBrowser onPick={onPick} />
+          <MusicPicker onPick={onPick} instagram={instagramMusic} />
         ) : activeTab === 'property' ? (
           <ul className="grid grid-cols-3 gap-2">
             {(propertyItems ?? [])

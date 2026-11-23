@@ -11,13 +11,13 @@ export type MediaDragPayload = {
   kind: 'image' | 'video' | 'audio';
   url: string;
   assetId: string | null;
-  source: 'library' | 'property' | 'jamendo';
+  source: 'library' | 'property' | 'jamendo' | 'audius';
   width: number | null;
   height: number | null;
   durationMs: number | null;
   posterUrl: string | null;
   title?: string;
-  /** Free-music tracks only: Jamendo id and credit, kept on the audio clip. */
+  /** Free-music tracks only: Jamendo or Audius id and credit, kept on the audio clip. */
   trackId?: string;
   artist?: string;
 };
@@ -67,7 +67,10 @@ export function readMediaDrag(
       kind: value.kind,
       url: value.url,
       assetId: typeof value.assetId === 'string' ? value.assetId : null,
-      source: value.source === 'property' || value.source === 'jamendo' ? value.source : 'library',
+      source:
+        value.source === 'property' || value.source === 'jamendo' || value.source === 'audius'
+          ? value.source
+          : 'library',
       width: typeof value.width === 'number' ? value.width : null,
       height: typeof value.height === 'number' ? value.height : null,
       durationMs: typeof value.durationMs === 'number' ? value.durationMs : null,

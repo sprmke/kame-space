@@ -115,6 +115,10 @@ Every call writes one `ai_platform_usage_events` row (success or failure) with `
 - **Atomic quota reserve/settle** is deferred to Phase 2 of `ai-paid-provider-and-production-quotas.md`. Overshoot is bounded by per-user rate limits and the platform cap.
 - **Chat turn loop stays in the handler.** The prompt, schema, tool registry, guards, context budget and deferred writes are shared modules; the loop itself is bound to ~20 pieces of per-turn state and extracting it would add indirection without reuse.
 
+## `marketing_video_captions` (Videos auto captions)
+
+Speech to timed words for the Videos editor. Not an LLM call: Groq Whisper (`whisper-large-v3-turbo`, `verbose_json`, word timestamps) through `_shared/ai/speechTransport.ts`, which lives in the gateway directory so the provider host and key handling stay in one place (`check:ai-gateway`). Function: `marketing-video-captions`. It passes the same gates as other host AI (feature toggle, org and property quota, credits) and records usage with `cost_basis: 'duration'` (about $0.04 per hour of audio, billed in whole seconds with a 10 s minimum, so a 60 s video costs a fraction of a cent). `AI_FEATURES` and `aiFeatureLabels.ts` carry the feature; limits stay super-admin only. The audio is not stored or logged. If the super-admin feature allowlist is non-empty, add `marketing_video_captions` to it or captions answer 503.
+
 ## `marketing_trends_classify` (Marketing Trends)
 
 One call a day from `marketing-trends-cron`, over up to 60 normalized feed candidates. Model

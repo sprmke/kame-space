@@ -25,6 +25,7 @@ import {
 import { ThemeContextBar } from '@/features/dashboard/marketing/components/themes/ThemeContextBar';
 import { ThemesHome } from '@/features/dashboard/marketing/components/themes/ThemesHome';
 import type { MarketingVideoExportPayload } from '@/features/dashboard/marketing/lib/marketingEditorPreload';
+import type { InstagramSong } from '@/features/dashboard/marketing/lib/video/v2/videoProjectV2Types';
 import {
   loadMarketingEditor,
   loadMarketingVideoEditor,
@@ -109,8 +110,13 @@ function MarketingStudioWorkspace() {
   );
 
   const openPublishWithBlob = useCallback(
-    (blob: Blob, mediaType: 'image' | 'video', templateId?: string) => {
-      setPublishMedia({ blob, mediaType, templateId });
+    (
+      blob: Blob,
+      mediaType: 'image' | 'video',
+      templateId?: string,
+      instagramSong?: InstagramSong
+    ) => {
+      setPublishMedia({ blob, mediaType, templateId, instagramSong });
       setPublishOpen(true);
     },
     []
@@ -216,7 +222,12 @@ function MarketingStudioWorkspace() {
                 document={document}
                 nav={nav}
                 onPublish={(payload: MarketingVideoExportPayload) =>
-                  openPublishWithBlob(payload.blob, 'video', payload.templateId)
+                  openPublishWithBlob(
+                    payload.blob,
+                    'video',
+                    payload.templateId,
+                    payload.instagramSong
+                  )
                 }
               />
             ) : (
@@ -249,6 +260,7 @@ function MarketingStudioWorkspace() {
             tabs={showStudioChrome ? <MarketingStudioModeTabs /> : null}
             actions={themeBar}
             hasDock={editorOpen && isMarketingEditorTab(tab)}
+            fullscreen={editorOpen && tab === 'video'}
           >
             {content}
           </MarketingStudioShell>

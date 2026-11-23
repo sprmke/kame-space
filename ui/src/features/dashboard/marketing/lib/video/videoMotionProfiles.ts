@@ -328,13 +328,13 @@ const VIDEO_MOTION_OVERRIDE_PROFILES: Record<VideoMotionOverride, VideoMotionPro
 
 export const VIDEO_MOTION_OVERRIDES: { value: VideoMotionOverride; label: string }[] = [
   { value: 'slow-zoom-in', label: 'Slow zoom in' },
-  { value: 'punch-in', label: 'Punch in' },
+  { value: 'punch-in', label: 'Quick zoom in' },
   { value: 'zoom-out', label: 'Zoom out' },
   { value: 'pan-left', label: 'Pan left' },
   { value: 'pan-right', label: 'Pan right' },
-  { value: 'drift-up', label: 'Drift up' },
-  { value: 'diagonal-drift', label: 'Diagonal drift' },
-  { value: 'hold', label: 'Hold' },
+  { value: 'drift-up', label: 'Float up' },
+  { value: 'diagonal-drift', label: 'Slide across' },
+  { value: 'hold', label: 'No movement' },
 ];
 
 export function resolveVideoMotionProfile(templateId: string | undefined): VideoMotionProfile {

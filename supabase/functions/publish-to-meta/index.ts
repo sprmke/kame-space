@@ -15,6 +15,7 @@ import {
 import { publishToFacebookPagePhoto, publishToInstagramMedia } from '../_shared/metaPublishing.ts';
 import { createServiceClient, requirePropertyPermissionAndFeature } from '../_shared/orgAuth.ts';
 import { jsonError, jsonSuccess, jsonUpgradeHook, readJsonBody } from '../_shared/httpResponse.ts';
+import { parseInstagramAudioRequest } from '../_shared/instagramAudio.ts';
 import {
   PlanFeatureRequiredError,
   requireMarketingPublishAllowed,
@@ -191,6 +192,15 @@ serveAuthenticated('publish-to-meta', async (req, user) => {
     return jsonError(req, 'Facebook video publishing is not supported in v1', 400);
   }
 
+  // A song from Instagram's library. Meta mixes it in, so it only works on an Instagram Reel.
+  const audioRequest = parseInstagramAudioRequest(body.instagramAudio, {
+    publishType,
+    mediaType,
+    scheduled: isFutureSchedule(scheduledAt),
+  });
+  if (!audioRequest.ok) return jsonError(req, audioRequest.error, 400);
+  const instagramAudio = audioRequest.audio;
+
   let mediaUrl: string;
   try {
     mediaUrl = await resolvePublicMarketingMediaUrl(sb, propertyId, rawMediaUrl);
@@ -273,6 +283,8 @@ serveAuthenticated('publish-to-meta', async (req, user) => {
       let igMediaType: 'IMAGE' | 'STORIES' | 'REELS' = 'IMAGE';
       if (publishType === 'instagram_story') igMediaType = 'STORIES';
       if (publishType === 'instagram_reel') igMediaType = 'REELS';
+      // Instagram no longer takes a plain video feed post: a video post is a Reel.
+      if (isVideo && igMediaType === 'IMAGE') igMediaType = 'REELS';
 
       const result = await publishToInstagramMedia({
         igUserId: connection.meta_ig_user_id,
@@ -281,6 +293,7 @@ serveAuthenticated('publish-to-meta', async (req, user) => {
         videoUrl: isVideo ? mediaUrl : undefined,
         caption,
         mediaType: igMediaType,
+        audio: instagramAudio ?? undefined,
       });
       metaPostId = result.mediaId;
     }
@@ -311,6 +324,7 @@ serveAuthenticated('publish-to-meta', async (req, user) => {
         status,
         scheduled: isScheduled,
         meta_post_id: metaPostId,
+        ...(instagramAudio ? { audio_source: 'instagram', audio_id: instagramAudio.audioId } : {}),
       },
     });
 

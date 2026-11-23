@@ -12,6 +12,26 @@ export function isJamendoStreamUrl(url: string | null | undefined): boolean {
   return /jamendo\.com/i.test(url);
 }
 
+/** Audius' stable stream endpoint. It redirects to a content node, so export cannot read it. */
+export function isAudiusStreamUrl(url: string | null | undefined): boolean {
+  if (!url?.trim()) return false;
+  try {
+    const parsed = new URL(url);
+    return (
+      parsed.hostname === 'api.audius.co' && /\/v1\/tracks\/[^/]+\/stream$/.test(parsed.pathname)
+    );
+  } catch {
+    return false;
+  }
+}
+
+/** A free-catalog stream (Jamendo or Audius) that must be cached to Storage before export. */
+export function isCatalogStreamUrl(url: string | null | undefined): boolean {
+  return isJamendoStreamUrl(url) || isAudiusStreamUrl(url);
+}
+
+export type CatalogSource = 'jamendo' | 'audius';
+
 export function videoMusicFromJamendoTrack(
   track: JamendoTrack,
   music: VideoProjectMusic
@@ -70,8 +90,9 @@ export function applyImportedVideoMusic(
   };
 }
 
-async function importJamendoTrackOnServer(
+async function importCatalogTrackOnServer(
   propertyId: string,
+  source: CatalogSource,
   trackId: string
 ): Promise<ImportedMarketingMusic> {
   const jwt = await getSessionJwt();
@@ -81,7 +102,7 @@ async function importJamendoTrackOnServer(
       Authorization: `Bearer ${jwt}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ action: 'import-jamendo', trackId }),
+    body: JSON.stringify({ action: 'import-track', source, trackId }),
   });
   const json = (await res.json()) as {
     success?: boolean;
@@ -103,7 +124,7 @@ export async function importJamendoTrackViaUpload(
   music: VideoProjectMusic,
   propertyId: string
 ): Promise<VideoProjectMusic> {
-  const imported = await importJamendoTrackOnServer(propertyId, track.id);
+  const imported = await importCatalogTrackOnServer(propertyId, 'jamendo', track.id);
   return {
     ...applyImportedVideoMusic(music, imported),
     title: track.title,
@@ -120,33 +141,35 @@ export async function importJamendoTrackViaUpload(
 export async function ensureVideoMusicForExport(
   music: VideoProjectMusic | undefined,
   propertyId: string | null
-): Promise<{ music: VideoProjectMusic | undefined; strippedJamendo: boolean }> {
-  if (!music?.url || !isJamendoStreamUrl(music.url)) {
-    return { music, strippedJamendo: false };
+): Promise<{ music: VideoProjectMusic | undefined; stripped: boolean }> {
+  if (!music?.url || !isCatalogStreamUrl(music.url)) {
+    return { music, stripped: false };
   }
+  const source: CatalogSource =
+    music.source === 'audius' || isAudiusStreamUrl(music.url) ? 'audius' : 'jamendo';
 
   const trackId = music.trackId?.trim();
   if (!propertyId || !trackId) {
     return {
       music: { ...music, url: null },
-      strippedJamendo: true,
+      stripped: true,
     };
   }
 
   try {
-    const imported = await importJamendoTrackOnServer(propertyId, trackId);
+    const imported = await importCatalogTrackOnServer(propertyId, source, trackId);
     return {
       music: {
         ...applyImportedVideoMusic(music, imported),
-        source: 'jamendo',
+        source,
         trackId,
       },
-      strippedJamendo: false,
+      stripped: false,
     };
   } catch {
     return {
       music: { ...music, url: null },
-      strippedJamendo: true,
+      stripped: true,
     };
   }
 }
