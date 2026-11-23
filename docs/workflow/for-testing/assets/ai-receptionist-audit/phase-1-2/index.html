@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AI receptionist: phase 1 and 2, before and after</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #16211f;
+        --muted: #5c6b68;
+        --line: #dbe5e2;
+        --wash: #f5f9f8;
+        --teal: #177f70;
+        --teal-deep: #0f5c51;
+        --amber: #b45309;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 32px 20px 80px;
+        background: #fff;
+        color: var(--ink);
+        font-family:
+          'Plus Jakarta Sans',
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          'Segoe UI',
+          sans-serif;
+        line-height: 1.5;
+      }
+      main {
+        max-width: 1180px;
+        margin: 0 auto;
+      }
+      header {
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 20px;
+      }
+      .eyebrow {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--teal-deep);
+        background: #e7f3f0;
+        border-radius: 999px;
+        padding: 3px 10px;
+      }
+      h1 {
+        font-size: 30px;
+        line-height: 1.15;
+        letter-spacing: -0.02em;
+        margin: 12px 0 8px;
+      }
+      header p {
+        margin: 0;
+        max-width: 80ch;
+        color: var(--muted);
+        font-size: 15px;
+      }
+      .stats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 16px;
+      }
+      .stat {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 10px 14px;
+        min-width: 150px;
+        background: var(--wash);
+      }
+      .stat b {
+        display: block;
+        font-size: 21px;
+        line-height: 1.1;
+        color: var(--teal-deep);
+      }
+      .stat span {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      section {
+        margin-top: 40px;
+      }
+      .pair-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 4px;
+      }
+      .pair-head h2 {
+        font-size: 19px;
+        margin: 0;
+      }
+      .code {
+        display: inline-block;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--teal-deep);
+        background: #e7f3f0;
+        border-radius: 999px;
+        padding: 2px 9px;
+      }
+      .code.later {
+        color: var(--amber);
+        background: #fff7ed;
+      }
+      .what {
+        margin: 0 0 12px;
+        font-size: 14px;
+        color: var(--muted);
+        max-width: 90ch;
+      }
+      figure {
+        margin: 0;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        overflow: hidden;
+        background: var(--wash);
+      }
+      figure a {
+        display: block;
+      }
+      figure img {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+      figure.portrait img {
+        max-width: 816px;
+        margin: 0 auto;
+      }
+      figcaption {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        justify-content: space-between;
+        padding: 8px 12px;
+        font-size: 12px;
+        color: var(--muted);
+        background: #fff;
+        border-top: 1px solid var(--line);
+      }
+      figcaption a {
+        color: var(--teal-deep);
+        font-weight: 700;
+        text-decoration: none;
+      }
+      .note {
+        margin-top: 12px;
+        border-left: 3px solid var(--teal);
+        background: var(--wash);
+        padding: 10px 14px;
+        border-radius: 0 10px 10px 0;
+        font-size: 14px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 14px;
+      }
+      .card {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 14px;
+      }
+      .card h3 {
+        margin: 0 0 6px;
+        font-size: 14px;
+      }
+      .card p {
+        margin: 0;
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .table-wrap {
+        overflow-x: auto;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13.5px;
+        margin-top: 10px;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--line);
+        vertical-align: top;
+      }
+      th {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+      }
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.92em;
+        background: var(--wash);
+        border: 1px solid var(--line);
+        border-radius: 5px;
+        padding: 1px 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <span class="eyebrow">Before and after</span>
+        <h1>AI receptionist: phase 1 and 2</h1>
+        <p>
+          Every screen that changed, captured before and after from the real components. The
+          before images are the originals from the audit; the after images come from
+          <code>aiReceptionistBeforeAfter.spec.ts</code>. Click any pair to open it full size.
+        </p>
+        <div class="stats">
+          <div class="stat"><b>10</b><span>UI changes shipped</span></div>
+          <div class="stat"><b>22</b><span>E2E tests passing</span></div>
+          <div class="stat"><b>4</b><span>Breakpoints verified</span></div>
+        </div>
+      </header>
+
+      <section>
+        <div class="pair-head"><span class="code">A1</span><h2>Talk to Kame is discoverable</h2></div>
+        <p class="what">
+          A mic button now sits in the chat header, and the empty thread starts with a
+          "Talk to Kame" card. Both open the same panel. The old path was the ⋮ menu only.
+        </p>
+        <figure>
+          <a href="pair-a1-discovery.png"><img src="pair-a1-discovery.png" alt="Before and after A1" /></a>
+          <figcaption>
+            <span>Left: menu only. Right: header button plus starter card.</span>
+            <a href="after-a1-discovery-1440.png">Open after full size</a>
+          </figcaption>
+        </figure>
+      </section>
+
+      <section>
+        <div class="pair-head"><span class="code">A2</span><h2>The call takes over the phone screen</h2></div>
+        <p class="what">
+          On phone the panel is portaled to the page root, covers the app bar and bottom tab bar,
+          and declares itself modal. The chat header, back arrow and options are not rendered
+          during a call. Closing the call returns to the thread and restores focus to the header
+          button.
+        </p>
+        <figure class="portrait">
+          <a href="pair-a2-immersive.png"><img src="pair-a2-immersive.png" alt="Before and after A2" /></a>
+          <figcaption>
+            <span>Left: app bar, chat header and tab bar stay live. Right: full-screen call.</span>
+            <a href="after-a2-immersive-375.png">Open after full size</a>
+          </figcaption>
+        </figure>
+      </section>
+
+      <section>
+        <div class="pair-head"><span class="code">A3</span><h2>Deleting captions asks first</h2></div>
+        <p class="what">
+          The transcript is removed only after a confirmation dialog. Keep leaves the captions
+          and keeps the button; Delete removes them and the button disappears.
+        </p>
+        <figure>
+          <a href="pair-a3-delete-confirm.png"><img src="pair-a3-delete-confirm.png" alt="Before and after A3" /></a>
+          <figcaption>
+            <span>Left: one tap deleted the transcript. Right: confirm dialog.</span>
+            <a href="after-a3-delete-confirm-1440.png">Open after full size</a>
+          </figcaption>
+        </figure>
+      </section>
+
+      <section>
+        <div class="pair-head"><span class="code">A4</span><h2>The failure names the real cause</h2></div>
+        <p class="what">
+          A blocked microphone now says "Microphone blocked" in the header instead of
+          "Connection issue". The body copy matches. Provider failures still say
+          "Connection issue", and offline says "Offline".
+        </p>
+        <figure>
+          <a href="pair-a4-mic-label.png"><img src="pair-a4-mic-label.png" alt="Before and after A4" /></a>
+          <figcaption>
+            <span>Left: connection issue. Right: microphone blocked.</span>
+            <a href="after-a4-mic-blocked-1440.png">Open after full size</a>
+          </figcaption>
+        </figure>
+      </section>
+
+      <section>
+        <div class="pair-head"><span class="code">A5</span><h2>The timer is explained</h2></div>
+        <p class="what">
+          The countdown reads "0:50 LEFT", turns amber near the cap, and shows
+          "About a minute left." The spoken wrap-up is not in this pass; it needs a provider
+          prompt change and a live call.
+        </p>
+        <figure>
+          <a href="pair-a5-timer.png"><img src="pair-a5-timer.png" alt="Before and after A5" /></a>
+          <figcaption>
+            <span>Left: unlabelled 8:59. Right: labelled timer and cap warning.</span>
+            <a href="after-a5-timer-1440.png">Open after full size</a>
+          </figcaption>
+        </figure>
+      </section>
+
+      <section>
+        <div class="pair-head"><span class="code">A6</span><h2>One name and clearer consent</h2></div>
+        <p class="what">
+          The panel is now "Kame, your AI receptionist". The first-use copy says Kame answers
+          with Gemini, audio is not stored, captions can be deleted after the call, and AI can
+          make mistakes. Retention stays out of the copy because it is configurable.
+        </p>
+        <figure>
+          <a href="pair-a6-disclosure.png"><img src="pair-a6-disclosure.png" alt="Before and after A6" /></a>
+          <figcaption>
+            <span>Left: "AI voice receptionist" and vague caption copy. Right: Kame, with caveats.</span>
+            <a href="after-a6-disclosure-1440.png">Open after full size</a>
+          </figcaption>
+        </figure>
+      </section>
+
+      <section>
+        <div class="pair-head"><span class="code">B1</span><h2>Super-admin numbers save on blur</h2></div>
+        <p class="what">
+          Numbers commit once when the operator leaves the field, not on every keystroke. Invalid
+          input reverts and explains the range. The test types 123 and asserts exactly one PATCH.
+        </p>
+        <figure>
+          <a href="pair-b1-numbers.png"><img src="pair-b1-numbers.png" alt="Before and after B1" /></a>
+          <figcaption>
+            <span>Left: the old grid. Right: invalid input reverts with a range message.</span>
+            <a href="after-b1-invalid-1440.png">Open after full size</a>
+          </figcaption>
+        </figure>
+      </section>
+
+      <section>
+        <div class="pair-head"><span class="code">B2</span><h2>The super-admin tabs scroll on phone</h2></div>
+        <p class="what">
+          Five tabs no longer wrap. The row scrolls horizontally, the active tab is centred, and
+          the page has no horizontal overflow.
+        </p>
+        <figure class="portrait">
+          <a href="pair-b2-tabs.png"><img src="pair-b2-tabs.png" alt="Before and after B2" /></a>
+          <figcaption>
+            <span>Left: Controls wraps to a second line. Right: one row, Controls in view.</span>
+            <a href="after-b2-tabs-375.png">Open after full size</a>
+          </figcaption>
+        </figure>
+      </section>
+
+      <section>
+        <div class="pair-head"><span class="code later">B3</span><h2>Focus moves into the panel and back</h2></div>
+        <p class="what">
+          Not visible in a still. Opening the panel focuses the panel region; closing it returns
+          focus to "Talk to Kame" in the header. Verified by
+          <code>aiReceptionistPhaseFixes.spec.ts</code>.
+        </p>
+        <div class="grid">
+          <div class="card">
+            <h3>Before</h3>
+            <p>Focus stayed on the ⋮ menu item after the panel replaced the thread.</p>
+          </div>
+          <div class="card">
+            <h3>After</h3>
+            <p>Panel focused on open. Header button focused again after "Not now" or "Done".</p>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="pair-head"><span class="code">B4</span><h2>Handoff does not end the call by accident</h2></div>
+        <p class="what">
+          "Message host" now asks first. Keep talking stays in the call; "End call and message"
+          ends it and returns to the thread. The control keeps its place beside mute.
+        </p>
+        <figure>
+          <a href="pair-b4-handoff.png"><img src="pair-b4-handoff.png" alt="Before and after B4" /></a>
+          <figcaption>
+            <span>Left: Message host ended the call immediately. Right: confirmation.</span>
+            <a href="after-b4-handoff-confirm-1440.png">Open after full size</a>
+          </figcaption>
+        </figure>
+      </section>
+
+      <section>
+        <div class="pair-head"><span class="code">B5</span><h2>The desktop booth is centred</h2></div>
+        <p class="what">
+          The booth, caption and actions centre vertically when they fit, and still scroll when
+          the answer is long. The bottom third is no longer empty at 1024 and up.
+        </p>
+        <figure>
+          <a href="pair-b5-composition.png"><img src="pair-b5-composition.png" alt="Before and after B5" /></a>
+          <figcaption>
+            <span>Left: content pinned to the top. Right: centred.</span>
+            <a href="after-b5-composition-1440.png">Open after full size</a>
+          </figcaption>
+        </figure>
+      </section>
+
+      <section>
+        <h2>Verification</h2>
+        <p class="what">What ran against these changes.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Check</th><th>Result</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>voiceReceptionistConsent.spec.ts</code> (@smoke)</td><td>7 passed</td></tr>
+              <tr><td><code>aiReceptionistPhaseFixes.spec.ts</code> (@ci)</td><td>7 passed</td></tr>
+              <tr><td><code>superAdminAiControls.spec.ts</code> (@ci)</td><td>3 passed</td></tr>
+              <tr><td><code>aiReceptionistWalkthrough.spec.ts</code> (@demo)</td><td>5 passed, screenshots refreshed</td></tr>
+              <tr><td><code>voiceSessionView.test.ts</code></td><td>7 passed</td></tr>
+              <tr><td><code>bun run type-check</code></td><td>clean</td></tr>
+              <tr><td><code>check:e2e-lane-tags</code></td><td>one lane per spec</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="note">
+          Still not addressed by design: B6 org settings details, B7 super-admin grouping, B8
+          app-wide text tokens, and every C item. The spoken cap warning is also out; it needs a
+          provider prompt change and a real call.
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

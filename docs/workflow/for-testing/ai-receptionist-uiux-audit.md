@@ -24,7 +24,12 @@ Visual record: [`assets/ai-receptionist-audit/index.html`](./assets/ai-reception
 **Decision board:**
 [`assets/ai-receptionist-audit/recommendations.html`](./assets/ai-receptionist-audit/recommendations.html).
 One card per item, with an annotated screenshot, what I would change, effort, risk, and a
-do/later/skip call. Use it to pick codes (A1, B2, ...) before any of this is implemented.
+do/later/skip call.
+
+**Phase 1 and 2 shipped (2026-11-23).** A1 to A6 and B1 to B5 are implemented. Review the UI
+side by side in
+[`assets/ai-receptionist-audit/phase-1-2/index.html`](./assets/ai-receptionist-audit/phase-1-2/index.html)
+(before and after for every changed screen). The tables below stay as the original audit record.
 
 Reproduce any screenshot:
 
@@ -62,7 +67,27 @@ fallback on every failure. The problems are around the call, not inside it.
 
 ---
 
-## Fixed in this pass
+## Shipped in phase 1 and 2
+
+- **A1** Header **Talk to Kame** mic button and an empty-thread **Talk to Kame** card.
+- **A2** The call takes over the chat: header, search and stay strip are hidden; below `lg` the
+  panel is portaled full-screen and modal; focus returns to the header button on close.
+- **A3** Delete captions asks first, with Keep and a destructive Delete.
+- **A4** Failure labels come from the error: Microphone blocked, No microphone, Microphone busy,
+  Microphone problem, Offline, Connection issue.
+- **A5** Countdown reads `m:ss LEFT`, turns amber under a minute, and shows "About a minute left."
+  The spoken wrap-up is not included.
+- **A6** "Kame, your AI receptionist", clearer consent copy, and an "AI can make mistakes" line.
+- **B1** Super-admin numbers commit on blur or Enter, validate, and revert on invalid input.
+- **B2** Super-admin tabs scroll horizontally on phone and keep the active tab in view.
+- **B3** Opening focuses the panel; closing restores focus to the header button.
+- **B4** "Message host" asks before ending the call.
+- **B5** The booth centres vertically when it fits and still scrolls when it does not.
+
+Not in this pass: B6 to B8 and every C item. The spoken cap warning needs a provider prompt change
+and a live call.
+
+## Fixed in the first pass
 
 1. **Blank avatar whenever WebGL is unavailable** (`ReceptionistAvatar.tsx`).
    The 3D Kame rig is the only avatar. When `three.js` cannot create a GL context it throws
