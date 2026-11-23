@@ -44,13 +44,16 @@ test.describe('property settings @ci', () => {
     await expect(nav.getByText('Account', { exact: true })).toBeVisible();
   });
 
-  test.fixme('renders Guest experience once', async ({ page }) => {
+  test('renders Guest experience once', async ({ page }) => {
     await page.goto(settingsPaths.property);
     await expect(page.locator('#section-basic')).toBeVisible({ timeout: 30_000 });
     await expect(page.locator('#section-guest-experience')).toHaveCount(1);
+    await expect(
+      page
+        .locator('[data-section-nav-scroll]')
+        .getByRole('button', { name: 'Guest experience', exact: true })
+    ).toHaveCount(1);
   });
-  // SET-P1-1: the section is registered twice in nav + JSX, so it renders twice
-  // and emits a duplicate DOM id.
 
   test.fixme('offers a section jump list on phone', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
@@ -112,6 +115,47 @@ test.describe('property settings @ci', () => {
     await expect(nav.getByRole('button', { name: 'Payment' })).toHaveClass(
       /text-primary-foreground/
     );
+  });
+
+  test('location saves without a map pin when maps cannot load', async ({ page }) => {
+    await page.route('**maps.googleapis.com/**', (route) => route.abort());
+    await page.route('**maps.gstatic.com/**', (route) => route.abort());
+    await page.goto(settingsPaths.property);
+    await expect(page.locator('#section-basic')).toBeVisible({ timeout: 30_000 });
+
+    await page.locator('#section-location').getByRole('button', { name: 'Manage' }).click();
+    const dialog = page.getByRole('dialog');
+    await dialog.locator('#property-location-search').fill('Azure North Residences');
+    await dialog.locator('#property-location-city').fill('San Fernando');
+    await dialog.locator('#property-location-province').fill('Pampanga');
+    await dialog.locator('#property-location-country').fill('Philippines');
+
+    const save = dialog.getByRole('button', { name: 'Save', exact: true });
+    await expect(save).toBeEnabled();
+    const patch = page.waitForRequest(
+      (request) =>
+        request.url().includes('/functions/v1/update-property') && request.method() === 'PATCH'
+    );
+    await save.click();
+    await patch;
+    await expect(page.getByText('Location saved')).toBeVisible();
+  });
+
+  test('residence and tower are editable', async ({ page }) => {
+    await page.goto(settingsPaths.property);
+    await expect(page.locator('#section-basic')).toBeVisible({ timeout: 30_000 });
+
+    const residence = page.getByRole('combobox', { name: 'Residence', exact: true });
+    await expect(residence).toBeEnabled();
+    await expect(residence).toContainText('Azure North Residences');
+
+    const tower = page.getByRole('combobox', { name: 'Tower', exact: true });
+    await expect(tower).toBeEnabled();
+    await expect(tower).toContainText('Monaco');
+
+    await tower.click();
+    await page.getByRole('option', { name: 'Bali', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Save Changes' })).toBeEnabled();
   });
 
   test('a required field shows an inline error', async ({ page }) => {
@@ -277,15 +321,42 @@ test.describe('parking settings @ci', () => {
     await expect(page.locator('#section-basic')).toHaveCount(0);
   });
 
-  test.fixme('saves even when the read-only slot label is not digits-only', async ({ page }) => {
+  test('accepts a lettered slot label', async ({ page }) => {
     await installSettingsMocks(page, 'parking');
     await page.goto(settingsPaths.parking);
     await expect(page.locator('#section-basic')).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByRole('textbox', { name: 'Slot number', exact: true })).toHaveValue(
+      '12A'
+    );
     await page.locator('#parking-description').fill('Level 2, beside the lift lobby');
     await expect(page.getByRole('button', { name: 'Save Changes' })).toBeEnabled();
+    await expect(page.getByText('Enter a valid slot number')).toHaveCount(0);
   });
-  // SET-P1-3: slot labels like "12A" fail the digits-only check, and the field is
-  // read-only here, so Save is disabled with no way to fix it from this page.
+
+  test('saves the address without a map pin when maps cannot load', async ({ page }) => {
+    await page.route('**maps.googleapis.com/**', (route) => route.abort());
+    await page.route('**maps.gstatic.com/**', (route) => route.abort());
+    await installSettingsMocks(page, 'parking');
+    await page.goto(settingsPaths.parking);
+    await expect(page.locator('#section-basic')).toBeVisible({ timeout: 30_000 });
+
+    await page
+      .getByPlaceholder('Street address, building, city')
+      .fill('One Palm Residences, Mactan');
+    await page.locator('#property-location-city').fill('Lapu-Lapu');
+    await page.locator('#property-location-province').fill('Cebu');
+    await page.locator('#property-location-country').fill('Philippines');
+    await page.keyboard.press('Tab');
+
+    const save = page.getByRole('button', { name: 'Save Changes' }).first();
+    await expect(save).toBeEnabled();
+    const patch = page.waitForRequest(
+      (request) =>
+        request.url().includes('/functions/v1/update-parking') && request.method() === 'PATCH'
+    );
+    await save.click();
+    await patch;
+  });
 
   test('phone layout keeps every card inside the viewport', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });

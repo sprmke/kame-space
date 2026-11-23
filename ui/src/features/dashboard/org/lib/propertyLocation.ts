@@ -216,13 +216,9 @@ export function propertyLocationFieldsEqual(
 
 /** Required for Manage Save — address + map pin (city/province/country filled by geocode). */
 export function isPropertyLocationManageValid(fields: PropertyLocationFields): boolean {
-  return (
-    fields.address.trim().length > 0 &&
-    fields.latitude != null &&
-    Number.isFinite(fields.latitude) &&
-    fields.longitude != null &&
-    Number.isFinite(fields.longitude)
-  );
+  // Address only. The pin improves directions but must not gate saving: Maps can be
+  // unavailable, and every guest surface falls back to the address.
+  return fields.address.trim().length > 0;
 }
 
 export const PROPERTY_LOCATION_MANAGE_FIELD_IDS = [

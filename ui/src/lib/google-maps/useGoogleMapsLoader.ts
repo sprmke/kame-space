@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { importLibrary, setOptions } from '@googlemaps/js-api-loader';
 
@@ -53,6 +53,7 @@ type UseGoogleMapsLoaderOptions = {
 export function useGoogleMapsLoader(options: UseGoogleMapsLoaderOptions = {}) {
   const enabled = options.enabled !== false;
   const libraries = options.libraries ?? GOOGLE_MAPS_LIBRARIES_FULL;
+  const [attempt, setAttempt] = useState(0);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(() => {
     if (!getMapsApiKey()) {
@@ -65,6 +66,7 @@ export function useGoogleMapsLoader(options: UseGoogleMapsLoaderOptions = {}) {
     if (!enabled || !getMapsApiKey()) return;
 
     let cancelled = false;
+    setError(null);
     loadGoogleMapsLibraries(libraries)
       .then(() => {
         if (!cancelled) {
@@ -81,7 +83,16 @@ export function useGoogleMapsLoader(options: UseGoogleMapsLoaderOptions = {}) {
     return () => {
       cancelled = true;
     };
-  }, [enabled, libraries]);
+  }, [enabled, libraries, attempt]);
 
-  return { ready, error, apiKeyConfigured: Boolean(getMapsApiKey()) };
+  const retry = useCallback(() => {
+    if (!getMapsApiKey()) return;
+    // Clear cached libraries so a key or network change is picked up on the next try.
+    loadedLibraries.clear();
+    optionsConfigured = false;
+    setReady(false);
+    setAttempt((current) => current + 1);
+  }, []);
+
+  return { ready, error, apiKeyConfigured: Boolean(getMapsApiKey()), retry };
 }

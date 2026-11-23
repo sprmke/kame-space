@@ -100,8 +100,26 @@ describe('propertyLocationFieldsEqual', () => {
 });
 
 describe('isPropertyLocationManageValid', () => {
-  it('isPropertyLocationManageValid is exported', () => {
-    expect(typeof isPropertyLocationManageValid).toBe('function');
+  const base = {
+    address: 'One Palm Residences, Mactan',
+    city: 'Lapu-Lapu',
+    province: 'Cebu',
+    country: 'Philippines',
+    zipCode: '',
+    latitude: null,
+    longitude: null,
+    mapsUrl: '',
+    placeId: '',
+  };
+
+  it('accepts an address without a pin', () => {
+    expect(isPropertyLocationManageValid(base)).toBe(true);
+  });
+
+  it('rejects a missing address even when coordinates exist', () => {
+    expect(
+      isPropertyLocationManageValid({ ...base, address: '', latitude: 14.4, longitude: 121 })
+    ).toBe(false);
   });
 });
 

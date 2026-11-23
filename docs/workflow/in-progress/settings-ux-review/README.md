@@ -20,8 +20,10 @@ desktop (1440) and in dark mode. Reviewed with the `impeccable` (critique + audi
 `mobile-responsive`, `frontend-design`, `ui-ux-pro-max`, `design-md`, `accessibility`,
 `human-copy` and `property-dashboard-qa` skills.
 
-**This is a review, not a fix.** No product code changed. E2E coverage and a slow-motion tour were
-added; see [Test coverage added](#test-coverage-added).
+**Status.** This started as a review. The four P1s are now fixed on `fix/settings-blockers`
+(PR pending), with tests: duplicate section removed, lettered slot labels accepted, map pin made
+optional with manual location fields, and residence/tower/unit made editable. The P2/P3 list is
+still open. See [Test coverage added](#test-coverage-added).
 
 ## Verdict
 
@@ -77,7 +79,7 @@ section order (property): basic details media amenities house-rules cancellation
 
 ### P1 — blocks a host
 
-#### P1-1. Property Settings renders **Guest experience twice**
+#### P1-1. Property Settings renders **Guest experience twice** (fixed)
 
 Evidence: [property-duplicate-guest-experience](./screenshots/issue-property-duplicate-guest-experience.png),
 [property-desktop-16-integrations](./screenshots/property-desktop-16-integrations.png).
@@ -97,9 +99,10 @@ Impact:
   duplicate further down.
 
 Fix direction: delete the second entry in `SETTINGS_SECTIONS` and the second JSX block; add a
-unit test asserting unique section ids.
+unit test asserting unique section ids. **Done:** the duplicate nav entry and JSX block are gone;
+`settingsModule.spec.ts` now asserts one card and one rail button.
 
-#### P1-2. Parking settings can never be saved when the slot label is not digits-only
+#### P1-2. Parking settings can never be saved when the slot label is not digits-only (fixed)
 
 Evidence: [parking-invalid-slot-blocked](./screenshots/issue-parking-invalid-slot-blocked.png).
 
@@ -113,27 +116,29 @@ so the host sees:
 
 Every other edit on the page is blocked by a field the host cannot reach.
 
-Fix direction: accept the real label grammar (letters allowed), or stop validating the read-only
-display value against the writable rule, or give the slot an explicit "rename in Properties"
-route.
+Fixed by: accepting the real label grammar (letters, digits, hyphen, up to 8 characters, at least
+one digit) in `parkingSlotDisplay.ts`, and keeping short stored labels intact. Unit tests cover
+`12A`, `A12`, `B-04` and composite legacy labels; the E2E test saves with the default `12A`.
 
-#### P1-3. A typed address is silently discarded when Google Maps is unavailable
+#### P1-3. Location could not be completed when Google Maps failed (fixed)
 
 Evidence: [parking-map-failure](./screenshots/issue-parking-map-failure.png).
 
-With Maps blocked, the card shows `The Google Maps JavaScript API could not load.` above an empty
-`Map pin` box. The address input is a Places autocomplete: typing updates the visible text but
-**never marks the draft dirty**, so `Save Changes` never appears and the address is lost on leave.
-The same component (`PropertyLocationPicker`) powers the property Location dialog.
+With Maps blocked, the card showed a raw Google error above an empty `Map pin` box. The address
+committed on blur, but **city, province and country were only filled by geocoding**, the pin was a
+hard requirement, and every Save was disabled with no way to enter those fields by hand. The same
+component (`PropertyLocationPicker`) powers the property Location dialog and the parking card.
 
-The earlier failure mode also leaked Google's developer copy into the address placeholder
+The failure mode also leaked Google's developer copy into the address placeholder
 ("Oops! Something went wrong.") and into the map ("see the JavaScript console for technical
 details").
 
-Fix direction: keep a plain text address path that commits on change, show a retry, and never
-expose provider error copy to a host.
+Fixed by: editable City / Province or state / Country / ZIP in the picker, an optional map pin
+(guest directions fall back to the address), host-facing copy, and a Retry action. See
+[issue-parking-map-failure](./screenshots/issue-parking-map-failure.png) and
+[issue-legacy-tower-error](./screenshots/issue-legacy-tower-error.png).
 
-#### P1-4. Legacy residence leaves a required, read-only Tower the host cannot fix
+#### P1-4. Legacy residence leaves a required, read-only Tower the host cannot fix (fixed)
 
 Evidence: [property-incomplete-basic](./screenshots/issue-property-incomplete-basic.png).
 
@@ -283,10 +288,10 @@ fixed.
 
 ## Recommended remediation order
 
-1. **P1-1** remove the duplicate Guest experience section and assert unique section ids.
-2. **P1-2** fix the slot-label validation (or stop validating the read-only value).
-3. **P1-3** keep a manual address path that commits without Places, and replace provider copy.
-4. **P1-4** make Tower editable or point at the surface that owns it.
+1. ~~**P1-1** remove the duplicate Guest experience section and assert unique section ids.~~ Done.
+2. ~~**P1-2** fix the slot-label validation (or stop validating the read-only value).~~ Done.
+3. ~~**P1-3** keep a manual address path that commits without Places, and replace provider copy.~~ Done.
+4. ~~**P1-4** make Tower editable or point at the surface that owns it.~~ Done.
 5. **P2-1** add a phone jump list (sheet or chip strip) for the section rail.
 6. **P2-3 / P2-5** make partial saves and staged modal edits say what actually happened.
 7. **P2-2 / P2-6** add `aria-current` and stop mounting two headings with one id.
