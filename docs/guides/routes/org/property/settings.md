@@ -126,9 +126,9 @@ Property Settings is where you complete operational setup: basic info, capacity,
 
 ## Setup completeness
 
-**Save Changes** saves **only dirty sections that pass validation** — you do not need every section complete first. Within a section, only **changed fields** are validated for that save (e.g. contact information can save even when other basic fields are still incomplete). Valid filled sections persist; invalid dirty sections are skipped and highlighted. **Exception — Payment:** if payment methods are edited, Save is disabled until the whole Payment section’s required fields are valid (it does not partially save other sections alongside an incomplete payment draft). If **no** dirty section is savable, the button stays visible but **disabled**. If some sections save and others do not, you get a toast: _New changes has been saved._
+**Save Changes** saves **only dirty sections that pass validation** — you do not need every section complete first. Within a section, only **changed fields** are validated for that save (e.g. contact information can save even when other basic fields are still incomplete). Valid filled sections persist; invalid dirty sections are skipped and highlighted. **Exception — Payment:** if payment methods are edited, Save is disabled until the whole Payment section’s required fields are valid (it does not partially save other sections alongside an incomplete payment draft). If **no** dirty section is savable, the button stays visible but **disabled**. If some sections save and others do not, you get a toast: **Saved your other changes**, with the blocking section named underneath (for example _Basic Information still needs attention._) and the page scrolled to it.
 
-Incomplete sections still show a **red dot** on the in-page section nav (**desktop `lg+` sidebar only** — the mobile horizontal chip strip is hidden) and on the sidebar **Settings** link (for setup tracking). On phone/tablet, Settings uses the same **brand hero** shell as other admin pages (`AdminMobilePage`); Save appears as a hero icon when there are unsaved changes. On desktop, **Save Changes** appears in the page header actions when the form is dirty (no separate sticky footer bar).
+Incomplete sections still show a **red dot** on the in-page section nav and on the sidebar **Settings** link (for setup tracking). Below `lg`, the rail is replaced by a **Jump to <section>** button at the top of the content that opens a grouped bottom sheet (Listing / Guest setup / Connections / Account), so a host can reach any of the 18 cards without scrolling. On phone/tablet, Settings uses the same **brand hero** shell as other admin pages (`AdminMobilePage`); Save appears as a hero icon when there are unsaved changes. On desktop, **Save Changes** appears in the page header actions when the form is dirty (no separate sticky footer bar).
 
 | Rule                                                           | Required? |
 | -------------------------------------------------------------- | --------- |
@@ -367,6 +367,10 @@ Stored in `properties.settings.cancellationPolicy` (v2 shape) with the current v
 Legacy v1 shapes are mapped on read (no data migration): `grace_period` → Flexible, `full_before_checkin(N)` → 100% at N days, `moderate(h,N)` → 100% at N days, `partial_before_checkin(N,p)` → p% at N days, `non_refundable` → Non-refundable, free text → custom with `needsReview` and request mode. A property with no saved policy resolves to **unset** (listing says "Ask the host about cancellation") instead of a silent default.
 
 Page Editor (`embedded`) shows the same controls inline. Closing the Manage sheet with unsaved edits prompts Save / Discard / Keep editing.
+
+## Staged Manage dialogs
+
+Amenities, House Rules, Payment and Building Forms open a Manage dialog that edits the page draft. Their primary button is **Done**, with the line **Applies when you save the page.**, because the settings PATCH (and the payment OTP) runs from the page-level **Save Changes**. Closing with unsaved dialog edits prompts to discard them.
 
 ## Location
 

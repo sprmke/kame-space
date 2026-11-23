@@ -8,8 +8,27 @@ import {
 } from '@/features/dashboard/org/lib/propertyHouseRulesConstants';
 
 describe('resolveHouseRulesForDisplay', () => {
-  it('resolveHouseRulesForDisplay is exported', () => {
-    expect(typeof resolveHouseRulesForDisplay).toBe('function');
+  it('formats dynamic check-in and check-out rules in 12-hour time', () => {
+    const rules = resolveHouseRulesForDisplay({
+      enabledIds: ['check_in_after', 'check_out_before'],
+      customRules: [],
+      checkInTime: '14:00',
+      checkOutTime: '12:00',
+    });
+    expect(rules.map((rule) => rule.text)).toEqual([
+      'Check-in: After 2:00 PM',
+      'Checkout: Before 12:00 PM',
+    ]);
+  });
+
+  it('leaves an unknown time string untouched', () => {
+    const rules = resolveHouseRulesForDisplay({
+      enabledIds: ['check_in_after'],
+      customRules: [],
+      checkInTime: 'afternoon',
+      checkOutTime: '12:00',
+    });
+    expect(rules[0]?.text).toBe('Check-in: After afternoon');
   });
 });
 

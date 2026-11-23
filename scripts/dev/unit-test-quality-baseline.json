@@ -174,7 +174,6 @@
     "ui/src/features/dashboard/org/lib/propertyDocumentRequirements.ts",
     "ui/src/features/dashboard/org/lib/propertyEmailAutomationDefaults.ts",
     "ui/src/features/dashboard/org/lib/propertyExternalReviews.ts",
-    "ui/src/features/dashboard/org/lib/propertyHouseRulesConstants.ts",
     "ui/src/features/dashboard/org/lib/propertyMedia.ts",
     "ui/src/features/dashboard/org/lib/propertyResidenceDefaults.ts",
     "ui/src/features/dashboard/org/lib/propertyResidences.ts",

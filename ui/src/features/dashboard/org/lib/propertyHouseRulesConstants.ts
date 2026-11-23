@@ -112,6 +112,17 @@ export type ResolvedHouseRule = {
   type: HouseRuleDisplayType;
 };
 
+/** 24h settings value -> host-facing 12h label ("14:00" -> "2:00 PM"). */
+function formatHouseRuleTime(value: string): string {
+  const match = /^(\d{1,2}):(\d{2})$/.exec(value.trim());
+  if (!match) return value;
+  const hours = Number(match[1]);
+  const minutes = match[2];
+  const suffix = hours >= 12 ? 'PM' : 'AM';
+  const twelveHour = hours % 12 === 0 ? 12 : hours % 12;
+  return `${twelveHour}:${minutes} ${suffix}`;
+}
+
 export function resolveHouseRulesForDisplay(input: {
   enabledIds: string[];
   customRules: Array<{ id: string; name: string }>;
@@ -131,9 +142,9 @@ export function resolveHouseRulesForDisplay(input: {
     if (preset) {
       let text = preset.name;
       if (preset.dynamic === 'check_in') {
-        text = `Check-in: After ${input.checkInTime}`;
+        text = `Check-in: After ${formatHouseRuleTime(input.checkInTime)}`;
       } else if (preset.dynamic === 'check_out') {
-        text = `Checkout: Before ${input.checkOutTime}`;
+        text = `Checkout: Before ${formatHouseRuleTime(input.checkOutTime)}`;
       }
       if (seen.has(text)) continue;
       seen.add(text);

@@ -1,6 +1,7 @@
 import { ChevronRight, Plus, X } from 'lucide-react';
 
 import { LimitedCountInput } from '@/features/dashboard/org/components/property-settings/PropertySettingsFields';
+import { StagedSettingsHint } from '@/features/dashboard/org/components/property-settings/PropertySettingsFields';
 import {
   HOUSE_RULE_CATEGORIES,
   HOUSE_RULE_CUSTOM_MAX_LENGTH,
@@ -194,13 +195,16 @@ export function PropertyHouseRulesManageDialog({
         {editor}
 
         <ResponsiveModalFooter className="border-border/60 shrink-0 border-t px-4 py-3 sm:px-5">
-          <Button
-            type="button"
-            className="min-h-[44px] w-full sm:ml-auto sm:w-auto"
-            onClick={() => onOpenChange(false)}
-          >
-            Save
-          </Button>
+          <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <StagedSettingsHint />
+            <Button
+              type="button"
+              className="min-h-[44px] w-full sm:w-auto"
+              onClick={() => onOpenChange(false)}
+            >
+              Done
+            </Button>
+          </div>
         </ResponsiveModalFooter>
       </ResponsiveModalContent>
     </ResponsiveModal>

@@ -143,6 +143,10 @@ Since parking type, residence, tower, level, and slot number can't change in Set
 
 **Unsaved changes.** Leaving with unsaved edits (another menu item, browser back, F5 / Cmd+Ctrl+R, closing the tab) asks to **Save & leave**, **Discard**, or **Keep editing**. Save & leave runs the same validation as Save and stays on the page if it fails. Shared guard: [`unsaved-changes.md`](../../../../architecture/unsaved-changes.md).
 
+## Phone navigation
+
+Below `lg`, a **Jump to <section>** button opens a grouped bottom sheet (Listing / Automations / Connections / Account) so the nine cards are reachable without scrolling. The Automations modal uses **Done** plus **Applies when you save the page.**, matching the property Manage dialogs.
+
 ## Implementation map
 
 | Concern                    | Path                                                                                                                            |

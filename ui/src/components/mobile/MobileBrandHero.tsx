@@ -115,9 +115,7 @@ export const MobileBrandHero = forwardRef<HTMLElement, MobileBrandHeroProps>(
               {title}
             </h1>
             {titleHint ? (
-              <span className="text-primary-foreground [&_button]:text-current">
-                {titleHint}
-              </span>
+              <span className="text-primary-foreground [&_button]:text-current">{titleHint}</span>
             ) : null}
             {badge ? (
               <span className="[&_[data-tier-badge]]:bg-primary-foreground [&_[data-tier-badge]]:text-primary">
@@ -262,7 +260,8 @@ export function AdminMobilePage({
         ref={heroRef}
         title={title}
         subtitle={subtitle}
-        titleId={titleId}
+        /* Only the visible breakpoint owns the id, so headings never duplicate. */
+        titleId={isMobileLayout ? titleId : undefined}
         badge={badge}
         titleHint={titleHint}
         trailing={heroTrailing}
@@ -315,7 +314,7 @@ export function AdminMobilePage({
         >
           <div className="hidden shrink-0 lg:block">
             <AdminPageHeader
-              id={titleId}
+              id={isMobileLayout ? undefined : titleId}
               variant="compact"
               card={false}
               title={title}

@@ -84,7 +84,7 @@ export function computeParkingSettingsCompletion(
   if (features.enabledParkingAmenities.length < MIN_PARKING_AMENITIES) {
     addSectionIssue(
       'features',
-      `Select at least ${MIN_PARKING_AMENITIES} amenity. This helps guests know what this slot offers.`
+      `Select at least ${MIN_PARKING_AMENITIES} amenity. This helps guests know what's included.`
     );
   }
 

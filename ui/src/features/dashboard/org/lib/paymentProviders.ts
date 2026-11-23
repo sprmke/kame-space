@@ -96,7 +96,7 @@ export function formatPaymentAccountNumberDisplay(provider: string, raw: string)
 }
 
 export function paymentAccountNumberLabel(_provider?: string): string {
-  return 'Account Number';
+  return 'Account number';
 }
 
 export function paymentAccountNumberPlaceholder(_provider?: string): string {

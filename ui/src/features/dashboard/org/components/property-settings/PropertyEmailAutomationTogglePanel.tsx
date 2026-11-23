@@ -90,7 +90,7 @@ function AutomationToggleRow({
           <span className="text-muted-foreground break-all">{recipient}</span>
         </p>
         <p className="text-xs leading-snug">
-          <span className="text-foreground/90 font-medium">When:</span>{' '}
+          <span className="text-foreground/90 font-medium">Sends:</span>{' '}
           <span className="text-muted-foreground">{trigger}</span>
         </p>
         {editHref ? (

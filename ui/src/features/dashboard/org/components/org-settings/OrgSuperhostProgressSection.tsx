@@ -134,7 +134,9 @@ function SuperhostStatusBanner({
         <div className="space-y-0.5">
           <p className="text-sm font-semibold">Not a Superhost yet</p>
           <p className="text-muted-foreground text-xs">
-            {metCount} of {TOTAL_GOALS} goals met. Next check · {nextCheckLabel}
+            {metCount >= TOTAL_GOALS
+              ? `All ${TOTAL_GOALS} goals met. Waiting for the ${nextCheckLabel} review.`
+              : `${metCount} of ${TOTAL_GOALS} goals met. Next check · ${nextCheckLabel}`}
           </p>
         </div>
         <div

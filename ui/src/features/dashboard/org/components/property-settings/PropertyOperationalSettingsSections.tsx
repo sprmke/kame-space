@@ -22,7 +22,10 @@ import {
   PropertyPaymentMethodsSection,
   PropertyPaymentMethodsSummary,
 } from '@/features/dashboard/org/components/property-settings/PropertyPaymentMethodsSection';
-import { PropertySettingsSectionAlert } from '@/features/dashboard/org/components/property-settings/PropertySettingsFields';
+import {
+  PropertySettingsSectionAlert,
+  StagedSettingsHint,
+} from '@/features/dashboard/org/components/property-settings/PropertySettingsFields';
 import {
   BUILDING_FORMS_MANAGE_FIELD_IDS,
   buildingFormsFieldsEqual,
@@ -391,14 +394,17 @@ export function PropertyOperationalSettingsSections({
                   </div>
 
                   <ResponsiveModalFooter className="border-border/60 shrink-0 border-t px-4 py-3 sm:px-5">
-                    <Button
-                      type="button"
-                      className="min-h-[44px] w-full sm:ml-auto sm:w-auto"
-                      disabled={!paymentManageCanSave}
-                      onClick={handlePaymentManageSave}
-                    >
-                      Save
-                    </Button>
+                    <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <StagedSettingsHint />
+                      <Button
+                        type="button"
+                        className="min-h-[44px] w-full sm:w-auto"
+                        disabled={!paymentManageCanSave}
+                        onClick={handlePaymentManageSave}
+                      >
+                        Done
+                      </Button>
+                    </div>
                   </ResponsiveModalFooter>
                 </ResponsiveModalContent>
               </ResponsiveModal>
@@ -473,14 +479,17 @@ export function PropertyOperationalSettingsSections({
                   </div>
 
                   <ResponsiveModalFooter className="border-border/60 shrink-0 border-t px-4 py-3 sm:px-5">
-                    <Button
-                      type="button"
-                      className="min-h-[44px] w-full sm:ml-auto sm:w-auto"
-                      disabled={!buildingFormsManageCanSave}
-                      onClick={handleBuildingFormsManageSave}
-                    >
-                      Save
-                    </Button>
+                    <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <StagedSettingsHint />
+                      <Button
+                        type="button"
+                        className="min-h-[44px] w-full sm:w-auto"
+                        disabled={!buildingFormsManageCanSave}
+                        onClick={handleBuildingFormsManageSave}
+                      >
+                        Done
+                      </Button>
+                    </div>
                   </ResponsiveModalFooter>
                 </ResponsiveModalContent>
               </ResponsiveModal>
