@@ -29,6 +29,21 @@ review that leaks server values — plus a long tail of density, copy and mobile
 The page is preview-open on every plan; Export PDF and AI review generation are the only gated
 actions. That is the right call for this module, and it works.
 
+## Status after remediation
+
+The five "fix now" items shipped in this branch. The screenshots below are the **pre-fix**
+evidence that documents the findings; the recordings were re-captured after the fixes.
+
+| Item                              | Status  | Change                                                                                                                                            |
+| --------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P1-1 chart legends and bar values | Shipped | Donut legend (name, count, share, tail folds into Others); counts on age, party and distribution bars; party axis captioned. `lib/donutSlices.ts` |
+| P1-2 AI review copy               | Shipped | `lib/aiReviewCopy.ts` normalises state ids, ISO dates, `PHP 12000` and ADR/RevPAR in the card and the PDF; prompt rules added                     |
+| P1-3 1024 KPI                     | Shipped | Whole-peso KPI values plus a reserved second title line at `lg` so values share a baseline                                                        |
+| P1-4 zero delta                   | Shipped | `StatCard` renders `change === 0` as a neutral gray chip with a dash icon (shared with Bookings, Finance, Dashboard)                              |
+| P2-6 / P2-7 PDF                   | Shipped | Two pages, readable period, `PHP` currency code, separate channel and origin tables side by side                                                  |
+| P2-1 to P2-5, P2-8 to P2-11       | Open    | Section in URL, phone tab strip, pace chart, origins rounding, tab semantics, toggle names, hit targets                                           |
+| P3 group                          | Open    | Cosmetic pass                                                                                                                                     |
+
 ## Evidence
 
 | Item        | Value                                                                                 |
