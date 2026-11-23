@@ -379,9 +379,8 @@ export async function installLiveBrowserMocks(page: Page, options: LiveBrowserMo
   }, options.staged ?? false);
 }
 
-/** Open the guest chat and the in-thread voice panel. */
+/** Open the guest chat and the in-thread voice panel from the header button. */
 export async function openVoicePanel(page: Page) {
   await page.goto(VOICE_CHAT_PATH);
-  await page.getByRole('button', { name: 'Chat options' }).click();
-  await page.getByText('Talk to receptionist', { exact: true }).click();
+  await page.getByRole('button', { name: 'Talk to Kame', exact: true }).click();
 }

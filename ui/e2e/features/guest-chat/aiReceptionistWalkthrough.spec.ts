@@ -108,19 +108,15 @@ test.describe('@demo AI receptionist walkthrough', () => {
     await installLiveBrowserMocks(page, { staged: true });
 
     await page.goto(VOICE_CHAT_PATH);
-    await expect(page.getByRole('button', { name: 'Chat options' })).toBeVisible({
+    await expect(page.getByRole('button', { name: 'Talk to Kame', exact: true })).toBeVisible({
       timeout: 20_000,
     });
+    await expect(page.getByRole('button', { name: /AI voice receptionist/ })).toBeVisible();
     await beat();
     await shot(page, '01-chat-1440');
 
-    await page.getByRole('button', { name: 'Chat options' }).click();
-    await expect(page.getByText('Talk to receptionist', { exact: true })).toBeVisible();
-    await beat(250);
-    await shot(page, '02-chat-menu-1440');
-
-    await page.getByText('Talk to receptionist', { exact: true }).click();
-    await expect(page.getByRole('heading', { name: 'AI voice receptionist' })).toBeVisible();
+    await page.getByRole('button', { name: 'Talk to Kame', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Kame, your AI receptionist' })).toBeVisible();
     await beat();
     await shot(page, '03-disclosure-1440');
 
@@ -205,12 +201,11 @@ test.describe('@demo AI receptionist walkthrough', () => {
     for (const viewport of viewports) {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
       await page.goto(VOICE_CHAT_PATH);
-      await expect(page.getByRole('button', { name: 'Chat options' })).toBeVisible({
+      await expect(page.getByRole('button', { name: 'Talk to Kame', exact: true })).toBeVisible({
         timeout: 20_000,
       });
-      await page.getByRole('button', { name: 'Chat options' }).click();
-      await page.getByText('Talk to receptionist', { exact: true }).click();
-      await expect(page.getByRole('heading', { name: 'AI voice receptionist' })).toBeVisible();
+      await page.getByRole('button', { name: 'Talk to Kame', exact: true }).click();
+      await expect(page.getByRole('heading', { name: 'Kame, your AI receptionist' })).toBeVisible();
       await beat(350);
       await shot(page, `20-disclosure-${viewport.name}`);
       await expectNoPageHorizontalOverflow(page);
@@ -239,9 +234,8 @@ test.describe('@demo AI receptionist walkthrough', () => {
     await installLiveBrowserMocks(page);
     await page.goto(VOICE_CHAT_PATH);
     await page.evaluate(() => document.documentElement.classList.add('dark'));
-    await page.getByRole('button', { name: 'Chat options' }).click();
-    await page.getByText('Talk to receptionist', { exact: true }).click();
-    await expect(page.getByRole('heading', { name: 'AI voice receptionist' })).toBeVisible();
+    await page.getByRole('button', { name: 'Talk to Kame', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Kame, your AI receptionist' })).toBeVisible();
     await beat(400);
     await shot(page, '30-disclosure-dark-1440');
     await page.getByRole('button', { name: 'Start call' }).click();
@@ -257,8 +251,7 @@ test.describe('@demo AI receptionist walkthrough', () => {
     await installLiveBrowserMocks(page);
 
     await page.goto(VOICE_CHAT_PATH);
-    await page.getByRole('button', { name: 'Chat options' }).click();
-    await page.getByText('Talk to receptionist', { exact: true }).click();
+    await page.getByRole('button', { name: 'Talk to Kame', exact: true }).click();
     await page.getByRole('button', { name: 'Start call' }).click();
     await expect(page.getByRole('alert')).toContainText('temporarily unavailable');
     await beat(400);
@@ -273,8 +266,7 @@ test.describe('@demo AI receptionist walkthrough', () => {
       });
     });
     await page.goto(VOICE_CHAT_PATH);
-    await page.getByRole('button', { name: 'Chat options' }).click();
-    await page.getByText('Talk to receptionist', { exact: true }).click();
+    await page.getByRole('button', { name: 'Talk to Kame', exact: true }).click();
     await page.getByRole('button', { name: 'Start call' }).click();
     await expect(page.getByRole('alert')).toContainText('Microphone access is blocked');
     await beat(400);

@@ -15,16 +15,15 @@ test.describe('@smoke voice receptionist consent', () => {
     await installVoiceReceptionistMocks(page);
     await page.goto('/properties/solea/messages?checkInDate=2026-10-01&checkOutDate=2026-10-03');
 
-    await page.getByRole('button', { name: 'Chat options' }).click();
-    await page.getByText('Talk to receptionist', { exact: true }).click();
+    await page.getByRole('button', { name: 'Talk to Kame', exact: true }).click();
 
-    await expect(page.getByRole('heading', { name: 'AI voice receptionist' })).toBeVisible({
+    await expect(page.getByRole('heading', { name: 'Kame, your AI receptionist' })).toBeVisible({
       timeout: 15_000,
     });
-    await expect(page.getByText(/Uses your microphone and Google Gemini/)).toBeVisible();
+    await expect(page.getByText(/Kame answers with Google Gemini/)).toBeVisible();
     await expect(
       page
-        .getByRole('heading', { name: 'AI voice receptionist' })
+        .getByRole('heading', { name: 'Kame, your AI receptionist' })
         .locator('..')
         .getByRole('link', { name: 'Privacy' })
     ).toBeVisible();
@@ -58,8 +57,7 @@ test.describe('@smoke voice receptionist consent', () => {
     });
     await page.goto('/properties/solea/messages?checkInDate=2026-10-01&checkOutDate=2026-10-03');
 
-    await page.getByRole('button', { name: 'Chat options' }).click();
-    await page.getByText('Talk to receptionist', { exact: true }).click();
+    await page.getByRole('button', { name: 'Talk to Kame', exact: true }).click();
     await page.getByRole('button', { name: 'Start call' }).click();
 
     await expect(page.getByRole('alert')).toContainText('Microphone access is blocked');
@@ -72,8 +70,7 @@ test.describe('@smoke voice receptionist consent', () => {
     await installLiveBrowserMocks(page);
     await page.goto('/properties/solea/messages?checkInDate=2026-10-01&checkOutDate=2026-10-03');
 
-    await page.getByRole('button', { name: 'Chat options' }).click();
-    await page.getByText('Talk to receptionist', { exact: true }).click();
+    await page.getByRole('button', { name: 'Talk to Kame', exact: true }).click();
     await page.getByRole('button', { name: 'Start call' }).click();
 
     await expect(
@@ -94,7 +91,9 @@ test.describe('@smoke voice receptionist consent', () => {
       page.getByTestId('voice-caption').filter({ hasText: 'How can I help with your stay?' })
     ).toBeVisible();
     await page.getByRole('button', { name: 'Message host' }).click();
-    await expect(page.getByRole('heading', { name: 'AI voice receptionist' })).toHaveCount(0);
+    await expect(page.getByRole('alertdialog')).toBeVisible();
+    await page.getByRole('button', { name: 'End call and message' }).click();
+    await expect(page.getByRole('heading', { name: 'Kame, your AI receptionist' })).toHaveCount(0);
   });
 
   test('falls back to text when the provider is unavailable', async ({ page }) => {
@@ -102,8 +101,7 @@ test.describe('@smoke voice receptionist consent', () => {
     await installLiveBrowserMocks(page);
     await page.goto('/properties/solea/messages?checkInDate=2026-10-01&checkOutDate=2026-10-03');
 
-    await page.getByRole('button', { name: 'Chat options' }).click();
-    await page.getByText('Talk to receptionist', { exact: true }).click();
+    await page.getByRole('button', { name: 'Talk to Kame', exact: true }).click();
     await page.getByRole('button', { name: 'Start call' }).click();
 
     await expect(page.getByRole('alert')).toContainText('temporarily unavailable');
@@ -116,8 +114,7 @@ test.describe('@smoke voice receptionist consent', () => {
     await installLiveBrowserMocks(page);
     await page.goto('/properties/solea/messages?checkInDate=2026-10-01&checkOutDate=2026-10-03');
 
-    await page.getByRole('button', { name: 'Chat options' }).click();
-    await page.getByText('Talk to receptionist', { exact: true }).click();
+    await page.getByRole('button', { name: 'Talk to Kame', exact: true }).click();
     await page.getByRole('button', { name: 'Start call' }).click();
 
     await expect(page.getByText('Call ended')).toBeVisible({ timeout: 30_000 });
@@ -129,8 +126,7 @@ test.describe('@smoke voice receptionist consent', () => {
     await installLiveBrowserMocks(page);
     await page.goto('/properties/solea/messages?checkInDate=2026-10-01&checkOutDate=2026-10-03');
 
-    await page.getByRole('button', { name: 'Chat options' }).click();
-    await page.getByText('Talk to receptionist', { exact: true }).click();
+    await page.getByRole('button', { name: 'Talk to Kame', exact: true }).click();
     await page.getByRole('button', { name: 'Start call' }).click();
     await expect(
       page.getByTestId('voice-caption').filter({ hasText: 'How can I help with your stay?' })
@@ -157,8 +153,7 @@ test.describe('@smoke voice receptionist consent', () => {
     await installLiveBrowserMocks(page);
     await page.goto('/properties/solea/messages?checkInDate=2026-10-01&checkOutDate=2026-10-03');
 
-    await page.getByRole('button', { name: 'Chat options' }).click();
-    await page.getByText('Talk to receptionist', { exact: true }).click();
+    await page.getByRole('button', { name: 'Talk to Kame', exact: true }).click();
     await page.getByRole('button', { name: 'Start call' }).click();
     await expect(
       page.getByTestId('voice-caption').filter({ hasText: 'How can I help with your stay?' })
