@@ -62,6 +62,20 @@ export const VOICE_VIEW_LABEL: Record<VoiceSessionView, string> = {
   error: 'Connection issue',
 };
 
+/**
+ * The header must name the real failure. A blocked microphone is not a connection problem, and
+ * "Connection issue" on every error teaches guests to ignore the label.
+ */
+export function voiceErrorLabel(message: string | null | undefined): string {
+  const text = (message ?? '').toLowerCase();
+  if (text.includes('no microphone')) return 'No microphone';
+  if (text.includes('in use by another app')) return 'Microphone busy';
+  if (text.includes('blocked') || text.includes('permission')) return 'Microphone blocked';
+  if (text.includes('microphone')) return 'Microphone problem';
+  if (text.includes('offline')) return 'Offline';
+  return 'Connection issue';
+}
+
 export function voiceViewAvatarState(view: VoiceSessionView): ReceptionistAvatarState {
   switch (view) {
     case 'connecting':

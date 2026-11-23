@@ -112,6 +112,8 @@ type Props = {
   searchInHeader?: boolean;
   /** FAQ starters when the thread has no messages yet. Default true. */
   faqSuggestions?: boolean;
+  /** Opens the voice receptionist from the empty-thread card. */
+  onStartVoiceSession?: () => void;
   hasInquiryDates?: boolean;
   inquiryCheckIn?: string | null;
   inquiryCheckOut?: string | null;
@@ -148,6 +150,7 @@ export function GuestChatThread({
   threadSearch: threadSearchProp,
   searchInHeader = false,
   faqSuggestions = true,
+  onStartVoiceSession,
   hasInquiryDates = false,
   inquiryCheckIn = null,
   inquiryCheckOut = null,
@@ -484,6 +487,7 @@ export function GuestChatThread({
             disabled={isBusy}
             hasInquiryDates={hasInquiryDates}
             hasMessages={messages.length > 0}
+            onStartVoiceSession={onStartVoiceSession}
           />
         ) : (
           <>

@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useState, type ReactNode, type RefObject } from 'react';
 
 import { Mic, MoreVertical, Search } from 'lucide-react';
 
@@ -24,8 +24,10 @@ type HeaderProps = {
   replyStatus?: string | null;
   threadSearch: ChatThreadSearchController;
   searchEnabled?: boolean;
-  /** Shown as a "Talk to receptionist" option in the header menu when set. */
+  /** Shows the voice receptionist button in the header when set. */
   onStartVoiceSession?: () => void;
+  /** Lets the page restore focus to this button after a call closes. */
+  voiceButtonRef?: RefObject<HTMLButtonElement | null>;
   /** e.g. inline dialog close — rendered after the options menu. */
   trailing?: ReactNode;
   /**
@@ -42,59 +44,32 @@ const headerIconButtonClass =
 function ChatOptionsItems({
   variant,
   searchEnabled,
-  onStartVoiceSession,
   onSearch,
 }: {
   variant: 'sheet' | 'menu';
   searchEnabled: boolean;
-  onStartVoiceSession?: () => void;
   onSearch: () => void;
 }) {
   if (variant === 'sheet') {
-    return (
-      <>
-        {onStartVoiceSession ? (
-          <MobileChoiceItem
-            label="Talk to receptionist"
-            icon={<Mic className="size-5" aria-hidden />}
-            onSelect={onStartVoiceSession}
-          />
-        ) : null}
-        {searchEnabled ? (
-          <MobileChoiceItem
-            label="Search"
-            icon={<Search className="size-5" aria-hidden />}
-            onSelect={onSearch}
-          />
-        ) : null}
-      </>
-    );
+    return searchEnabled ? (
+      <MobileChoiceItem
+        label="Search"
+        icon={<Search className="size-5" aria-hidden />}
+        onSelect={onSearch}
+      />
+    ) : null;
   }
 
-  return (
-    <>
-      {onStartVoiceSession ? (
-        <DropdownMenuItem
-          onSelect={() => {
-            window.setTimeout(() => onStartVoiceSession(), 0);
-          }}
-        >
-          <Mic className="size-4" aria-hidden />
-          Talk to receptionist
-        </DropdownMenuItem>
-      ) : null}
-      {searchEnabled ? (
-        <DropdownMenuItem
-          onSelect={() => {
-            onSearch();
-          }}
-        >
-          <Search className="size-4" aria-hidden />
-          Search
-        </DropdownMenuItem>
-      ) : null}
-    </>
-  );
+  return searchEnabled ? (
+    <DropdownMenuItem
+      onSelect={() => {
+        onSearch();
+      }}
+    >
+      <Search className="size-4" aria-hidden />
+      Search
+    </DropdownMenuItem>
+  ) : null;
 }
 
 /** Guest chat identity row — options menu inline with host info. */
@@ -107,6 +82,7 @@ export function GuestChatHeaderBar({
   threadSearch,
   searchEnabled = true,
   onStartVoiceSession,
+  voiceButtonRef,
   trailing,
   bookingChip,
   className,
@@ -114,7 +90,7 @@ export function GuestChatHeaderBar({
   const isMobileLayout = useIsBelowLg();
   const [sheetOpen, setSheetOpen] = useState(false);
   const awaitingReply = isAwaitingHostReply(replyStatus);
-  const showMenu = searchEnabled || !!onStartVoiceSession;
+  const showMenu = searchEnabled;
 
   const openSearch = () => {
     threadSearch.openSearch();
@@ -146,6 +122,18 @@ export function GuestChatHeaderBar({
         ) : null}
         {awaitingReply ? <GuestChatAwaitingReplyBadge className="mt-0.5" /> : null}
       </div>
+      {onStartVoiceSession ? (
+        <button
+          ref={voiceButtonRef}
+          type="button"
+          className={headerIconButtonClass}
+          aria-label="Talk to Kame"
+          title="Talk to Kame"
+          onClick={onStartVoiceSession}
+        >
+          <Mic className="size-5" aria-hidden />
+        </button>
+      ) : null}
       {showMenu ? (
         isMobileLayout ? (
           <>
@@ -155,14 +143,6 @@ export function GuestChatHeaderBar({
                 <ChatOptionsItems
                   variant="sheet"
                   searchEnabled={searchEnabled}
-                  onStartVoiceSession={
-                    onStartVoiceSession
-                      ? () => {
-                          setSheetOpen(false);
-                          window.setTimeout(() => onStartVoiceSession(), 0);
-                        }
-                      : undefined
-                  }
                   onSearch={() => {
                     setSheetOpen(false);
                     openSearch();
@@ -183,7 +163,6 @@ export function GuestChatHeaderBar({
               <ChatOptionsItems
                 variant="menu"
                 searchEnabled={searchEnabled}
-                onStartVoiceSession={onStartVoiceSession}
                 onSearch={openSearch}
               />
             </DropdownMenuContent>
