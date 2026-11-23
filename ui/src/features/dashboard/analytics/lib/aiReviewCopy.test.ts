@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { humanizeAiReview, humanizeReviewText } from '@/features/dashboard/analytics/lib/aiReviewCopy';
+import {
+  humanizeAiReview,
+  humanizeReviewText,
+} from '@/features/dashboard/analytics/lib/aiReviewCopy';
 import type { AnalyticsAiReviewRecord } from '@/features/dashboard/analytics/lib/aiReviewTypes';
 
 const THIS_YEAR = new Date().getFullYear();
@@ -10,7 +13,7 @@ function review(overrides: Partial<AnalyticsAiReviewRecord> = {}): AnalyticsAiRe
     id: 'review-1',
     generated_at: '2026-11-22T02:00:00.000Z',
     model: 'test',
-    headline: "Monaco 2604: ADR held at PHP 3500 while occupancy cooled.",
+    headline: 'Monaco 2604: ADR held at PHP 3500 while occupancy cooled.',
     score: 74,
     score_delta: 4,
     period_start: '2026-11-01',
@@ -84,9 +87,7 @@ describe('humanizeAiReview', () => {
     expect(cleaned?.headline).toBe(
       'Monaco 2604: average nightly rate held at ₱3,500 while occupancy cooled.'
     );
-    expect(cleaned?.payload.strengths[0].evidence).toBe(
-      'Average nightly rate is ₱3,480, up 4.1%.'
-    );
+    expect(cleaned?.payload.strengths[0].evidence).toBe('Average nightly rate is ₱3,480, up 4.1%.');
     expect(cleaned?.payload.improvements[0].why).toBe(
       'Two stays still owe ₱16,500, putting your balance collection state at risk.'
     );

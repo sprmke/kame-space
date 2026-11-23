@@ -2,10 +2,7 @@ import { useMemo, useState } from 'react';
 
 import { Cell, Pie, PieChart, ResponsiveContainer, Sector, Tooltip } from 'recharts';
 
-import {
-  buildDonutPoints,
-  DONUT_MAX_SLICES,
-} from '@/features/dashboard/analytics/lib/donutSlices';
+import { buildDonutPoints, DONUT_MAX_SLICES } from '@/features/dashboard/analytics/lib/donutSlices';
 
 import { cn } from '@/lib/utils';
 

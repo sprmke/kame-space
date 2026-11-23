@@ -1,4 +1,7 @@
-import type { AnalyticsAiReviewItem, AnalyticsAiReviewRecord } from '@/features/dashboard/analytics/lib/aiReviewTypes';
+import type {
+  AnalyticsAiReviewItem,
+  AnalyticsAiReviewRecord,
+} from '@/features/dashboard/analytics/lib/aiReviewTypes';
 
 /**
  * The AI review is model output stored as-is, so it can carry server vocabulary (state ids),
