@@ -1,3 +1,5 @@
+import { useEffect, useRef } from 'react';
+
 import { NavLink } from 'react-router-dom';
 
 import { cn } from '@/lib/utils';
@@ -21,24 +23,31 @@ type SuperAdminSecondaryNavProps = {
 };
 
 /**
- * Pill tabs for Super Admin detail shells. Wraps onto a second line on phones so
- * every destination stays reachable without a hidden horizontal scroller.
+ * Pill tabs for Super Admin detail shells. On phones the row scrolls horizontally and keeps the
+ * active pill in view; five tabs cannot wrap without the active one reading as a stray button.
  */
 export function SuperAdminSecondaryNav({
   items,
   className,
   ariaLabel = 'Sections',
 }: SuperAdminSecondaryNavProps) {
+  const activeRef = useRef<HTMLSpanElement | null>(null);
+
+  useEffect(() => {
+    activeRef.current?.scrollIntoView({ inline: 'center', block: 'nearest' });
+  }, []);
+
   return (
-    <nav aria-label={ariaLabel} className={cn('pb-0.5', className)}>
-      <div className="flex min-w-0 flex-wrap items-center gap-2">
+    <nav aria-label={ariaLabel} className={cn('min-w-0 pb-0.5', className)}>
+      <div className="-mx-1 flex min-w-0 snap-x items-center gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0 [&::-webkit-scrollbar]:hidden">
         {items.map((item) => {
           const Icon = item.icon;
-          const pill = (active: boolean) => (
+          const renderPill = (active: boolean) => (
             <span
+              ref={active ? activeRef : undefined}
               data-active={active}
               className={cn(
-                'inline-flex min-h-[44px] items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors',
+                'inline-flex min-h-[44px] shrink-0 snap-start items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors',
                 active
                   ? 'bg-primary-strong text-primary-foreground'
                   : 'bg-muted text-muted-foreground hover:text-foreground'
@@ -51,15 +60,15 @@ export function SuperAdminSecondaryNav({
 
           if (item.active != null) {
             return (
-              <NavLink key={item.to} to={item.to}>
-                {pill(item.active)}
+              <NavLink key={item.to} to={item.to} className="shrink-0">
+                {renderPill(item.active)}
               </NavLink>
             );
           }
 
           return (
-            <NavLink key={item.to} to={item.to} end={item.end ?? true}>
-              {({ isActive }) => pill(isActive)}
+            <NavLink key={item.to} to={item.to} end={item.end ?? true} className="shrink-0">
+              {({ isActive }) => renderPill(isActive)}
             </NavLink>
           );
         })}
