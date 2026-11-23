@@ -21,6 +21,11 @@ Visual record: [`assets/ai-receptionist-audit/index.html`](./assets/ai-reception
 (open in a browser). The slow-motion journey is
 [`walkthrough-slowmo.mp4`](./assets/ai-receptionist-audit/walkthrough-slowmo.mp4).
 
+**Decision board:**
+[`assets/ai-receptionist-audit/recommendations.html`](./assets/ai-receptionist-audit/recommendations.html).
+One card per item, with an annotated screenshot, what I would change, effort, risk, and a
+do/later/skip call. Use it to pick codes (A1, B2, ...) before any of this is implemented.
+
 Reproduce any screenshot:
 
 ```bash
@@ -245,11 +250,15 @@ macOS Safari, including headset/Bluetooth, noisy room, background/foreground, an
 
 ## Recommended order
 
-1. P1-1 discovery (mic affordance + starter card).
-2. P1-2 delete confirmation, P1-3 immersive call, P1-4 error labels.
-3. P1-5 super-admin commit-on-blur, P1-6 mobile tabs.
-4. P1-7 focus, P1-8 cap warning.
-5. P2 desktop composition, handoff, naming, consent copy, admin density.
+The decision board groups the same findings into three phases:
 
-Each item is small enough to ship independently. Nothing in P1 requires a schema or edge change
-except the optional spoken wrap-up, which is a prompt/client-timer change.
+- **Phase 1, quick wins:** A3 delete confirm, A4 failure labels, A6 naming and consent copy, B1
+  number fields, B2 phone tabs, B3 focus. About one day, small diffs.
+- **Phase 2, call experience:** A1 discovery, A2 immersive call, A5 cap warning, B4 handoff,
+  B5 desktop composition. Two to three days.
+- **Phase 3, operator polish:** B6 org settings, B7 super-admin grouping, B8 text tokens. When
+  the module is next open.
+- **Skip:** C1 to C8 in the board, with the reason for each.
+
+Each item is small enough to ship independently. Nothing in phase 1 or 2 requires a schema change;
+the spoken cap warning is a prompt and client-timer change.
