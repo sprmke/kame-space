@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AI receptionist: every width, before and after</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #16211f;
+        --muted: #5c6b68;
+        --line: #dbe5e2;
+        --wash: #f5f9f8;
+        --teal: #177f70;
+        --teal-deep: #0f5c51;
+        --amber: #b45309;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 32px 20px 80px;
+        background: #fff;
+        color: var(--ink);
+        font-family:
+          'Plus Jakarta Sans',
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          'Segoe UI',
+          sans-serif;
+        line-height: 1.5;
+      }
+      main {
+        max-width: 1180px;
+        margin: 0 auto;
+      }
+      header {
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 20px;
+      }
+      .eyebrow {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--teal-deep);
+        background: #e7f3f0;
+        border-radius: 999px;
+        padding: 3px 10px;
+      }
+      h1 {
+        font-size: 30px;
+        line-height: 1.15;
+        letter-spacing: -0.02em;
+        margin: 12px 0 8px;
+      }
+      header p {
+        margin: 0 0 8px;
+        max-width: 82ch;
+        color: var(--muted);
+        font-size: 15px;
+      }
+      .note {
+        margin-top: 14px;
+        border-left: 3px solid var(--teal);
+        background: var(--wash);
+        padding: 10px 14px;
+        border-radius: 0 10px 10px 0;
+        font-size: 14px;
+      }
+      .note.amber {
+        border-left-color: var(--amber);
+        background: #fff7ed;
+      }
+      .state {
+        margin-top: 44px;
+        padding-top: 24px;
+        border-top: 1px solid var(--line);
+      }
+      .head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+      }
+      .head h2 {
+        font-size: 20px;
+        margin: 0;
+      }
+      .code {
+        display: inline-block;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--teal-deep);
+        background: #e7f3f0;
+        border-radius: 999px;
+        padding: 2px 9px;
+      }
+      .what {
+        margin: 6px 0 14px;
+        color: var(--muted);
+        font-size: 14px;
+        max-width: 90ch;
+      }
+      .tabs {
+        display: inline-flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 12px;
+      }
+      .tabs button {
+        min-height: 36px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: #fff;
+        color: var(--muted);
+        font: inherit;
+        font-size: 13px;
+        font-weight: 600;
+        padding: 6px 14px;
+        cursor: pointer;
+      }
+      .tabs button[aria-selected='true'] {
+        background: var(--teal-deep);
+        border-color: var(--teal-deep);
+        color: #fff;
+      }
+      .tabs button:focus-visible {
+        outline: 2px solid var(--teal);
+        outline-offset: 2px;
+      }
+      .pane[hidden] {
+        display: none;
+      }
+      figure {
+        margin: 0;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        overflow: hidden;
+        background: var(--wash);
+      }
+      figure a {
+        display: block;
+      }
+      figure img {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+      figcaption {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        justify-content: space-between;
+        padding: 8px 12px;
+        font-size: 12px;
+        color: var(--muted);
+        background: #fff;
+        border-top: 1px solid var(--line);
+      }
+      figcaption a {
+        color: var(--teal-deep);
+        font-weight: 700;
+        text-decoration: none;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13.5px;
+        margin-top: 12px;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--line);
+        vertical-align: top;
+      }
+      th {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+      }
+      .table-wrap {
+        overflow-x: auto;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+      }
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.92em;
+        background: var(--wash);
+        border: 1px solid var(--line);
+        border-radius: 5px;
+        padding: 1px 5px;
+      }
+      @media (max-width: 720px) {
+        .pane img {
+          min-width: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <span class="eyebrow">All widths</span>
+        <h1>AI receptionist: 375, 768, 1024 and 1440</h1>
+        <p>
+          Every changed screen, captured from the pre-change code and the current branch at the same
+          viewport. Switch the width under each screen. The page is deliberately AI receptionist
+          only: no finance screens or finance commits are in this branch.
+        </p>
+        <div class="note">
+          <strong>Sync check.</strong> Rebased onto the latest <code>main</code>. Main and develop
+          currently have identical file trees (the four main commits are merge-only), so no audit
+          item is fixed upstream. All eleven items were still open on main and are covered below.
+        </div>
+        <div class="note amber">
+          <strong>Scope check.</strong> The branch touches the guest chat, the voice panel, the
+          super-admin AI controls and their docs/tests. The property finance module is not part of
+          this change; earlier finance commits lived on the umbrella branch, not on this one.
+        </div>
+      </header>
+
+      <section class="state">
+        <div class="head"><span class="code">A1</span><h2>Finding Talk to Kame</h2></div>
+        <p class="what">
+          Before, voice was only inside the ⋮ menu. After, a mic button sits in the chat header and
+          an empty thread starts with a Talk to Kame card. At 375 and 768 the header stays compact;
+          at 1024 and 1440 both entries remain visible.
+        </p>
+        <div class="tabs" role="tablist" aria-label="A1 width">
+          <button role="tab" data-pane="entry-375" aria-selected="false">375</button>
+          <button role="tab" data-pane="entry-768" aria-selected="false">768</button>
+          <button role="tab" data-pane="entry-1024" aria-selected="false">1024</button>
+          <button role="tab" data-pane="entry-1440" aria-selected="false">1440</button>
+        </div>
+        <div class="pane" data-pane="entry-375"><figure><a href="resolutions/pair-entry-375.png"><img src="resolutions/pair-entry-375.png" alt="A1 at 375" /></a><figcaption><span>375 · before and after</span><a href="resolutions/after-entry-375.png">Open after full size</a></figcaption></figure></div>
+        <div class="pane" data-pane="entry-768"><figure><a href="resolutions/pair-entry-768.png"><img src="resolutions/pair-entry-768.png" alt="A1 at 768" /></a><figcaption><span>768 · before and after</span></figcaption></figure></div>
+        <div class="pane" data-pane="entry-1024"><figure><a href="resolutions/pair-entry-1024.png"><img src="resolutions/pair-entry-1024.png" alt="A1 at 1024" /></a><figcaption><span>1024 · before and after</span></figcaption></figure></div>
+        <div class="pane" data-pane="entry-1440"><figure><a href="resolutions/pair-entry-1440.png"><img src="resolutions/pair-entry-1440.png" alt="A1 at 1440" /></a><figcaption><span>1440 · before and after</span><a href="resolutions/after-entry-1440.png">Open after full size</a></figcaption></figure></div>
+      </section>
+
+      <section class="state">
+        <div class="head"><span class="code">A6</span><h2>Disclosure and naming</h2></div>
+        <p class="what">
+          Before, the panel said "AI voice receptionist" and "captions may be stored". After, it is
+          "Kame, your AI receptionist", with Gemini processing, audio not stored, captions saved with
+          the call and deletable, and "AI can make mistakes".
+        </p>
+        <div class="tabs" role="tablist" aria-label="A6 width">
+          <button role="tab" data-pane="disclosure-375" aria-selected="false">375</button>
+          <button role="tab" data-pane="disclosure-768" aria-selected="false">768</button>
+          <button role="tab" data-pane="disclosure-1024" aria-selected="false">1024</button>
+          <button role="tab" data-pane="disclosure-1440" aria-selected="false">1440</button>
+        </div>
+        <div class="pane" data-pane="disclosure-375"><figure><a href="resolutions/pair-disclosure-375.png"><img src="resolutions/pair-disclosure-375.png" alt="A6 at 375" /></a><figcaption><span>375 · before and after</span><a href="resolutions/after-disclosure-375.png">Open after full size</a></figcaption></figure></div>
+        <div class="pane" data-pane="disclosure-768"><figure><a href="resolutions/pair-disclosure-768.png"><img src="resolutions/pair-disclosure-768.png" alt="A6 at 768" /></a><figcaption><span>768 · before and after</span></figcaption></figure></div>
+        <div class="pane" data-pane="disclosure-1024"><figure><a href="resolutions/pair-disclosure-1024.png"><img src="resolutions/pair-disclosure-1024.png" alt="A6 at 1024" /></a><figcaption><span>1024 · before and after</span></figcaption></figure></div>
+        <div class="pane" data-pane="disclosure-1440"><figure><a href="resolutions/pair-disclosure-1440.png"><img src="resolutions/pair-disclosure-1440.png" alt="A6 at 1440" /></a><figcaption><span>1440 · before and after</span><a href="resolutions/after-disclosure-1440.png">Open after full size</a></figcaption></figure></div>
+      </section>
+
+      <section class="state">
+        <div class="head"><span class="code">A2 · A5 · B5</span><h2>The call itself</h2></div>
+        <p class="what">
+          Before, the app bar, chat header, stay strip and tab bar stayed live, the timer was an
+          unlabelled number, and the content sat at the top. After, the call takes over, the timer
+          reads time left, turns amber under a minute with "About a minute left.", and the booth is
+          centred. At 375 and 768 the panel covers the whole screen; at 1024 and 1440 it fills the
+          chat card.
+        </p>
+        <div class="tabs" role="tablist" aria-label="A2 width">
+          <button role="tab" data-pane="in-call-375" aria-selected="false">375</button>
+          <button role="tab" data-pane="in-call-768" aria-selected="false">768</button>
+          <button role="tab" data-pane="in-call-1024" aria-selected="false">1024</button>
+          <button role="tab" data-pane="in-call-1440" aria-selected="false">1440</button>
+        </div>
+        <div class="pane" data-pane="in-call-375"><figure><a href="resolutions/pair-in-call-375.png"><img src="resolutions/pair-in-call-375.png" alt="call at 375" /></a><figcaption><span>375 · before and after</span><a href="resolutions/after-in-call-375.png">Open after full size</a></figcaption></figure></div>
+        <div class="pane" data-pane="in-call-768"><figure><a href="resolutions/pair-in-call-768.png"><img src="resolutions/pair-in-call-768.png" alt="call at 768" /></a><figcaption><span>768 · before and after</span></figcaption></figure></div>
+        <div class="pane" data-pane="in-call-1024"><figure><a href="resolutions/pair-in-call-1024.png"><img src="resolutions/pair-in-call-1024.png" alt="call at 1024" /></a><figcaption><span>1024 · before and after</span></figcaption></figure></div>
+        <div class="pane" data-pane="in-call-1440"><figure><a href="resolutions/pair-in-call-1440.png"><img src="resolutions/pair-in-call-1440.png" alt="call at 1440" /></a><figcaption><span>1440 · before and after</span><a href="resolutions/after-in-call-1440.png">Open after full size</a></figcaption></figure></div>
+      </section>
+
+      <section class="state">
+        <div class="head"><span class="code">A3</span><h2>Delete captions</h2></div>
+        <p class="what">
+          Before, one tap removed the transcript. After, the same tap opens "Delete captions?" with
+          Keep and a red Delete. At every width the dialog stays readable and above the panel.
+        </p>
+        <div class="tabs" role="tablist" aria-label="A3 width">
+          <button role="tab" data-pane="ended-375" aria-selected="false">375</button>
+          <button role="tab" data-pane="ended-768" aria-selected="false">768</button>
+          <button role="tab" data-pane="ended-1024" aria-selected="false">1024</button>
+          <button role="tab" data-pane="ended-1440" aria-selected="false">1440</button>
+        </div>
+        <div class="pane" data-pane="ended-375"><figure><a href="resolutions/pair-ended-375.png"><img src="resolutions/pair-ended-375.png" alt="delete at 375" /></a><figcaption><span>375 · before and after</span><a href="resolutions/after-ended-375.png">Open after full size</a></figcaption></figure></div>
+        <div class="pane" data-pane="ended-768"><figure><a href="resolutions/pair-ended-768.png"><img src="resolutions/pair-ended-768.png" alt="delete at 768" /></a><figcaption><span>768 · before and after</span></figcaption></figure></div>
+        <div class="pane" data-pane="ended-1024"><figure><a href="resolutions/pair-ended-1024.png"><img src="resolutions/pair-ended-1024.png" alt="delete at 1024" /></a><figcaption><span>1024 · before and after</span></figcaption></figure></div>
+        <div class="pane" data-pane="ended-1440"><figure><a href="resolutions/pair-ended-1440.png"><img src="resolutions/pair-ended-1440.png" alt="delete at 1440" /></a><figcaption><span>1440 · before and after</span><a href="resolutions/after-ended-1440.png">Open after full size</a></figcaption></figure></div>
+      </section>
+
+      <section class="state">
+        <div class="head"><span class="code">B4</span><h2>Message host</h2></div>
+        <p class="what">
+          Before, the footer button ended the call immediately. After, it opens "End the call?" with
+          Keep talking and End call and message. The control stays beside mute at every width.
+        </p>
+        <div class="tabs" role="tablist" aria-label="B4 width">
+          <button role="tab" data-pane="handoff-375" aria-selected="false">375</button>
+          <button role="tab" data-pane="handoff-768" aria-selected="false">768</button>
+          <button role="tab" data-pane="handoff-1024" aria-selected="false">1024</button>
+          <button role="tab" data-pane="handoff-1440" aria-selected="false">1440</button>
+        </div>
+        <div class="pane" data-pane="handoff-375"><figure><a href="resolutions/pair-handoff-375.png"><img src="resolutions/pair-handoff-375.png" alt="handoff at 375" /></a><figcaption><span>375 · before and after</span><a href="resolutions/after-handoff-375.png">Open after full size</a></figcaption></figure></div>
+        <div class="pane" data-pane="handoff-768"><figure><a href="resolutions/pair-handoff-768.png"><img src="resolutions/pair-handoff-768.png" alt="handoff at 768" /></a><figcaption><span>768 · before and after</span></figcaption></figure></div>
+        <div class="pane" data-pane="handoff-1024"><figure><a href="resolutions/pair-handoff-1024.png"><img src="resolutions/pair-handoff-1024.png" alt="handoff at 1024" /></a><figcaption><span>1024 · before and after</span></figcaption></figure></div>
+        <div class="pane" data-pane="handoff-1440"><figure><a href="resolutions/pair-handoff-1440.png"><img src="resolutions/pair-handoff-1440.png" alt="handoff at 1440" /></a><figcaption><span>1440 · before and after</span><a href="resolutions/after-handoff-1440.png">Open after full size</a></figcaption></figure></div>
+      </section>
+
+      <section class="state">
+        <div class="head"><span class="code">A4</span><h2>Microphone blocked</h2></div>
+        <p class="what">
+          Before, the header blamed the connection while the body named the microphone. After, the
+          header says "Microphone blocked" and matches the body at every width.
+        </p>
+        <div class="tabs" role="tablist" aria-label="A4 width">
+          <button role="tab" data-pane="mic-blocked-375" aria-selected="false">375</button>
+          <button role="tab" data-pane="mic-blocked-768" aria-selected="false">768</button>
+          <button role="tab" data-pane="mic-blocked-1024" aria-selected="false">1024</button>
+          <button role="tab" data-pane="mic-blocked-1440" aria-selected="false">1440</button>
+        </div>
+        <div class="pane" data-pane="mic-blocked-375"><figure><a href="resolutions/pair-mic-blocked-375.png"><img src="resolutions/pair-mic-blocked-375.png" alt="mic error at 375" /></a><figcaption><span>375 · before and after</span><a href="resolutions/after-mic-blocked-375.png">Open after full size</a></figcaption></figure></div>
+        <div class="pane" data-pane="mic-blocked-768"><figure><a href="resolutions/pair-mic-blocked-768.png"><img src="resolutions/pair-mic-blocked-768.png" alt="mic error at 768" /></a><figcaption><span>768 · before and after</span></figcaption></figure></div>
+        <div class="pane" data-pane="mic-blocked-1024"><figure><a href="resolutions/pair-mic-blocked-1024.png"><img src="resolutions/pair-mic-blocked-1024.png" alt="mic error at 1024" /></a><figcaption><span>1024 · before and after</span></figcaption></figure></div>
+        <div class="pane" data-pane="mic-blocked-1440"><figure><a href="resolutions/pair-mic-blocked-1440.png"><img src="resolutions/pair-mic-blocked-1440.png" alt="mic error at 1440" /></a><figcaption><span>1440 · before and after</span><a href="resolutions/after-mic-blocked-1440.png">Open after full size</a></figcaption></figure></div>
+      </section>
+
+      <section class="state">
+        <div class="head"><span class="code">B2</span><h2>Super admin tabs</h2></div>
+        <p class="what">
+          Before, five tabs wrapped and the active tab read like a stray button at 375 and 768. After,
+          one row scrolls and keeps the active tab in view. At 1024 and 1440 nothing wraps either way.
+        </p>
+        <div class="tabs" role="tablist" aria-label="B2 width">
+          <button role="tab" data-pane="controls-top-375" aria-selected="false">375</button>
+          <button role="tab" data-pane="controls-top-768" aria-selected="false">768</button>
+          <button role="tab" data-pane="controls-top-1024" aria-selected="false">1024</button>
+          <button role="tab" data-pane="controls-top-1440" aria-selected="false">1440</button>
+        </div>
+        <div class="pane" data-pane="controls-top-375"><figure><a href="resolutions/pair-controls-top-375.png"><img src="resolutions/pair-controls-top-375.png" alt="tabs at 375" /></a><figcaption><span>375 · before and after</span><a href="resolutions/after-controls-top-375.png">Open after full size</a></figcaption></figure></div>
+        <div class="pane" data-pane="controls-top-768"><figure><a href="resolutions/pair-controls-top-768.png"><img src="resolutions/pair-controls-top-768.png" alt="tabs at 768" /></a><figcaption><span>768 · before and after</span></figcaption></figure></div>
+        <div class="pane" data-pane="controls-top-1024"><figure><a href="resolutions/pair-controls-top-1024.png"><img src="resolutions/pair-controls-top-1024.png" alt="tabs at 1024" /></a><figcaption><span>1024 · before and after</span></figcaption></figure></div>
+        <div class="pane" data-pane="controls-top-1440"><figure><a href="resolutions/pair-controls-top-1440.png"><img src="resolutions/pair-controls-top-1440.png" alt="tabs at 1440" /></a><figcaption><span>1440 · before and after</span><a href="resolutions/after-controls-top-1440.png">Open after full size</a></figcaption></figure></div>
+      </section>
+
+      <section class="state">
+        <div class="head"><span class="code">B1</span><h2>Super admin numbers</h2></div>
+        <p class="what">
+          Before, typing 0 snapped back silently; the field saved on every keystroke. After, the field
+          commits on blur, reverts the invalid value, and explains "Enter 1 or more.".
+        </p>
+        <div class="tabs" role="tablist" aria-label="B1 width">
+          <button role="tab" data-pane="numbers-375" aria-selected="false">375</button>
+          <button role="tab" data-pane="numbers-768" aria-selected="false">768</button>
+          <button role="tab" data-pane="numbers-1024" aria-selected="false">1024</button>
+          <button role="tab" data-pane="numbers-1440" aria-selected="false">1440</button>
+        </div>
+        <div class="pane" data-pane="numbers-375"><figure><a href="resolutions/pair-numbers-375.png"><img src="resolutions/pair-numbers-375.png" alt="numbers at 375" /></a><figcaption><span>375 · before and after</span><a href="resolutions/after-numbers-375.png">Open after full size</a></figcaption></figure></div>
+        <div class="pane" data-pane="numbers-768"><figure><a href="resolutions/pair-numbers-768.png"><img src="resolutions/pair-numbers-768.png" alt="numbers at 768" /></a><figcaption><span>768 · before and after</span></figcaption></figure></div>
+        <div class="pane" data-pane="numbers-1024"><figure><a href="resolutions/pair-numbers-1024.png"><img src="resolutions/pair-numbers-1024.png" alt="numbers at 1024" /></a><figcaption><span>1024 · before and after</span></figcaption></figure></div>
+        <div class="pane" data-pane="numbers-1440"><figure><a href="resolutions/pair-numbers-1440.png"><img src="resolutions/pair-numbers-1440.png" alt="numbers at 1440" /></a><figcaption><span>1440 · before and after</span><a href="resolutions/after-numbers-1440.png">Open after full size</a></figcaption></figure></div>
+      </section>
+
+      <section class="state">
+        <h2>Verification</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Check</th><th>Result</th></tr></thead>
+            <tbody>
+              <tr><td>Unit, <code>voiceSessionView.test.ts</code></td><td>7 passed</td></tr>
+              <tr><td>Smoke, <code>voiceReceptionistConsent.spec.ts</code></td><td>7 passed desktop + 7 passed mobile</td></tr>
+              <tr><td>CI, <code>aiReceptionistPhaseFixes.spec.ts</code></td><td>7 passed</td></tr>
+              <tr><td>CI, <code>superAdminAiControls.spec.ts</code></td><td>3 passed</td></tr>
+              <tr><td>Demo, <code>aiReceptionistMatrix.spec.ts</code></td><td>6 passed, 32 after captures</td></tr>
+              <tr><td>Demo, <code>aiReceptionistBeforeAfter.spec.ts</code></td><td>10 passed</td></tr>
+              <tr><td>Demo, <code>aiReceptionistWalkthrough.spec.ts</code></td><td>5 passed</td></tr>
+              <tr><td>Gates</td><td>type-check, lint, filenames, lane tags, support content, AI coverage</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="note">
+          Held: B6 org settings details, B7 super-admin grouping, B8 app-wide text tokens, all C items,
+          and the spoken cap warning (needs a provider prompt change and a live call).
+        </div>
+      </section>
+    </main>
+
+    <script>
+      document.querySelectorAll('.state').forEach((section) => {
+        const tabs = section.querySelector('.tabs');
+        if (!tabs) return;
+        const buttons = Array.from(tabs.querySelectorAll('[role="tab"]'));
+        const panes = Array.from(section.querySelectorAll('.pane[data-pane]'));
+        const activate = (button) => {
+          buttons.forEach((item) => item.setAttribute('aria-selected', String(item === button)));
+          panes.forEach((pane) => {
+            pane.hidden = pane.dataset.pane !== button.dataset.pane;
+          });
+        };
+        buttons.forEach((button) => button.addEventListener('click', () => activate(button)));
+        activate(buttons.find((button) => button.dataset.pane.endsWith('-1440')) ?? buttons[0]);
+      });
+    </script>
+  </body>
+</html>

@@ -29,7 +29,9 @@ do/later/skip call.
 **Phase 1 and 2 shipped (2026-11-23).** A1 to A6 and B1 to B5 are implemented. Review the UI
 side by side in
 [`assets/ai-receptionist-audit/phase-1-2/index.html`](./assets/ai-receptionist-audit/phase-1-2/index.html)
-(before and after for every changed screen). The tables below stay as the original audit record.
+(before and after for every changed screen), and the
+[all-width board](./assets/ai-receptionist-audit/phase-1-2/resolutions.html) for 375, 768, 1024
+and 1440 side by side. The tables below stay as the original audit record.
 
 Reproduce any screenshot:
 
