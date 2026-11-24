@@ -39,10 +39,7 @@ import { ReviewsToolbar } from '@/features/reviews/components/ReviewsToolbar';
 import { useGuestReputation } from '@/features/reviews/hooks/useGuestReputation';
 import { useOrgReviews } from '@/features/reviews/hooks/useOrgReviews';
 import { usePropertyReviews } from '@/features/reviews/hooks/usePropertyReviews';
-import type {
-  OrgReceivedReviewItem,
-  OrgToWriteItem,
-} from '@/features/reviews/lib/orgReviewsApi';
+import type { OrgReceivedReviewItem, OrgToWriteItem } from '@/features/reviews/lib/orgReviewsApi';
 import {
   activeReviewsFilterCount,
   defaultReviewsQuery,
@@ -57,6 +54,7 @@ import {
 } from '@/features/reviews/lib/propertyReviewsApi';
 import { ReviewPropertyScopeProvider } from '@/features/reviews/lib/reviewPropertyScope';
 import { resolveReviewsListLoadState } from '@/features/reviews/lib/reviewsListLoadState';
+import { summarizeListingRows } from '@/features/reviews/lib/reviewsOrgSummary';
 import { REVIEW_WINDOW_DAYS } from '@/features/reviews/lib/reviewWindow';
 
 import { FloatingToolbar } from '@/components/mobile/FloatingPanel';
@@ -108,10 +106,7 @@ export function ReviewsListPage({ scope }: Props) {
   const [searchParams, setSearchParams] = useSearchParams();
   const isMobileLayout = useIsBelowLg();
   const tab = parseReviewsTab(searchParams.get('tab'));
-  const query = useMemo(
-    () => parseReviewsQueryFromParams(searchParams, tab),
-    [searchParams, tab]
-  );
+  const query = useMemo(() => parseReviewsQueryFromParams(searchParams, tab), [searchParams, tab]);
 
   const { data: access } = usePropertyPermissions();
   const propertyCanRespond = hasPropertyPermission(access?.permissions, 'reviews.responses:edit');
@@ -181,6 +176,20 @@ export function ReviewsListPage({ scope }: Props) {
     [listingRows]
   );
 
+  /**
+   * Org cards describe the feed. When the listing filter is on, recompute the four headline
+   * numbers from the per-listing rows we already have (weighted by review count) instead of
+   * leaving org-wide totals above a narrowed list. The distribution sheet stays org-wide,
+   * so the Average card stops opening it while a filter is on.
+   */
+  const listingFiltered = isOrg && query.properties.length > 0;
+  const scopedSummary = useMemo(() => {
+    if (!summary || !listingFiltered) return summary;
+    const selected = listingRows.filter((row) => query.properties.includes(row.propertyId));
+    const rollup = summarizeListingRows(selected);
+    return rollup ? { ...summary, ...rollup } : summary;
+  }, [summary, listingFiltered, listingRows, query.properties]);
+
   const hasActiveQuery =
     query.q.trim().length > 0 ||
     activeReviewsFilterCount(tab, query) > 0 ||
@@ -212,8 +221,7 @@ export function ReviewsListPage({ scope }: Props) {
     listingCount: listingRows.length,
   });
 
-  const emptySkeletonIcon =
-    tab === 'to_write' ? PencilLine : tab === 'written' ? UserCheck : Quote;
+  const emptySkeletonIcon = tab === 'to_write' ? PencilLine : tab === 'written' ? UserCheck : Quote;
 
   const listSkeleton = () =>
     showTable ? (
@@ -323,14 +331,14 @@ export function ReviewsListPage({ scope }: Props) {
       }
       titleId="reviews-heading"
       heroTrailing={
-        isOrg ? undefined : (
+        isOrg || !propertyCanWriteGuest ? undefined : (
           <MobileHeroActionButton aria-label="Auto-review" onClick={() => setAutomationOpen(true)}>
             <Sparkles className="size-5" aria-hidden />
           </MobileHeroActionButton>
         )
       }
       desktopActions={
-        isOrg ? undefined : (
+        isOrg || !propertyCanWriteGuest ? undefined : (
           <button
             type="button"
             className="native-cta sm:w-auto sm:px-3.5"
@@ -343,14 +351,15 @@ export function ReviewsListPage({ scope }: Props) {
       }
       desktopActionsClassName="w-full sm:w-auto"
     >
-      {reviews.isLoading && !summary ? (
+      {reviews.isError ? null : reviews.isLoading && !summary ? (
         <ReviewsSummaryCardsSkeleton />
       ) : (
         <ReviewsSummaryCards
-          summary={summary}
+          summary={scopedSummary}
           onOpenBreakdown={() => setRatingOpen(true)}
           onShowToWrite={() => setTab('to_write')}
           toWriteActive={tab === 'to_write'}
+          breakdownEnabled={!listingFiltered}
         />
       )}
 
@@ -462,6 +471,10 @@ export function ReviewsListPage({ scope }: Props) {
             bookingId={respondReview.bookingId}
             guestName={respondReview.guestName || 'Guest'}
             existingText={respondReview.responseText}
+            reviewText={respondReview.reviewText}
+            starRating={respondReview.starRating}
+            checkInDate={respondReview.checkInDate}
+            checkOutDate={respondReview.checkOutDate}
           />
         </ReviewPropertyScopeProvider>
       ) : null}

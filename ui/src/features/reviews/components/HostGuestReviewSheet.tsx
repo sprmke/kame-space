@@ -71,6 +71,9 @@ type Props = {
 
 export function HostGuestReviewSheet({ open, onOpenChange, bookingId, guestName, draft }: Props) {
   const [form, setForm] = useState<FormState>(() => draftToForm(draft));
+  // Errors appear on the first save attempt, inline next to the field, not as a toast:
+  // a toast does not say which field in a long sheet is missing.
+  const [attempted, setAttempted] = useState(false);
   const submit = useSubmitHostGuestReview(bookingId);
   const draftAi = useDraftReviewWithAi(bookingId);
   const { canUse: canAutomate } = useFeatureGate('reviewAutomation');
@@ -94,25 +97,34 @@ export function HostGuestReviewSheet({ open, onOpenChange, bookingId, guestName,
     );
   }, [open, baseline, draft]);
 
+  const errors = {
+    overall: form.overallRating < 1 ? 'Pick an overall rating' : null,
+    categories: !isHostCategoryRatingsComplete(form.categories) ? 'Rate every category' : null,
+    wouldHostAgain:
+      typeof form.wouldHostAgain !== 'boolean' ? 'Choose whether you would host again' : null,
+    text: hostReviewTextRequired(form.overallRating, form.reviewText)
+      ? `Add ${HOST_REVIEW_TEXT_MIN_WHEN_LOW} characters or more when the overall is 3 or below`
+      : null,
+  };
+  const firstErrorId =
+    (errors.overall && 'host-review-overall') ||
+    (errors.categories && 'host-review-categories') ||
+    (errors.wouldHostAgain && 'host-review-would-host-again') ||
+    (errors.text && 'host-review-text') ||
+    null;
+
   const handleSave = async (): Promise<boolean> => {
-    if (form.overallRating < 1 || form.overallRating > 5) {
-      toast.error('Overall rating is required');
+    if (firstErrorId) {
+      setAttempted(true);
+      window.setTimeout(() => {
+        const field = document.getElementById(firstErrorId);
+        field?.focus({ preventScroll: false });
+        field?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      }, 0);
       return false;
     }
-    if (!isHostCategoryRatingsComplete(form.categories)) {
-      toast.error('All category ratings are required');
-      return false;
-    }
-    if (typeof form.wouldHostAgain !== 'boolean') {
-      toast.error('Would host again is required');
-      return false;
-    }
-    if (hostReviewTextRequired(form.overallRating, form.reviewText)) {
-      toast.error(
-        `Add at least ${HOST_REVIEW_TEXT_MIN_WHEN_LOW} characters when the overall is 3 or below`
-      );
-      return false;
-    }
+    // Narrowing for the payload below; the guard above already reported it inline.
+    if (typeof form.wouldHostAgain !== 'boolean') return false;
     try {
       await submit.mutateAsync({
         overallRating: form.overallRating,
@@ -205,26 +217,44 @@ export function HostGuestReviewSheet({ open, onOpenChange, bookingId, guestName,
         }
       >
         <div className="space-y-5">
-          <div className="flex flex-col items-center gap-2">
-            <GuestReviewStarRating
-              value={form.overallRating}
-              onChange={(overallRating) =>
-                setForm((prev) => ({
-                  ...prev,
-                  overallRating,
-                  tags: overallRating >= 4 === prev.overallRating >= 4 ? prev.tags : [],
-                }))
-              }
-              ariaLabel="Overall rating"
-            />
+          <div className="space-y-1.5">
+            <div
+              id="host-review-overall"
+              tabIndex={-1}
+              className="flex flex-col items-center gap-2 outline-none"
+            >
+              <GuestReviewStarRating
+                value={form.overallRating}
+                onChange={(overallRating) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    overallRating,
+                    tags: overallRating >= 4 === prev.overallRating >= 4 ? prev.tags : [],
+                  }))
+                }
+                ariaLabel="Overall rating"
+              />
+            </div>
+            {attempted && errors.overall ? (
+              <p role="alert" className="text-destructive text-center text-xs font-medium">
+                {errors.overall}
+              </p>
+            ) : null}
           </div>
 
-          <HostCategoryRatingList
-            value={form.categories}
-            onChange={(categories) => setForm((prev) => ({ ...prev, categories }))}
-          />
+          <div id="host-review-categories" tabIndex={-1} className="space-y-1.5 outline-none">
+            <HostCategoryRatingList
+              value={form.categories}
+              onChange={(categories) => setForm((prev) => ({ ...prev, categories }))}
+            />
+            {attempted && errors.categories ? (
+              <p role="alert" className="text-destructive text-xs font-medium">
+                {errors.categories}
+              </p>
+            ) : null}
+          </div>
 
-          <div className="space-y-2">
+          <div id="host-review-would-host-again" tabIndex={-1} className="space-y-2 outline-none">
             <Label>Would host again</Label>
             <div className="grid grid-cols-2 gap-2" role="group" aria-label="Would host again">
               {[
@@ -271,8 +301,18 @@ export function HostGuestReviewSheet({ open, onOpenChange, bookingId, guestName,
               id="host-review-text"
               value={form.reviewText}
               maxLength={REVIEW_TEXT_MAX_LEN}
+              aria-invalid={Boolean(attempted && errors.text)}
               onChange={(event) => setForm((prev) => ({ ...prev, reviewText: event.target.value }))}
             />
+            {attempted && errors.text ? (
+              <p role="alert" className="text-destructive text-xs font-medium">
+                {errors.text}
+              </p>
+            ) : (
+              <p className="text-caption text-right tabular-nums">
+                {form.reviewText.length}/{REVIEW_TEXT_MAX_LEN}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">

@@ -95,7 +95,9 @@ export function ReviewsToolbar({
   }
 
   const searchField = (
-    <div className="relative w-full min-w-0">
+    // Keep a usable field at lg: without a floor it collapsed to ~2 characters once the
+    // filters, sort, per-page and view controls shared the row.
+    <div className="relative w-full min-w-0 lg:min-w-[13rem]">
       <Search
         className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2"
         aria-hidden
@@ -205,37 +207,46 @@ export function ReviewsToolbar({
     />
   );
 
+  // Rating is offered on every tab except To write, so "not To write" already covers the
+  // received/written facets. To write therefore only gets a Filters section when the
+  // listing filter is available; otherwise the section rendered empty.
+  const hasMobileFilters = Boolean(showListingFilter) || tab !== 'to_write';
+
   const mobileRefineBody = (
     <>
-      <AdminListRefineSection title="Filters">
-        <div className="flex flex-col gap-2 [&_button]:w-full">
-          {showListingFilter ? (
-            <ReviewsListingFilter
-              options={listingOptions ?? []}
-              value={query.properties}
-              onChange={(properties) => onChange({ ...query, page: 1, properties })}
-            />
-          ) : null}
-          {showRatingFilter ? (
-            <ReviewsRatingFilter
-              value={query.ratings}
-              onChange={(ratings) => onChange({ ...query, page: 1, ratings })}
-            />
-          ) : null}
-          {tab === 'received' ? (
-            <ReviewsResponseFilter
-              value={query.responded}
-              onChange={(responded) => onChange({ ...query, page: 1, responded })}
-            />
-          ) : null}
-          {tab === 'written' ? (
-            <ReviewsHostAgainFilter
-              value={query.hostAgain}
-              onChange={(hostAgain) => onChange({ ...query, page: 1, hostAgain })}
-            />
-          ) : null}
-        </div>
-      </AdminListRefineSection>
+      {/* To write on a single-listing property has no filter at all; rendering the heading
+          anyway left an empty "Filters" band in the sheet. */}
+      {hasMobileFilters ? (
+        <AdminListRefineSection title="Filters">
+          <div className="flex flex-col gap-2 [&_button]:w-full">
+            {showListingFilter ? (
+              <ReviewsListingFilter
+                options={listingOptions ?? []}
+                value={query.properties}
+                onChange={(properties) => onChange({ ...query, page: 1, properties })}
+              />
+            ) : null}
+            {showRatingFilter ? (
+              <ReviewsRatingFilter
+                value={query.ratings}
+                onChange={(ratings) => onChange({ ...query, page: 1, ratings })}
+              />
+            ) : null}
+            {tab === 'received' ? (
+              <ReviewsResponseFilter
+                value={query.responded}
+                onChange={(responded) => onChange({ ...query, page: 1, responded })}
+              />
+            ) : null}
+            {tab === 'written' ? (
+              <ReviewsHostAgainFilter
+                value={query.hostAgain}
+                onChange={(hostAgain) => onChange({ ...query, page: 1, hostAgain })}
+              />
+            ) : null}
+          </div>
+        </AdminListRefineSection>
+      ) : null}
       <AdminListRefineSection title="Sort">{sortMenu}</AdminListRefineSection>
       <AdminListRefineSection title="Per page">{perPage}</AdminListRefineSection>
     </>
@@ -271,6 +282,9 @@ export function ReviewsToolbar({
 
       <AdminListDesktopToolbar
         aria-label="Review filters"
+        // Wrap to a second row instead of crushing the search field at 1024.
+        className="flex-wrap gap-y-2"
+        searchWrapperClassName="lg:min-w-[13rem]"
         search={searchField}
         leading={leadingFilter ?? undefined}
         refine={

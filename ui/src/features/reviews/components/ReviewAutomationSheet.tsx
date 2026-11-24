@@ -5,15 +5,18 @@ import { toast } from 'sonner';
 
 import { GuestReviewStarRating } from '@/features/guest/sd-form/components/GuestReviewStarRating';
 
+import { useOptionalOrgContext } from '@/features/dashboard/org/components/RequireOrgContext';
 import { handleAiMutationError } from '@/features/dashboard/org/lib/aiQuotaToast';
 import { TierBadge } from '@/features/dashboard/plans/components/TierBadge';
 import { useUpgradeModal } from '@/features/dashboard/plans/components/UpgradeModalProvider';
 import { useFeatureGate } from '@/features/dashboard/plans/hooks/useFeatureGate';
 
+import { usePropertyReviews } from '@/features/reviews/hooks/usePropertyReviews';
 import {
   useReviewAutomationRules,
   useSaveReviewAutomationRules,
 } from '@/features/reviews/hooks/useReviewAutomation';
+import { defaultReviewsQuery } from '@/features/reviews/lib/propertyReviewsApi';
 import {
   DEFAULT_REVIEW_AUTOMATION_RULES,
   type ReviewAutomationRules,
@@ -25,6 +28,7 @@ import { UnsavedChangesDialog } from '@/components/forms/UnsavedChangesDialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { ResponsiveModalTitle } from '@/components/ui/responsive-modal';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useGuardedClose } from '@/hooks/useGuardedClose';
@@ -33,6 +37,19 @@ import { useGuardedClose } from '@/hooks/useGuardedClose';
 const MIN_TEMPLATES = 3;
 const MIN_DELAY = 1;
 const MAX_DELAY = 13;
+
+/** Fills the two supported placeholders for the preview line. */
+function renderPreview(
+  template: string | undefined,
+  guestName: string | null,
+  propertyName: string | null
+): string | null {
+  const text = template?.trim();
+  if (!text) return null;
+  return text
+    .replace(/\{\{guest_first_name\}\}/g, guestName || 'Your guest')
+    .replace(/\{\{property_name\}\}/g, propertyName || 'your property');
+}
 
 const CATEGORY_FIELDS = [
   ['cleanlinessRating', 'Left the place clean'],
@@ -77,6 +94,13 @@ type Props = {
 export function ReviewAutomationSheet({ open, onOpenChange, canEdit }: Props) {
   const query = useReviewAutomationRules();
   const save = useSaveReviewAutomationRules();
+  const orgContext = useOptionalOrgContext();
+  // One real pending stay, so "what it posts" can be previewed with a real name.
+  const pendingReviews = usePropertyReviews('to_write', defaultReviewsQuery('to_write'), {
+    enabled: open,
+  });
+  const previewGuest = pendingReviews.data?.items[0]?.guestName ?? null;
+  const previewProperty = orgContext?.property?.name ?? null;
   const { canUse } = useFeatureGate('reviewAutomation');
   const { open: openUpgradeModal } = useUpgradeModal();
   const baseline = query.data ?? DEFAULT_REVIEW_AUTOMATION_RULES;
@@ -141,10 +165,12 @@ export function ReviewAutomationSheet({ open, onOpenChange, canEdit }: Props) {
         onOpenChange={guardedOpenChange}
         sizeClassName="max-w-[min(calc(100vw-1.5rem),34rem)] sm:max-w-[min(90vw,34rem)]"
         title={
-          <span className="flex items-center gap-2">
+          // A JSX title must carry ResponsiveModalTitle itself, or the dialog has no
+          // accessible name at all (AdminDialogShell only wraps string titles).
+          <ResponsiveModalTitle className="flex items-center gap-2">
             Auto-review
             <TierBadge feature="reviewAutomation" />
-          </span>
+          </ResponsiveModalTitle>
         }
         footer={
           <>
@@ -193,7 +219,7 @@ export function ReviewAutomationSheet({ open, onOpenChange, canEdit }: Props) {
                 <Button
                   type="button"
                   variant="outline"
-                  className="size-10 shrink-0 p-0"
+                  className="size-11 shrink-0 p-0"
                   disabled={disabled || form.delayDays <= MIN_DELAY}
                   aria-label="Fewer days"
                   onClick={() =>
@@ -214,7 +240,7 @@ export function ReviewAutomationSheet({ open, onOpenChange, canEdit }: Props) {
                 <Button
                   type="button"
                   variant="outline"
-                  className="size-10 shrink-0 p-0"
+                  className="size-11 shrink-0 p-0"
                   disabled={disabled || form.delayDays >= MAX_DELAY}
                   aria-label="More days"
                   onClick={() =>
@@ -280,6 +306,16 @@ export function ReviewAutomationSheet({ open, onOpenChange, canEdit }: Props) {
             hint="One is picked at random. Use {{guest_first_name}} and {{property_name}}."
           >
             <div className="space-y-2">
+              {renderPreview(form.templates[0], previewGuest, previewProperty) ? (
+                <div className="bg-muted/40 border-border/60 rounded-lg border px-3 py-2">
+                  <p className="text-muted-foreground text-[11px] font-semibold uppercase tracking-wide">
+                    Preview
+                  </p>
+                  <p className="text-foreground mt-1 text-sm leading-relaxed">
+                    {renderPreview(form.templates[0], previewGuest, previewProperty)}
+                  </p>
+                </div>
+              ) : null}
               {form.templates.map((template, index) => (
                 <div key={index} className="flex items-start gap-2">
                   <Textarea

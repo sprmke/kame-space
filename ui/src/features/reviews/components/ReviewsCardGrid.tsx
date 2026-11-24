@@ -1,4 +1,4 @@
-import type { KeyboardEvent, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -27,7 +27,6 @@ import type {
 import { AdminListCardOverflowMenu } from '@/components/mobile/AdminListCardOverflowMenu';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 import { formatManilaLongDate, formatStayDateRange } from '@/utils/format/dates';
 
 /** Same grid as the other admin card views (Maintenance / Finance stays). */
@@ -39,40 +38,55 @@ function CardGrid({ children }: { children: ReactNode }) {
   );
 }
 
-function ReviewCardShell({ onOpen, children }: { onOpen?: () => void; children: ReactNode }) {
-  const handleKey = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (!onOpen) return;
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      onOpen();
-    }
-  };
-
+/**
+ * One card. The whole surface opens the review through a single overlay button that is a
+ * sibling of the content, not a wrapper: wrapping it in `role="button"` hid the ⋯ menu and the
+ * Reply button from screen readers and from role-based queries. The interactive children sit
+ * above the overlay (`z-20`), everything else is covered by it, so tapping anywhere on the card
+ * that is not an action still opens the review.
+ */
+function ReviewCard({
+  children,
+  onOpen,
+  openLabel,
+}: {
+  children: ReactNode;
+  onOpen?: () => void;
+  openLabel: string;
+}) {
   return (
-    <div
-      role={onOpen ? 'button' : undefined}
-      tabIndex={onOpen ? 0 : undefined}
-      onClick={onOpen}
-      onKeyDown={handleKey}
-      className={cn(
-        'surface-card flex min-h-[8.5rem] flex-col gap-2 p-3.5 text-left',
-        onOpen &&
-          'native-press focus-visible:ring-primary/40 cursor-pointer outline-none focus-visible:ring-2'
-      )}
-    >
+    <div className="surface-card relative flex min-h-[8.5rem] flex-col gap-2 p-3.5 text-left">
       {children}
+      {onOpen ? (
+        <button
+          type="button"
+          aria-label={openLabel}
+          onClick={onOpen}
+          className="focus-visible:ring-primary/40 absolute inset-0 z-0 rounded-[inherit] outline-none focus-visible:ring-2"
+        />
+      ) : null}
     </div>
   );
 }
 
 function CardHeader({ name, trailing }: { name: string; trailing?: ReactNode }) {
   return (
-    <div className="flex items-start justify-between gap-2">
+    <div className="pointer-events-none relative z-10 flex items-start justify-between gap-2">
       <div className="flex min-w-0 items-center gap-2.5">
         <ReviewAvatar name={name} className="size-8 shrink-0" />
         <p className="text-foreground min-w-0 truncate text-[13px] font-semibold">{name}</p>
       </div>
-      {trailing}
+      {trailing ? (
+        <div className="pointer-events-auto relative z-20 shrink-0">{trailing}</div>
+      ) : null}
+    </div>
+  );
+}
+
+function CardFooter({ children }: { children: ReactNode }) {
+  return (
+    <div className="pointer-events-none relative z-20 mt-auto flex items-center justify-between gap-2 pt-1">
+      {children}
     </div>
   );
 }
@@ -108,23 +122,18 @@ export function ReceivedReviewsCardGrid({
         const marketingHref = `${propertySectionPath(orgSlug, propertySlug, 'marketing')}?tab=design&reviewId=${encodeURIComponent(review.id)}`;
 
         return (
-          <ReviewCardShell key={review.id} onOpen={() => onOpen(review)}>
+          <ReviewCard
+            key={review.id}
+            openLabel={`Open ${guestName}'s review`}
+            onOpen={() => onOpen(review)}
+          >
             <CardHeader
               name={guestName}
               trailing={
                 <AdminListCardOverflowMenu
                   label={`Actions for ${guestName}'s review`}
+                  sheetTitle={guestName}
                   actions={[
-                    ...(mayRespond
-                      ? [
-                          {
-                            key: 'respond',
-                            label: review.responseText ? 'Edit response' : 'Respond',
-                            icon: <Reply className="size-5" aria-hidden />,
-                            onSelect: () => onRespond(review),
-                          },
-                        ]
-                      : []),
                     {
                       key: 'booking',
                       label: 'Open booking',
@@ -164,18 +173,29 @@ export function ReceivedReviewsCardGrid({
                 {review.reviewText}
               </p>
             ) : null}
-            <div className="mt-auto pt-1">
+            <CardFooter>
               {review.responseText ? (
                 <Badge variant="success" className="font-medium">
                   Responded
                 </Badge>
               ) : (
-                <Badge variant="outline" className="text-muted-foreground font-medium">
-                  No response
-                </Badge>
+                <span />
               )}
-            </div>
-          </ReviewCardShell>
+              {/* The page's primary job, on the surface hosts actually use. It used to live
+                  only inside the ⋯ sheet. */}
+              {mayRespond ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="pointer-events-auto min-h-[44px] shrink-0 px-3"
+                  onClick={() => onRespond(review)}
+                >
+                  <Reply className="mr-1.5 size-4" aria-hidden />
+                  {review.responseText ? 'Edit reply' : 'Reply'}
+                </Button>
+              ) : null}
+            </CardFooter>
+          </ReviewCard>
         );
       })}
     </CardGrid>
@@ -199,13 +219,17 @@ export function WrittenReviewsCardGrid({
         const propertyName = resolvePropertyName?.(review) ?? '';
 
         return (
-          <ReviewCardShell key={review.id} onOpen={() => onOpen(review)}>
+          <ReviewCard
+            key={review.id}
+            openLabel={`Open ${guestName}'s guest review`}
+            onOpen={() => onOpen(review)}
+          >
             <CardHeader
               name={guestName}
               trailing={
                 review.status === 'submitted' ? (
-                  <Badge variant="outline" className="shrink-0 font-medium">
-                    Hidden
+                  <Badge variant="outline" className="font-medium">
+                    Hidden until publish
                   </Badge>
                 ) : undefined
               }
@@ -222,7 +246,7 @@ export function WrittenReviewsCardGrid({
                 {review.reviewText}
               </p>
             ) : null}
-            <div className="mt-auto pt-1">
+            <CardFooter>
               <Badge
                 variant={review.wouldHostAgain ? 'success' : 'destructive'}
                 className="font-medium"
@@ -234,8 +258,8 @@ export function WrittenReviewsCardGrid({
                 )}
                 {review.wouldHostAgain ? 'Would host again' : 'Would not host again'}
               </Badge>
-            </div>
-          </ReviewCardShell>
+            </CardFooter>
+          </ReviewCard>
         );
       })}
     </CardGrid>
@@ -265,35 +289,41 @@ export function ToWriteReviewsCardGrid({
         const bookingHref = `${propertySectionPath(orgSlug, resolvePropertySlug(row), 'bookings')}/${row.bookingId}`;
 
         return (
-          <ReviewCardShell key={row.bookingId} onOpen={mayWrite ? () => onWrite(row) : undefined}>
-            <CardHeader
-              name={guestName}
-              trailing={<ReviewWindowBadge closesAt={row.closesAt} className="shrink-0" />}
-            />
+          <ReviewCard
+            key={row.bookingId}
+            openLabel={`Open ${guestName}'s stay`}
+            onOpen={mayWrite ? () => onWrite(row) : undefined}
+          >
+            <CardHeader name={guestName} trailing={<ReviewWindowBadge closesAt={row.closesAt} />} />
             <div className="space-y-1">
               {showProperty && propertyName ? (
                 <p className="text-foreground truncate text-xs font-medium">{propertyName}</p>
               ) : null}
               {stayRange ? <p className="text-data-secondary truncate">{stayRange}</p> : null}
             </div>
-            <div className="mt-auto pt-1" onClick={(event) => event.stopPropagation()}>
+            <CardFooter>
               {mayWrite ? (
                 <Button
                   type="button"
                   variant="outline"
-                  className="min-h-[44px] w-full"
+                  className="pointer-events-auto min-h-[44px] w-full"
                   onClick={() => onWrite(row)}
                 >
                   <PencilLine className="mr-1.5 size-4" aria-hidden />
                   Write review
                 </Button>
               ) : (
-                <Button type="button" variant="outline" className="min-h-[44px] w-full" asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="pointer-events-auto min-h-[44px] w-full"
+                  asChild
+                >
                   <Link to={bookingHref}>Open booking</Link>
                 </Button>
               )}
-            </div>
-          </ReviewCardShell>
+            </CardFooter>
+          </ReviewCard>
         );
       })}
     </CardGrid>

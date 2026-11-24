@@ -118,7 +118,7 @@ export function ReceivedReviewDetailSheet({
     <AdminDialogShell
       open={open}
       onOpenChange={onOpenChange}
-      title="Guest review"
+      title={`${review.guestName || 'Guest'}'s review`}
       sizeClassName="max-w-[min(calc(100vw-1.5rem),34rem)] sm:max-w-[min(90vw,34rem)]"
       footer={
         <>
@@ -185,7 +185,7 @@ export function WrittenReviewDetailSheet({
     <AdminDialogShell
       open={open}
       onOpenChange={onOpenChange}
-      title="Your guest review"
+      title={`Your review of ${review.guestName || 'Guest'}`}
       sizeClassName="max-w-[min(calc(100vw-1.5rem),32rem)] sm:max-w-[min(90vw,32rem)]"
       footer={
         <>
