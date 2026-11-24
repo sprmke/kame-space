@@ -242,7 +242,9 @@ test.describe('@ci notifications hub', () => {
     await expect(rows).toHaveCount(40, { timeout: 15_000 });
   });
 
-  test('@flaky the Manage sheet holds delivery settings and the Telegram controls', async ({ page }) => {
+  test('@flaky the Manage sheet holds delivery settings and the Telegram controls', async ({
+    page,
+  }) => {
     await page.goto(HUB);
     await expect(page.getByRole('heading', { name: 'Notifications', level: 1 })).toBeVisible({
       timeout: 20_000,
@@ -260,9 +262,10 @@ test.describe('@ci notifications hub', () => {
     const deviceSwitch = dialog.getByRole('switch', { name: 'Push notifications' });
     await expect(deviceSwitch).toBeVisible();
     await expect(deviceSwitch).toBeDisabled();
-    await expect(
-      dialog.getByText(/Preparing push|aren't available|doesn't support/i)
-    ).toBeVisible();
+    await expect(dialog.getByText(/Preparing push|not available|don't support/i)).toBeVisible();
+    /* Account-level preferences stay reachable even when this device cannot push. */
+    await expect(dialog.getByText('Push preferences')).toBeVisible();
+    await expect(dialog.getByRole('switch', { name: 'Bookings' })).toBeVisible();
 
     /* How it works now lives beside the page title. */
     await dialog.getByRole('button', { name: 'Done' }).click();
@@ -367,8 +370,97 @@ test.describe('@ci notifications hub', () => {
 
     await dialog.getByRole('tab', { name: 'Activity' }).click();
     await expect(page.getByRole('alertdialog')).toBeHidden();
-    await expect(
-      dialog.getByRole('switch', { name: 'Push notifications' })
-    ).toBeVisible();
+    await expect(dialog.getByRole('switch', { name: 'Push notifications' })).toBeVisible();
+  });
+});
+
+/**
+ * Behaviour added by the notifications UX pass: permission-gated controls, rows
+ * that have nowhere to go, honest error copy, the desktop bell entry point and
+ * the org-level URL.
+ */
+test.describe('@ci notifications hub permissions and edge states', () => {
+  test.beforeEach(async ({ page }) => {
+    await installPropertyTeamRbacMocks(page, 'full_access');
+  });
+
+  test('a read-only member gets disabled Telegram controls, not a dead switch', async ({
+    page,
+  }) => {
+    await installPropertyTeamRbacMocks(page, 'read_only');
+    await mockDeliveryControl(page);
+
+    await page.goto(HUB);
+    await page.getByRole('button', { name: 'Manage', exact: true }).click();
+    const dialog = page.getByRole('dialog');
+    await dialog.getByRole('tab', { name: 'Telegram' }).click();
+
+    await expect(dialog.getByText(/Some modules are view only/)).toBeVisible({
+      timeout: 20_000,
+    });
+    await expect(dialog.getByRole('switch', { name: 'Telegram delivery' })).toBeDisabled();
+    await expect(page.locator('#global-bot-token')).toBeDisabled();
+  });
+
+  test('a row with no destination is not rendered as a button', async ({ page }) => {
+    const billing = [
+      {
+        id: 'n-billing',
+        type: 'billing_notice',
+        title: 'Card expiring soon',
+        body: 'Update your payment method before Nov 30.',
+        booking_id: null,
+        conversation_id: null,
+        property_id: 'prop-1',
+        parking_id: null,
+        metadata: {},
+        created_at: new Date(Date.now() - 3_600_000).toISOString(),
+        isRead: false,
+      },
+    ];
+    await page.route('**/functions/v1/notifications-list**', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: { notifications: billing, nextCursor: null, unreadCount: 1 },
+        }),
+      })
+    );
+
+    await page.goto(HUB);
+    const row = page.getByText('Card expiring soon');
+    await expect(row).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByRole('button', { name: /Card expiring soon/ })).toHaveCount(0);
+  });
+
+  test('a failed list marks the KPIs unavailable and keeps retry centred', async ({ page }) => {
+    await page.route('**/functions/v1/notifications-list**', (route) =>
+      route.fulfill({ status: 500, contentType: 'application/json', body: '{"error":"boom"}' })
+    );
+
+    await page.goto(HUB);
+    await expect(page.getByText('Could not load notifications.')).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByRole('button', { name: /^Unread: n\/a/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Messages: n\/a/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Retry' })).toBeVisible();
+  });
+
+  test('the Quick access pill opens the notification panel on desktop', async ({ page }) => {
+    await page.goto(HUB);
+    await expect(page.getByRole('heading', { name: 'Notifications', level: 1 })).toBeVisible({
+      timeout: 20_000,
+    });
+
+    await page.getByRole('button', { name: /Quick access/ }).click();
+    await page.getByRole('button', { name: /^Notifications/ }).click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+  });
+
+  test('the org-level notifications URL lands inside the dashboard', async ({ page }) => {
+    await page.goto('/org/sample-stays-ph/notifications');
+    await expect(page).toHaveURL(/\/property\/solea-mactan\/notifications$/, { timeout: 20_000 });
+    await expect(page.getByRole('heading', { name: 'Notifications', level: 1 })).toBeVisible();
   });
 });
