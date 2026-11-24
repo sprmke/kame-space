@@ -152,6 +152,8 @@ export const MOCK_CONVERSATIONS: InboxConversation[] = [
     participant_name: 'Carlo Mendoza',
     participant_avatar_url: null,
     subject_preview: "Can you waive the pet fee? It's a service animal.",
+    property_slug: 'solea-mactan',
+    property_name: 'Solea Mactan',
     last_message_at: minutesAgo(2),
     last_inbound_at: minutesAgo(2),
     unread_count: 1,

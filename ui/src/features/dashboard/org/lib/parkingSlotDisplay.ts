@@ -46,6 +46,21 @@ type ParkingCompactLabelFields = {
   name?: string;
 };
 
+/**
+ * Human label for switchers and page titles. The stored name wins; the compact code
+ * (`ML2S27`) is a fallback for rows that have no name, never the primary label.
+ */
+export function resolveParkingLabel(parking: ParkingCompactLabelFields): string {
+  const name = parking.name?.trim();
+  if (name) return name;
+  const display = formatParkingDisplayName(
+    parking.tower ?? '',
+    parking.level ?? '',
+    parking.slotLabel ?? ''
+  );
+  return display || resolveParkingCompactLabel(parking);
+}
+
 /** Compact label for switchers; falls back to stored name when slot fields are incomplete. */
 export function resolveParkingCompactLabel(parking: ParkingCompactLabelFields): string {
   const code = formatParkingCode(parking.tower ?? '', parking.level ?? '', parking.slotLabel ?? '');

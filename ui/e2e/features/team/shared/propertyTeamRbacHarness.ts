@@ -42,6 +42,8 @@ export type PropertyTeamRbacMockOpts = {
   bookingChatsFailure?: { status: number; message: string };
   /** Permission ids removed from the template, to test a member who lacks one. */
   omitPermissions?: string[];
+  /** Permission ids added on top of the template, for surfaces a template does not cover. */
+  extraPermissions?: string[];
   /** AI chat mode platform switch (dashboard-assistant-settings `aiModeEnabled`). */
   aiModeEnabled?: boolean;
   /** Server-saved dashboard mode returned by user-ui-preferences GET. */
@@ -1223,8 +1225,13 @@ export async function installPropertyTeamRbacMocks(
   template: TeamRbacTemplate,
   opts?: PropertyTeamRbacMockOpts
 ) {
-  const permissions = permissionsForTemplate(template).filter(
-    (id) => !(opts?.omitPermissions ?? []).includes(id)
+  const permissions = Array.from(
+    new Set([
+      ...permissionsForTemplate(template).filter(
+        (id) => !(opts?.omitPermissions ?? []).includes(id)
+      ),
+      ...(opts?.extraPermissions ?? []),
+    ])
   );
   const freePlan = Boolean(opts?.freePlan);
   const assistantEnabled = Boolean(opts?.assistantEnabled);

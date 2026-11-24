@@ -105,6 +105,9 @@ ui/e2e/artifacts/*
 # Same rules for ad-hoc Playwright captures under ui/screen-tmp/
 ui/screen-tmp/*
 !ui/screen-tmp/.gitkeep
+# Messages UX audit media (local evidence; regenerate with `bun run test:e2e:messages:tour:video`)
+docs/workflow/for-testing/messages-module-audit/shots/
+docs/workflow/for-testing/messages-module-audit/video/
 # Stray screenshots dumped at repo root by Playwright / design QA — never belong in git
 /*.png
 /*.jpg

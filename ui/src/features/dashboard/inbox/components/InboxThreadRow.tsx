@@ -53,7 +53,7 @@ export function InboxThreadRow({ conversation, selected, showPlatform, onSelect 
             unread ? 'text-foreground/85' : 'text-foreground/60'
           )}
         >
-          {conversation.subject_preview || '-'}
+          {conversation.subject_preview || 'No messages yet'}
         </p>
         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
           {conversation.platform === 'web' &&
@@ -84,10 +84,10 @@ export function InboxThreadRow({ conversation, selected, showPlatform, onSelect 
             </span>
           )}
           {unread && (
-            <span
-              className="bg-primary size-2 rounded-full"
-              aria-label={`${conversation.unread_count} unread`}
-            />
+            <span className="flex items-center gap-1">
+              <span className="bg-primary size-2 rounded-full" aria-hidden />
+              <span className="sr-only">{conversation.unread_count} unread</span>
+            </span>
           )}
         </div>
       </div>

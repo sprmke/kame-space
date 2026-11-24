@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Building2, RefreshCw } from 'lucide-react';
 
@@ -23,7 +23,12 @@ const LAYOUT_KEY = guestAccountListLayoutStorageKey('messages');
 
 function GuestMessagesHubSkeleton() {
   return (
-    <div className={GUEST_MESSAGES_HUB_SHELL_CLASS} role="status" aria-busy="true" aria-label="Loading messages">
+    <div
+      className={GUEST_MESSAGES_HUB_SHELL_CLASS}
+      role="status"
+      aria-busy="true"
+      aria-label="Loading messages"
+    >
       <div className="flex min-h-0 flex-1 overflow-hidden">
         <div className="border-border flex h-full min-h-0 w-full shrink-0 flex-col border-r lg:w-[min(100%,320px)]">
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
@@ -65,8 +70,18 @@ function GuestMessagesHubSkeleton() {
 }
 
 export function GuestMessagesPage() {
-  usePageTitle(publicPageTitle('Stays'));
+  usePageTitle(publicPageTitle('Messages'));
   const { data, isLoading, isError, refetch } = useGuestMessages();
+  const [slowLoading, setSlowLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isLoading) {
+      setSlowLoading(false);
+      return;
+    }
+    const timer = setTimeout(() => setSlowLoading(true), 15_000);
+    return () => clearTimeout(timer);
+  }, [isLoading]);
   const threads = data?.threads ?? [];
   const loadState = resolveGuestAccountListLoadState({
     isPending: isLoading,
@@ -82,39 +97,82 @@ export function GuestMessagesPage() {
 
   if (loadState === 'empty') {
     return (
-      <GuestAccountEmptyStateSkeleton mascotPose="guest-inbox" ariaLabel="Loading messages" />
+      <>
+        <h1 className="sr-only">Messages</h1>
+        <GuestAccountEmptyStateSkeleton mascotPose="guest-inbox" ariaLabel="Loading messages" />
+        {slowLoading ? (
+          <p className="text-muted-foreground mt-2 text-center text-xs">
+            Taking longer than usual.{' '}
+            <button
+              type="button"
+              className="text-foreground font-medium underline underline-offset-2"
+              onClick={() => void refetch()}
+            >
+              Retry
+            </button>
+          </p>
+        ) : null}
+      </>
     );
   }
 
   if (loadState === 'list') {
-    return <GuestMessagesHubSkeleton />;
+    return (
+      <>
+        <h1 className="sr-only">Messages</h1>
+        <GuestMessagesHubSkeleton />
+        {slowLoading ? (
+          <p className="text-muted-foreground mt-2 text-center text-xs">
+            Taking longer than usual.{' '}
+            <button
+              type="button"
+              className="text-foreground font-medium underline underline-offset-2"
+              onClick={() => void refetch()}
+            >
+              Retry
+            </button>
+          </p>
+        ) : null}
+      </>
+    );
   }
 
   if (isError) {
     return (
-      <GuestAccountEmptyState
-        mascotPose="gentle-failure"
-        title="Couldn't load messages"
-        description="Check your connection and try again."
-        actionLabel="Try again"
-        actionIcon={RefreshCw}
-        onAction={() => void refetch()}
-      />
+      <>
+        <h1 className="sr-only">Messages</h1>
+        <GuestAccountEmptyState
+          mascotPose="gentle-failure"
+          title="Couldn't load messages"
+          description="Check your connection and try again."
+          actionLabel="Try again"
+          actionIcon={RefreshCw}
+          onAction={() => void refetch()}
+        />
+      </>
     );
   }
 
   if (threads.length === 0) {
     return (
-      <GuestAccountEmptyState
-        mascotPose="guest-inbox"
-        title="No messages yet"
-        description="Chats with hosts about your stays will show up here."
-        actionLabel="Browse properties"
-        actionIcon={Building2}
-        actionHref="/properties"
-      />
+      <>
+        <h1 className="sr-only">Messages</h1>
+        <GuestAccountEmptyState
+          mascotPose="guest-inbox"
+          title="No messages yet"
+          description="Chats with hosts about your stays will show up here."
+          actionLabel="Browse properties"
+          actionIcon={Building2}
+          actionHref="/properties"
+        />
+      </>
     );
   }
 
-  return <GuestMessagesHub threads={threads} />;
+  return (
+    <>
+      <h1 className="sr-only">Messages</h1>
+      <GuestMessagesHub threads={threads} />
+    </>
+  );
 }

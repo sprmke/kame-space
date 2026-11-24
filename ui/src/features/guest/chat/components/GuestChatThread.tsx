@@ -30,26 +30,23 @@ import {
 import { BookingCalendarModal } from '@/features/guest/marketing/properties/components/property-detail/BookingCalendarModal';
 
 import {
-  InboxMediaPreviewDialog,
-  InboxMessageMediaTile,
-} from '@/features/dashboard/inbox/components/InboxMediaPreviewDialog';
-import {
   ChatTemplateCard,
   ChatTemplatePreviewDialog,
 } from '@/features/dashboard/inbox/components/ChatTemplateMessage';
+import {
+  InboxMediaPreviewDialog,
+  InboxMessageMediaTile,
+} from '@/features/dashboard/inbox/components/InboxMediaPreviewDialog';
 import type { InboxAttachmentPreview } from '@/features/dashboard/inbox/lib/inboxMessageAttachments';
 
 import { ChatComposerContextBar } from '@/components/chat/ChatComposerContextBar';
+import { ChatMessageActionsMenu } from '@/components/chat/ChatMessageActionsMenu';
+import { ChatMessageBubble } from '@/components/chat/ChatMessageBubble';
+import { ChatMessageList } from '@/components/chat/ChatMessageList';
 import {
   type ChatTemplateSnapshot,
   readChatTemplateSnapshot,
 } from '@/components/chat/chatTemplateSnapshot';
-import {
-  ChatMessageActionItem,
-  ChatMessageActionsMenu,
-} from '@/components/chat/ChatMessageActionsMenu';
-import { ChatMessageBubble } from '@/components/chat/ChatMessageBubble';
-import { ChatMessageList } from '@/components/chat/ChatMessageList';
 import { ChatThreadSearchPanel } from '@/components/chat/ChatThreadSearch';
 import { GuestChatLegalNotice } from '@/components/legal/LegalNoticePresets';
 import { Button } from '@/components/ui/button';
@@ -159,6 +156,7 @@ export function GuestChatThread({
   onAiFeedback,
 }: Props) {
   const [draft, setDraft] = useState('');
+  const [liveMessage, setLiveMessage] = useState('');
   const [pickingFaq, setPickingFaq] = useState(false);
   const [pendingAttachments, setPendingAttachments] = useState<GuestChatAttachment[]>([]);
   const [previewAttachment, setPreviewAttachment] = useState<InboxAttachmentPreview | null>(null);
@@ -406,6 +404,13 @@ export function GuestChatThread({
       });
   };
 
+  useEffect(() => {
+    const last = messages[messages.length - 1];
+    // Guest's own messages are `inbound`; the host's replies are `outbound`.
+    if (!last || last.direction !== 'outbound' || isChatMessageUnsent(last)) return;
+    setLiveMessage(`Host said ${last.body_text ?? 'a new message'}`);
+  }, [messages]);
+
   const composerBar =
     composerMode.kind === 'reply' ? (
       <ChatComposerContextBar
@@ -423,6 +428,9 @@ export function GuestChatThread({
 
   return (
     <div className={cn('flex min-h-0 flex-1 flex-col', className)}>
+      <p className="sr-only" aria-live="polite">
+        {liveMessage}
+      </p>
       <InboxMediaPreviewDialog
         attachment={previewAttachment}
         open={!!previewAttachment}
@@ -534,51 +542,62 @@ export function GuestChatThread({
                   !isUnsent && outbound ? resolveOutboundDeliveryStatus(msg) : null;
 
                 const messageActions = (
-                  <ChatMessageActionsMenu outbound={outbound}>
-                    <ChatMessageActionItem onSelect={() => startReply(msg)}>
-                      <Reply className="size-3.5" aria-hidden />
-                      Reply
-                    </ChatMessageActionItem>
-                    {showEdit ? (
-                      <ChatMessageActionItem onSelect={() => startEdit(msg)}>
-                        <Pencil className="size-3.5" aria-hidden />
-                        Edit
-                      </ChatMessageActionItem>
-                    ) : null}
-                    {!outbound && msg.is_ai_generated && onAiFeedback ? (
-                      <>
-                        <ChatMessageActionItem
-                          onSelect={() => onAiFeedback(msg.id, 1)}
-                          className="lg:hidden"
-                        >
-                          <ThumbsUp className="size-3.5" aria-hidden />
-                          Helpful
-                        </ChatMessageActionItem>
-                        <ChatMessageActionItem
-                          onSelect={() => onAiFeedback(msg.id, -1)}
-                          className="lg:hidden"
-                        >
-                          <ThumbsDown className="size-3.5" aria-hidden />
-                          Not helpful
-                        </ChatMessageActionItem>
-                      </>
-                    ) : null}
-                    {showUnsend ? (
-                      <ChatMessageActionItem
-                        destructive
-                        onSelect={() => {
-                          void onUnsend?.(msg.id).catch((e) => {
-                            const message = (e as Error).message;
-                            if (isChatActionEligibilityError(message)) return;
-                            toast.error(message);
-                          });
-                        }}
-                      >
-                        <Undo2 className="size-3.5" aria-hidden />
-                        Unsend
-                      </ChatMessageActionItem>
-                    ) : null}
-                  </ChatMessageActionsMenu>
+                  <ChatMessageActionsMenu
+                    outbound={outbound}
+                    actions={[
+                      {
+                        key: 'reply',
+                        label: 'Reply',
+                        icon: <Reply className="size-3.5" aria-hidden />,
+                        onSelect: () => startReply(msg),
+                      },
+                      ...(showEdit
+                        ? [
+                            {
+                              key: 'edit',
+                              label: 'Edit',
+                              icon: <Pencil className="size-3.5" aria-hidden />,
+                              onSelect: () => startEdit(msg),
+                            },
+                          ]
+                        : []),
+                      ...(!outbound && msg.is_ai_generated && onAiFeedback
+                        ? [
+                            {
+                              key: 'helpful',
+                              label: 'Helpful',
+                              icon: <ThumbsUp className="size-3.5" aria-hidden />,
+                              hideOnDesktop: true,
+                              onSelect: () => onAiFeedback(msg.id, 1),
+                            },
+                            {
+                              key: 'not-helpful',
+                              label: 'Not helpful',
+                              icon: <ThumbsDown className="size-3.5" aria-hidden />,
+                              hideOnDesktop: true,
+                              onSelect: () => onAiFeedback(msg.id, -1),
+                            },
+                          ]
+                        : []),
+                      ...(showUnsend
+                        ? [
+                            {
+                              key: 'unsend',
+                              label: 'Unsend',
+                              icon: <Undo2 className="size-3.5" aria-hidden />,
+                              destructive: true,
+                              onSelect: () => {
+                                void onUnsend?.(msg.id).catch((e) => {
+                                  const message = (e as Error).message;
+                                  if (isChatActionEligibilityError(message)) return;
+                                  toast.error(message);
+                                });
+                              },
+                            },
+                          ]
+                        : []),
+                    ]}
+                  />
                 );
 
                 const templateSnapshot = isUnsent

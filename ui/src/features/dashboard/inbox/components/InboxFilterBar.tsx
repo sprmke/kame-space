@@ -25,7 +25,7 @@ export function InboxFilterBar({ statusFilter, onStatusFilter }: Props) {
             type="button"
             onClick={() => onStatusFilter(opt.value)}
             className={cn(
-              'min-h-[36px] shrink-0 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors sm:min-h-[32px]',
+              'min-h-[44px] shrink-0 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors sm:min-h-[32px]',
               active
                 ? 'bg-foreground/5 text-foreground'
                 : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'

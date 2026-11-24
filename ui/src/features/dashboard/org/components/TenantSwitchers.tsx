@@ -22,7 +22,7 @@ import {
 } from '@/features/dashboard/org/lib/orgAccessKind';
 import { orgParkingCardModel } from '@/features/dashboard/org/lib/orgParkingCardModel';
 import { orgPropertyCardModel } from '@/features/dashboard/org/lib/orgPropertyCardModel';
-import { resolveParkingCompactLabel } from '@/features/dashboard/org/lib/parkingSlotDisplay';
+import { resolveParkingLabel } from '@/features/dashboard/org/lib/parkingSlotDisplay';
 import {
   orgDashboardPath,
   parkingSectionPath,
@@ -282,7 +282,7 @@ function ContextSwitcherMenu({
               >
                 <Car className="text-muted-foreground size-4 shrink-0" aria-hidden />
                 <span className="min-w-0 flex-1 truncate" title={parking.name}>
-                  {resolveParkingCompactLabel(parking)}
+                  {resolveParkingLabel(parking)}
                 </span>
                 {currentParkingId === parking.id ? (
                   <Check className="text-primary size-4 shrink-0" aria-hidden />
@@ -352,7 +352,7 @@ export function SidebarTenantScope({
     ? { primary: currentProperty.name, secondary: currentOrg.name, primaryTitle: undefined }
     : currentParking
       ? {
-          primary: resolveParkingCompactLabel(currentParking),
+          primary: resolveParkingLabel(currentParking),
           secondary: currentOrg.name,
           primaryTitle: currentParking.name,
         }

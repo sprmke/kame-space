@@ -12,6 +12,7 @@ import type {
   SocialMessageRow,
   SocialPlatform,
 } from './socialInboxTypes.ts';
+import { webGuestConversationLookup } from './webGuestThreadLookup.ts';
 
 export { socialInboxDb, upsertChannelConnection };
 
@@ -341,6 +342,24 @@ const UPSERT_PRESERVE_NULL_FIELDS = [
   'linked_post_url',
 ] as const;
 
+async function getWebConversationForGuest(
+  fields: Parameters<typeof upsertConversation>[0]
+): Promise<SocialConversationRow | null> {
+  const lookup = webGuestConversationLookup(fields);
+  if (!lookup) return null;
+  const sb = socialInboxDb();
+  const { data, error } = await sb
+    .from('social_conversations')
+    .select('*')
+    .eq('organization_id', fields.organization_id)
+    .eq('platform', 'web')
+    .eq('guest_user_id', fields.guest_user_id!)
+    .eq(lookup.column, lookup.value)
+    .limit(1);
+  if (error) return null;
+  return (data?.[0] as SocialConversationRow | undefined) ?? null;
+}
+
 function buildConversationUpdatePayload(payload: Record<string, unknown>): Record<string, unknown> {
   const update = { ...payload };
   for (const key of UPSERT_PRESERVE_NULL_FIELDS) {
@@ -398,7 +417,21 @@ export async function upsertConversation(
         fields.external_thread_id
       );
       if (created) return created;
-    } else if (insertError.code !== '23505') {
+    } else if (insertError.code === '23505') {
+      // A legacy / imported website chat for this guest already exists. Adopt it and
+      // rewrite the thread id to the canonical one so the fast lookup wins next time.
+      const forGuest = await getWebConversationForGuest(fields);
+      if (forGuest) {
+        const updatePayload = buildConversationUpdatePayload(payload);
+        for (const key of Object.keys(insertOnly)) delete updatePayload[key];
+        const { error: adoptError } = await sb
+          .from('social_conversations')
+          .update(updatePayload)
+          .eq('id', forGuest.id);
+        if (adoptError) throw new Error(adoptError.message);
+        return { ...forGuest, ...updatePayload } as SocialConversationRow;
+      }
+    } else {
       throw new Error(insertError.message);
     }
 

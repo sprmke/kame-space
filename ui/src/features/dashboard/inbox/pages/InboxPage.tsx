@@ -4,8 +4,11 @@ import { useSearchParams } from 'react-router-dom';
 
 import { toast } from 'sonner';
 
+import {
+  useAdminLayoutFillMain,
+  useAdminLayoutSuppressFab,
+} from '@/features/dashboard/bookings/lib/adminLayoutFillMain';
 import { ADMIN_MODULE_INBOX_LABEL } from '@/features/dashboard/bookings/lib/adminModuleLabels';
-import { useAdminLayoutFillMain } from '@/features/dashboard/bookings/lib/adminLayoutFillMain';
 import { InboxConversationView } from '@/features/dashboard/inbox/components/InboxConversationView';
 import { InboxHowItWorksSheet } from '@/features/dashboard/inbox/components/InboxHowItWorksSheet';
 import { InboxImportBanner } from '@/features/dashboard/inbox/components/InboxImportBanner';
@@ -52,11 +55,12 @@ import { useUpgradeModal } from '@/features/dashboard/plans/components/UpgradeMo
 import { useFeatureGate } from '@/features/dashboard/plans/hooks/useFeatureGate';
 
 import { FeatureUnavailableNotice } from '@/components/feature-availability/FeatureUnavailableNotice';
-import { bottomTabBarOffsetClassName } from '@/components/mobile/BottomTabBar';
+import { bottomTabBarAndNoticeOffsetClassName } from '@/components/mobile/BottomTabBar';
 import { AdminMobilePage } from '@/components/mobile/MobileBrandHero';
 import { PullToRefreshIndicator } from '@/components/pwa/PullToRefreshIndicator';
 import { StaleDataLabel } from '@/components/pwa/StaleDataLabel';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
+import { useIsBelowLg } from '@/hooks/useMediaQuery';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { toastFeatureUnavailable } from '@/lib/featureAvailability/featureUnavailableError';
 import { useFeatureAvailability } from '@/lib/featureAvailability/useFeatureAvailability';
@@ -118,6 +122,10 @@ export function InboxPage({
   const search = debouncedSearchInput.trim();
   const inboxShellRef = useRef<HTMLDivElement | null>(null);
   const [splitPaneActive, setSplitPaneActive] = useState(false);
+  // The floating Quick Access button sits on the composer's Send corner on phone and on
+  // the tablet split view, so it steps aside whenever a thread is open below `lg`.
+  const isBelowLg = useIsBelowLg();
+  useAdminLayoutSuppressFab(isBelowLg && !!selectedId);
 
   useEffect(() => {
     if (!conversationIdParam) return;
@@ -288,6 +296,26 @@ export function InboxPage({
   }, [threadsData?.pages]);
   const conversationIds = useMemo(() => conversations.map((c) => c.id), [conversations]);
 
+  const [threadsSlow, setThreadsSlow] = useState(false);
+  useEffect(() => {
+    if (!threadsLoading || conversations.length > 0) {
+      setThreadsSlow(false);
+      return;
+    }
+    const timer = setTimeout(() => setThreadsSlow(true), 15_000);
+    return () => clearTimeout(timer);
+  }, [threadsLoading, conversations.length]);
+
+  const [messagesSlow, setMessagesSlow] = useState(false);
+  useEffect(() => {
+    if (!messagesLoading) {
+      setMessagesSlow(false);
+      return;
+    }
+    const timer = setTimeout(() => setMessagesSlow(true), 15_000);
+    return () => clearTimeout(timer);
+  }, [messagesLoading]);
+
   // Split layout only: open the newest filtered thread so the right pane is never an empty
   // "Select a conversation" prompt. Narrow (list-first) stays untouched until the host taps.
   // Does not chase newly arrived threads while the current selection is still in the list.
@@ -323,7 +351,7 @@ export function InboxPage({
     platformFilter === 'all' || platformFilter === 'facebook' || platformFilter === 'instagram';
 
   const threadEmptyVariant = useMemo(() => {
-    if (mockActive) return 'empty' as const;
+    if (mockActive && !search) return 'empty' as const;
     if (
       showChannelsTab &&
       metaPlatformFilterActive &&
@@ -333,6 +361,9 @@ export function InboxPage({
       return 'feature-unavailable' as const;
     }
     if (threadsError && conversations.length === 0) return 'load-error' as const;
+    // A search with no matches must say so, even on the Chat tab where the "empty" copy
+    // would otherwise win before the search branch.
+    if (search && (platformFilter === 'web' || !showChannelsTab)) return 'search-empty' as const;
     if (platformFilter === 'web' || !showChannelsTab) return 'empty' as const;
     if (!metaConnected) return 'not-connected' as const;
     if (metaSyncError && conversations.length === 0) return 'sync-error' as const;
@@ -458,8 +489,9 @@ export function InboxPage({
       <div
         className={cn(
           'flex min-h-0 flex-1 flex-col gap-3 overflow-hidden lg:min-h-[480px]',
-          /* Fill-main skips shell tab `pb` — keep the composer / list above the dock. */
-          bottomTabBarOffsetClassName()
+          /* Fill-main skips shell tab `pb` — keep the composer / list above the dock and
+             any first-visit consent bar. */
+          bottomTabBarAndNoticeOffsetClassName()
         )}
       >
         {mockActive && (
@@ -483,22 +515,26 @@ export function InboxPage({
           ref={inboxShellRef}
           className="border-border/80 bg-card @container relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border shadow-sm"
         >
-          <InboxPlatformTabs
-            value={platformFilter}
-            onChange={setPlatformFilter}
-            platforms={showChannelsTab ? undefined : ['web']}
-            metaFeatureOff={!metaAvailability.available}
-            trailing={
-              /* Hide idle "Not connected"; Channels manage still covers connect. */
-              syncStatus.state !== 'needs-attention' || syncStatus.action !== 'reconnect' ? (
-                <InboxSyncStatusPill
-                  status={syncStatus}
-                  onAction={handleSyncAction}
-                  onHowItWorks={() => setHowItWorksOpen(true)}
-                />
-              ) : null
-            }
-          />
+          {/* Inside a thread on phone the channel switch is not useful chrome. It returns
+              with the back button, and keeps the conversation taller. */}
+          <div className={cn('shrink-0', mobileShowConversation && '@2xl:block hidden')}>
+            <InboxPlatformTabs
+              value={platformFilter}
+              onChange={setPlatformFilter}
+              platforms={showChannelsTab ? undefined : ['web']}
+              metaFeatureOff={!metaAvailability.available}
+              trailing={
+                /* Hide idle "Not connected"; Channels manage still covers connect. */
+                syncStatus.state !== 'needs-attention' || syncStatus.action !== 'reconnect' ? (
+                  <InboxSyncStatusPill
+                    status={syncStatus}
+                    onAction={handleSyncAction}
+                    onHowItWorks={() => setHowItWorksOpen(true)}
+                  />
+                ) : null
+              }
+            />
+          </div>
 
           {showChannelsTab &&
           metaPlatformFilterActive &&
@@ -555,6 +591,7 @@ export function InboxPage({
                 hasMore={!!hasMoreThreads}
                 loadingMore={loadingMoreThreads || loadingOlderFromMeta}
                 onLoadMore={() => void fetchMoreThreads()}
+                slowLoading={threadsSlow}
                 canLoadOlderFromMeta={canLoadOlderFromMeta}
                 onLoadOlderFromMeta={() =>
                   void loadOlderFromMeta().catch((e) =>
@@ -636,6 +673,7 @@ export function InboxPage({
                   });
                 }}
                 suggesting={aiSuggest.isPending}
+                slowLoading={messagesSlow}
                 focusMessageId={messageIdParam}
                 onFocusMessageHandled={clearFocusMessageParam}
               />

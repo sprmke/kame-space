@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type { RefObject } from 'react';
 
 import { ArrowLeft } from 'lucide-react';
 
@@ -25,7 +26,51 @@ type Props = {
 export const GUEST_MESSAGES_HUB_SHELL_CLASS =
   'border-border bg-card flex h-[calc(100dvh-12rem)] max-h-[720px] min-h-[480px] flex-col overflow-hidden rounded-2xl border shadow-sm lg:h-[calc(100dvh-10rem)]';
 
+/**
+ * Height for the hub on phone/tablet. A fixed `100dvh` offset cannot know the account nav
+ * strip and the floating tab bar, and guessing leaves the composer under the dock. Measure
+ * the real top edge and the dock instead, and let `lg+` keep the CSS height.
+ */
+function useHubHeight(ref: RefObject<HTMLDivElement | null>) {
+  const [height, setHeight] = useState<number | null>(null);
+
+  useEffect(() => {
+    const update = () => {
+      const element = ref.current;
+      if (!element || window.innerWidth >= 1024) {
+        setHeight(null);
+        return;
+      }
+      const top = element.getBoundingClientRect().top + window.scrollY;
+      const dock =
+        document.querySelector('[data-bottom-tab-bar]')?.getBoundingClientRect().height ?? 0;
+      const notice =
+        Number.parseFloat(
+          getComputedStyle(document.documentElement).getPropertyValue('--cookie-consent-h')
+        ) || 0;
+      const available = Math.round(window.innerHeight - top - dock - notice - 12);
+      setHeight(Math.max(240, available));
+    };
+    update();
+    // The consent bar publishes its height on the root element after this mounts and
+    // resets it to 0 when dismissed, so follow the variable rather than poll.
+    const settle = window.setTimeout(update, 250);
+    const observer = new MutationObserver(update);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['style'] });
+    window.addEventListener('resize', update);
+    return () => {
+      window.clearTimeout(settle);
+      observer.disconnect();
+      window.removeEventListener('resize', update);
+    };
+  }, [ref]);
+
+  return height;
+}
+
 export function GuestMessagesHub({ threads }: Props) {
+  const hubRef = useRef<HTMLDivElement>(null);
+  const hubHeight = useHubHeight(hubRef);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [mobileShowConversation, setMobileShowConversation] = useState(false);
 
@@ -84,7 +129,11 @@ export function GuestMessagesHub({ threads }: Props) {
     null;
 
   return (
-    <div className={GUEST_MESSAGES_HUB_SHELL_CLASS}>
+    <div
+      ref={hubRef}
+      className={GUEST_MESSAGES_HUB_SHELL_CLASS}
+      style={hubHeight ? { height: `${hubHeight}px`, minHeight: 0, flex: '0 0 auto' } : undefined}
+    >
       <div className="flex min-h-0 flex-1 overflow-hidden">
         <div
           className={cn(

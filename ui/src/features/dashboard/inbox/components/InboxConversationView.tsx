@@ -35,6 +35,7 @@ import {
 } from '@/features/dashboard/inbox/components/ChatTemplateMessage';
 import { GuestRequestCard } from '@/features/dashboard/inbox/components/GuestRequestCard';
 import { InboxInsertMenu } from '@/features/dashboard/inbox/components/InboxInsertMenu';
+import { InboxSlowLoadNote } from '@/features/dashboard/inbox/components/InboxSlowLoadNote';
 import {
   InboxMediaPreviewDialog,
   InboxMessageMediaTile,
@@ -49,6 +50,7 @@ import {
   isMessagingWindowOpen,
   messagingWindowLabel,
   platformLabel,
+  quickReplyPreview,
 } from '@/features/dashboard/inbox/lib/inboxFormat';
 import { readPropertyMapsUrl } from '@/features/dashboard/inbox/lib/inboxInsertContent';
 import {
@@ -85,10 +87,7 @@ import {
   type ChatTemplateSnapshot,
   readChatTemplateSnapshot,
 } from '@/components/chat/chatTemplateSnapshot';
-import {
-  ChatMessageActionItem,
-  ChatMessageActionsMenu,
-} from '@/components/chat/ChatMessageActionsMenu';
+import { ChatMessageActionsMenu } from '@/components/chat/ChatMessageActionsMenu';
 import { ChatMessageBubble } from '@/components/chat/ChatMessageBubble';
 import { ChatMessageList } from '@/components/chat/ChatMessageList';
 import { ChatThreadSearchPanel, ChatThreadSearchTrigger } from '@/components/chat/ChatThreadSearch';
@@ -124,6 +123,12 @@ import { useFeatureAvailability } from '@/lib/featureAvailability/useFeatureAvai
 import { cn } from '@/lib/utils';
 import { formatStayDateRange } from '@/utils/format/dates';
 import { useQueryClient } from '@tanstack/react-query';
+
+/**
+ * Drafts are kept per open thread for the browser session so switching threads to check
+ * something does not throw away a half-written reply. Memory only: never persisted.
+ */
+const composerDrafts = new Map<string, { text: string; attachments: InboxChatAttachment[] }>();
 
 const MESSAGE_SKELETON_ROWS = [
   { outbound: false, widthClass: 'w-2/3' },
@@ -205,6 +210,8 @@ type Props = {
   focusMessageId?: string | null;
   /** Fired after a focus scroll attempt (found or not) so the caller can clear `?messageId=`. */
   onFocusMessageHandled?: () => void;
+  /** The message skeleton has been up long enough to offer a retry. */
+  slowLoading?: boolean;
 };
 
 export function InboxConversationView({
@@ -236,6 +243,7 @@ export function InboxConversationView({
   onRetryLoad,
   focusMessageId = null,
   onFocusMessageHandled,
+  slowLoading = false,
 }: Props) {
   const [draft, setDraft] = useState('');
   const [pendingAttachments, setPendingAttachments] = useState<InboxChatAttachment[]>([]);
@@ -268,6 +276,10 @@ export function InboxConversationView({
   const pendingComposerFocusRef = useRef<ComposerFocusMode | null>(null);
   const shouldSmoothScrollRef = useRef(false);
   const prevTailKeyRef = useRef('');
+  /** Thread the composer currently belongs to, so a switch can save/restore its draft. */
+  const composerConversationIdRef = useRef<string | null>(null);
+  /** Screen-reader announcement for a newly arrived guest message. */
+  const [liveMessage, setLiveMessage] = useState('');
   const prevScrollHeightRef = useRef(0);
   /** `${conversationId}:${messageId}` once we have attempted a deep-link focus scroll. */
   const focusMessageHandledRef = useRef<string | null>(null);
@@ -359,12 +371,26 @@ export function InboxConversationView({
   }, [messages]);
 
   useEffect(() => {
+    const previousId = composerConversationIdRef.current;
+    if (previousId && previousId !== conversation?.id) {
+      if (draft.trim() || pendingAttachments.length > 0) {
+        composerDrafts.set(previousId, { text: draft, attachments: pendingAttachments });
+      } else {
+        composerDrafts.delete(previousId);
+      }
+    }
+    const restored =
+      conversation?.id && conversation.id !== previousId
+        ? composerDrafts.get(conversation.id)
+        : undefined;
+    composerConversationIdRef.current = conversation?.id ?? null;
+
     if (aiDraftRef.current && !aiDraftRef.current.editedReported) {
       captureAppEvent('inbox_ai_suggest_used', { action: 'discarded' });
     }
     aiDraftRef.current = null;
-    setDraft('');
-    setPendingAttachments([]);
+    setDraft(restored?.text ?? '');
+    setPendingAttachments(restored?.attachments ?? []);
     threadSearch.close();
     setComposerMode({ kind: 'compose' });
     setDraftFromAi(false);
@@ -372,6 +398,8 @@ export function InboxConversationView({
     setUseHumanAgentTag(false);
     shouldSmoothScrollRef.current = false;
     focusMessageHandledRef.current = null;
+    // `draft` and `pendingAttachments` are read once per switch; adding them would loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversation?.id, threadSearch.close]);
 
   useEffect(() => {
@@ -478,6 +506,13 @@ export function InboxConversationView({
     window.open(att.url, '_blank', 'noopener,noreferrer');
   };
 
+  useEffect(() => {
+    const last = messages[messages.length - 1];
+    if (!last || last.direction !== 'inbound') return;
+    const sender = conversation?.participant_name?.trim() || 'Guest';
+    setLiveMessage(`${sender} said ${last.body_text ?? 'a new message'}`);
+  }, [messages, conversation?.participant_name]);
+
   if (!conversation) {
     return (
       <div className="bg-muted/20 text-muted-foreground flex min-h-0 flex-1 flex-col items-center justify-center gap-2">
@@ -555,6 +590,9 @@ export function InboxConversationView({
           attachments: pendingAttachments.length > 0 ? pendingAttachments : undefined,
           aiDrafted: draftFromAi,
         });
+      }
+      if (composerConversationIdRef.current) {
+        composerDrafts.delete(composerConversationIdRef.current);
       }
       clearComposerMode();
     } catch (e) {
@@ -672,6 +710,9 @@ export function InboxConversationView({
 
   return (
     <div className="bg-muted/20 flex min-h-0 flex-1 flex-col">
+      <p className="sr-only" aria-live="polite">
+        {liveMessage}
+      </p>
       <InboxMediaPreviewDialog
         attachment={previewAttachment}
         open={!!previewAttachment}
@@ -832,6 +873,7 @@ export function InboxConversationView({
                 widthClass={row.widthClass}
               />
             ))}
+            {slowLoading ? <InboxSlowLoadNote onRetry={onRetryLoad} /> : null}
           </div>
         ) : (
           <div className="space-y-4">
@@ -939,33 +981,44 @@ export function InboxConversationView({
                     !isUnsent && outbound ? resolveOutboundDeliveryStatus(msg) : null;
 
                   const messageActions = showMessageMenu ? (
-                    <ChatMessageActionsMenu outbound={outbound}>
-                      <ChatMessageActionItem onSelect={() => startReply(msg)}>
-                        <Reply className="size-3.5" aria-hidden />
-                        Reply
-                      </ChatMessageActionItem>
-                      {showEdit ? (
-                        <ChatMessageActionItem onSelect={() => startEdit(msg)}>
-                          <Pencil className="size-3.5" aria-hidden />
-                          Edit
-                        </ChatMessageActionItem>
-                      ) : null}
-                      {showUnsend ? (
-                        <ChatMessageActionItem
-                          destructive
-                          onSelect={() => {
-                            void onUnsend?.(msg.id).catch((e) => {
-                              const message = (e as Error).message;
-                              if (isChatActionEligibilityError(message)) return;
-                              toast.error(message);
-                            });
-                          }}
-                        >
-                          <Undo2 className="size-3.5" aria-hidden />
-                          Unsend
-                        </ChatMessageActionItem>
-                      ) : null}
-                    </ChatMessageActionsMenu>
+                    <ChatMessageActionsMenu
+                      outbound={outbound}
+                      actions={[
+                        {
+                          key: 'reply',
+                          label: 'Reply',
+                          icon: <Reply className="size-3.5" aria-hidden />,
+                          onSelect: () => startReply(msg),
+                        },
+                        ...(showEdit
+                          ? [
+                              {
+                                key: 'edit',
+                                label: 'Edit',
+                                icon: <Pencil className="size-3.5" aria-hidden />,
+                                onSelect: () => startEdit(msg),
+                              },
+                            ]
+                          : []),
+                        ...(showUnsend
+                          ? [
+                              {
+                                key: 'unsend',
+                                label: 'Unsend',
+                                icon: <Undo2 className="size-3.5" aria-hidden />,
+                                destructive: true,
+                                onSelect: () => {
+                                  void onUnsend?.(msg.id).catch((e) => {
+                                    const message = (e as Error).message;
+                                    if (isChatActionEligibilityError(message)) return;
+                                    toast.error(message);
+                                  });
+                                },
+                              },
+                            ]
+                          : []),
+                      ]}
+                    />
                   ) : null;
 
                   const templateSnapshot = isUnsent
@@ -1208,6 +1261,7 @@ export function InboxConversationView({
                 setDraftAiFlagged(false);
                 if (isWeb) signalTyping();
               }}
+              aria-label="Message"
               placeholder={
                 channelDisconnected
                   ? 'Reconnect Meta to reply'
@@ -1299,6 +1353,7 @@ export function InboxConversationView({
                               <MobileChoiceItem
                                 key={template.id}
                                 label={template.title}
+                                description={quickReplyPreview(template.body_text)}
                                 onSelect={() => {
                                   applyQuickReply(template);
                                   setQuickReplyOpen(false);
@@ -1335,8 +1390,12 @@ export function InboxConversationView({
                             <DropdownMenuItem
                               key={template.id}
                               onClick={() => applyQuickReply(template)}
+                              className="flex-col items-start gap-0.5"
                             >
                               <span className="font-medium">{template.title}</span>
+                              <span className="text-muted-foreground line-clamp-1 text-[11px] font-normal">
+                                {quickReplyPreview(template.body_text)}
+                              </span>
                             </DropdownMenuItem>
                           ))}
                         </DropdownMenuContent>
@@ -1391,7 +1450,7 @@ export function InboxConversationView({
                 <Button
                   type="button"
                   size="sm"
-                  className="h-9 min-h-[36px] gap-1.5 rounded-lg px-3"
+                  className="h-11 min-h-[44px] gap-1.5 rounded-lg px-3 lg:h-9 lg:min-h-[36px]"
                   disabled={!canSend}
                   onClick={() => void handleSend()}
                 >

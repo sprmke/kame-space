@@ -4,6 +4,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { Search } from 'lucide-react';
 
 import { InboxFilterBar } from '@/features/dashboard/inbox/components/InboxFilterBar';
+import { InboxSlowLoadNote } from '@/features/dashboard/inbox/components/InboxSlowLoadNote';
 import { InboxThreadListEmpty } from '@/features/dashboard/inbox/components/InboxThreadListEmpty';
 import { InboxThreadRow } from '@/features/dashboard/inbox/components/InboxThreadRow';
 import type {
@@ -72,6 +73,8 @@ type Props = {
   onLoadMore?: () => void;
   canLoadOlderFromMeta?: boolean;
   onLoadOlderFromMeta?: () => void;
+  /** Skeletons have been up long enough that the host deserves a retry. */
+  slowLoading?: boolean;
 };
 
 export function InboxThreadList({
@@ -98,6 +101,7 @@ export function InboxThreadList({
   featureUnavailableLabel,
   featureUnavailableMessage,
   featureUnavailableExpectedBack,
+  slowLoading = false,
 }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -156,13 +160,14 @@ export function InboxThreadList({
       <div
         ref={scrollRef}
         data-pull-to-refresh
-        className="min-h-0 flex-1 overflow-y-auto overscroll-contain"
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain max-lg:pb-16"
       >
         {isLoading ? (
           <div role="status" className="py-1" aria-busy="true" aria-label="Loading conversations">
             {Array.from({ length: 6 }).map((_, i) => (
               <InboxThreadRowSkeleton key={i} opacity={1 - i * 0.08} />
             ))}
+            {slowLoading ? <InboxSlowLoadNote onRetry={onRetryLoad} /> : null}
           </div>
         ) : conversations.length === 0 ? (
           <InboxThreadListEmpty

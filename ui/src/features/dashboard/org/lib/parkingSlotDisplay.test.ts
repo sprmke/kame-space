@@ -6,6 +6,7 @@ import {
   formatParkingDisplayName,
   formatParkingCode,
   resolveParkingCompactLabel,
+  resolveParkingLabel,
   inferParkingTypeForTower,
   parseParkingSlotNumberFromLabel,
 } from '@/features/dashboard/org/lib/parkingSlotDisplay';
@@ -49,5 +50,24 @@ describe('inferParkingTypeForTower', () => {
 describe('parseParkingSlotNumberFromLabel', () => {
   it('parseParkingSlotNumberFromLabel is exported', () => {
     expect(typeof parseParkingSlotNumberFromLabel).toBe('function');
+  });
+});
+
+describe('resolveParkingLabel', () => {
+  it('prefers the stored name over the compact code', () => {
+    expect(
+      resolveParkingLabel({
+        name: 'Azure Monaco - Level 2 - Slot 27',
+        tower: 'Monaco',
+        level: 'Level 2',
+        slotLabel: '27',
+      })
+    ).toBe('Azure Monaco - Level 2 - Slot 27');
+  });
+
+  it('builds a readable name when the row has no name', () => {
+    expect(resolveParkingLabel({ tower: 'Monaco', level: 'Level 2', slotLabel: '27' })).toBe(
+      'Monaco - Level 2 - Slot 27'
+    );
   });
 });

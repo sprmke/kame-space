@@ -247,3 +247,7 @@ Backlog: [GitHub Issue #110 — Epic 10](https://github.com/sprmke/kame-space/is
 - [properties.md](./properties.md) — property detail + Contact host
 - [org/inbox.md](./org/inbox.md) — operator Guest Inbox
 - `.cursor/rules/social-inbox.mdc`
+
+## Behavior
+
+- **Starting a chat is resilient to older threads.** If a website-chat row already exists for this guest and property (legacy or imported id), the start call adopts that row and rewrites its thread id instead of failing. Guests see a short retry card; the transport error stays in Sentry.

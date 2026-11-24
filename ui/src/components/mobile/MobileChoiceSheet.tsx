@@ -67,6 +67,8 @@ type MobileChoiceItemProps = {
   /** Optional element pinned to the row's right edge (e.g. a plan `TierBadge`). */
   trailing?: ReactNode;
   disabled?: boolean;
+  /** Destructive rows read in the danger colour, e.g. delete / unsend. */
+  destructive?: boolean;
   className?: string;
 };
 
@@ -79,6 +81,7 @@ export function MobileChoiceItem({
   icon,
   trailing,
   disabled = false,
+  destructive = false,
   className,
 }: MobileChoiceItemProps) {
   return (
@@ -95,11 +98,18 @@ export function MobileChoiceItem({
         className
       )}
     >
-      {icon ? <span className="text-muted-foreground shrink-0">{icon}</span> : null}
+      {icon ? (
+        <span
+          className={cn('shrink-0', destructive ? 'text-destructive' : 'text-muted-foreground')}
+        >
+          {icon}
+        </span>
+      ) : null}
       <span className="min-w-0 flex-1">
         <span
           className={cn(
-            'text-foreground block text-sm leading-tight',
+            'block text-sm leading-tight',
+            destructive ? 'text-destructive' : 'text-foreground',
             selected ? 'font-semibold' : 'font-medium'
           )}
         >

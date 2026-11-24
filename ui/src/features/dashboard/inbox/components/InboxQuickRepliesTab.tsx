@@ -21,8 +21,18 @@ import type {
   SaveInboxTemplatePayload,
 } from '@/features/dashboard/inbox/types/inbox';
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -58,6 +68,7 @@ export function InboxQuickRepliesTab({
   const [groupTab, setGroupTab] = useState<QuickReplyGroupTab>('all');
   const [search, setSearch] = useState('');
   const [formOpen, setFormOpen] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<InboxTemplate | null>(null);
   const [editing, setEditing] = useState<InboxTemplate | null>(null);
 
   const orphanPins = useMemo(() => {
@@ -274,10 +285,7 @@ export function InboxQuickRepliesTab({
                             disabled={pinning || saving}
                             onClick={() => void handleTogglePin(template)}
                           >
-                            <Pin
-                              className={cn('size-4', pinned && 'fill-current')}
-                              aria-hidden
-                            />
+                            <Pin className={cn('size-4', pinned && 'fill-current')} aria-hidden />
                           </Button>
                         ) : null}
                         <Button
@@ -296,7 +304,7 @@ export function InboxQuickRepliesTab({
                           size="icon"
                           className="text-destructive hover:bg-destructive/10 hover:text-destructive size-10 min-h-[44px] min-w-[44px]"
                           aria-label={`Delete ${template.title}`}
-                          onClick={() => void handleDelete(template)}
+                          onClick={() => setPendingDelete(template)}
                         >
                           <Trash2 className="size-4" />
                         </Button>
@@ -318,6 +326,32 @@ export function InboxQuickRepliesTab({
         onOpenChange={setFormOpen}
         onSave={onSave}
       />
+
+      <AlertDialog open={!!pendingDelete} onOpenChange={(open) => !open && setPendingDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this quick reply?</AlertDialogTitle>
+            <AlertDialogDescription>
+              &ldquo;{pendingDelete?.title ?? 'This reply'}&rdquo; is removed for every property.
+              This can&rsquo;t be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className={buttonVariants({ variant: 'destructive' })}
+              onClick={(event) => {
+                event.preventDefault();
+                const template = pendingDelete;
+                setPendingDelete(null);
+                if (template) void handleDelete(template);
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
