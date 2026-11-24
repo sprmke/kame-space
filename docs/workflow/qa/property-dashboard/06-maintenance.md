@@ -249,7 +249,7 @@ test-results/maintenance-tour/videos/04-phone-tablet-layouts.mp4
 
 Run in a clean worktree based on `origin/main` (the tree is identical to `origin/develop`):
 
-- 16/16 `@ci` tests pass; 4/4 `@demo` tour scenarios pass; the screenshot generator passes at 20 captures.
+- 16/16 `@ci` tests pass; 4/4 `@demo` tour scenarios pass; the screenshot generator passes at 21 captures.
 - Unit: 8 files / 71 tests pass (`maintenanceReminders`, steps, can-proceed, recurrence count).
 - Edge: `maintenanceValidation_test` + `maintenanceSummary_test` pass under Deno (`TZ=Asia/Manila`).
 - `eslint` on every changed file: 0 errors (2 pre-existing `react-refresh` warnings on component files that also export helpers).
