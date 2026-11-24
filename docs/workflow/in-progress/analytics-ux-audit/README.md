@@ -71,9 +71,9 @@ as product calls.
 | O5 large revenue change | Decision | `+500.0%` on a tiny prior base is accurate but noisy. Leave, cap, or label as "new" — product call                                                                                                                                                                                             |
 | O6 phone Promote chip   | Open     | The floating support button overlaps the Promote chip at 375. Shell-level, same as the property page                                                                                                                                                                                           |
 
-E2E: `ui/e2e/features/analytics/orgAnalytics.spec.ts` (7 tests at `@ci`) covers KPIs, rows,
-search + empty result, CSV download, the free-plan upgrade dialog, read-only export, the empty org
-and the 1024 stacking.
+E2E: `ui/e2e/features/analytics/orgAnalytics.spec.ts` (8 tests at `@ci`) covers KPIs, rows,
+search + empty result, CSV download, the free-plan upgrade dialog, read-only export, the empty org,
+the 1024 stacking and the 1280 revenue cell.
 
 ## Evidence
 

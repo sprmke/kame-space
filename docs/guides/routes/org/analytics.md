@@ -66,7 +66,7 @@ Bookings / Finance tables).
   nights that opens that listing's Marketing plan. Other rows show a dash. Parkings never appear
   here. Grid and list views show the same chip beside Outlook only when the listing ranks; no
   separate strip above the toolbar.
-- **Revenue** shows whole pesos (`₱42,000`) and the change vs the prior period beside it. A tiny
+- **Revenue** shows whole pesos (`₱42,000`) and the change vs the prior period. In list rows the change sits under the amount so a large percentage never clips; cards keep it inline. A tiny
   prior base can produce a very large percentage (e.g. `+500.0%`); the number is real, not a bug.
 - The **Revenue KPI** is whole pesos too, so it stays readable at 1024.
 - **Order** — needs-attention listings are always first, most urgent on top. Sorting by a column
@@ -118,12 +118,12 @@ granted by default.
 
 ## Testing
 
-| Layer  | Coverage                                                                                                                                                                                |
-| ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Unit   | `orgPortfolioRollup.test.ts` (night-weighted occupancy), `orgAnalyticsListings.test.ts` (attention order, filters), `marketingPortfolio.test.ts` (promote ranking), `exportCsv.test.ts` |
-| E2E    | `ui/e2e/features/analytics/orgAnalytics.spec.ts` (`@ci`, 7 tests — KPIs, rows, search + empty result, CSV download, free-plan gate, read-only, empty org, 1024 stacking)                |
-| Edge   | N/A for rollup helpers (Vitest covers math; avoid Deno-importing `analyticsService`)                                                                                                    |
-| Manual | Org with properties only / parkings only / both; Export plan gate; 375px date float + hero export                                                                                       |
+| Layer  | Coverage                                                                                                                                                                                    |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Unit   | `orgPortfolioRollup.test.ts` (night-weighted occupancy), `orgAnalyticsListings.test.ts` (attention order, filters), `marketingPortfolio.test.ts` (promote ranking), `exportCsv.test.ts`     |
+| E2E    | `ui/e2e/features/analytics/orgAnalytics.spec.ts` (`@ci`, 8 tests — KPIs, rows, search + empty result, CSV download, free-plan gate, read-only, empty org, 1024 stacking, 1280 revenue cell) |
+| Edge   | N/A for rollup helpers (Vitest covers math; avoid Deno-importing `analyticsService`)                                                                                                        |
+| Manual | Org with properties only / parkings only / both; Export plan gate; 375px date float + hero export                                                                                           |
 
 ## Host-facing knowledge
 
