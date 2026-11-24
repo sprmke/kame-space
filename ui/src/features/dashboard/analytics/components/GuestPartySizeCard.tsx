@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 
 import { UsersRound } from 'lucide-react';
-import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Bar, BarChart, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 import {
   PARTY_SIZE_BUCKET_ORDER,
@@ -46,47 +46,58 @@ export function GuestPartySizeCard({ partySize, className }: Props) {
           </p>
         </div>
       ) : (
-        <div className="min-h-[188px] w-full flex-1">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={chartData}
-              margin={{ ...defaultChartMargin(isBelowMd), top: 8, bottom: 4 }}
-              barCategoryGap="18%"
-            >
-              <XAxis
-                dataKey="bucket"
-                tick={chartAxisTick(isBelowMd)}
-                tickLine={false}
-                axisLine={false}
-                interval={0}
-                tickMargin={8}
-                height={36}
-              />
-              <YAxis hide domain={[0, 'auto']} />
-              <Tooltip
-                cursor={{ fill: 'hsl(var(--muted))', opacity: 0.5 }}
-                content={({ active, payload }) => {
-                  if (!active || !payload?.[0]) return null;
-                  const point = payload[0].payload as { bucket: string; count: number };
-                  const label =
-                    point.bucket === '1'
-                      ? '1 guest'
-                      : point.bucket === '5+'
-                        ? '5+ guests'
-                        : `${point.bucket} guests`;
-                  return (
-                    <div className="border-border bg-card rounded-lg border px-3 py-2 shadow-lg">
-                      <p className="text-foreground text-sm font-semibold">{label}</p>
-                      <p className="text-sm" style={{ color: CHART_INFO_COLOR }}>
-                        {point.count} {point.count === 1 ? 'booking' : 'bookings'}
-                      </p>
-                    </div>
-                  );
-                }}
-              />
-              <Bar dataKey="count" fill={CHART_INFO_COLOR} radius={[4, 4, 0, 0]} maxBarSize={36} />
-            </BarChart>
-          </ResponsiveContainer>
+        <div className="flex min-h-[188px] w-full flex-1 flex-col">
+          <div className="min-h-0 flex-1">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={chartData}
+                margin={{ ...defaultChartMargin(isBelowMd), top: 18, bottom: 4 }}
+                barCategoryGap="18%"
+              >
+                <XAxis
+                  dataKey="bucket"
+                  tick={chartAxisTick(isBelowMd)}
+                  tickLine={false}
+                  axisLine={false}
+                  interval={0}
+                  tickMargin={8}
+                  height={36}
+                />
+                <YAxis hide domain={[0, 'auto']} />
+                <Tooltip
+                  cursor={{ fill: 'hsl(var(--muted))', opacity: 0.5 }}
+                  content={({ active, payload }) => {
+                    if (!active || !payload?.[0]) return null;
+                    const point = payload[0].payload as { bucket: string; count: number };
+                    const label =
+                      point.bucket === '1'
+                        ? '1 guest'
+                        : point.bucket === '5+'
+                          ? '5+ guests'
+                          : `${point.bucket} guests`;
+                    return (
+                      <div className="border-border bg-card rounded-lg border px-3 py-2 shadow-lg">
+                        <p className="text-foreground text-sm font-semibold">{label}</p>
+                        <p className="text-sm" style={{ color: CHART_INFO_COLOR }}>
+                          {point.count} {point.count === 1 ? 'booking' : 'bookings'}
+                        </p>
+                      </div>
+                    );
+                  }}
+                />
+                <Bar dataKey="count" fill={CHART_INFO_COLOR} radius={[4, 4, 0, 0]} maxBarSize={36}>
+                  <LabelList
+                    dataKey="count"
+                    position="top"
+                    fontSize={11}
+                    fill="hsl(var(--foreground))"
+                    formatter={(value: number | string) => (Number(value) > 0 ? String(value) : '')}
+                  />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <p className="text-caption text-muted-foreground pb-1 text-center">Guests per booking</p>
         </div>
       )}
     </section>

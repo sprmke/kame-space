@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react';
 
 import { Cell, Pie, PieChart, ResponsiveContainer, Sector, Tooltip } from 'recharts';
 
+import { buildDonutPoints, DONUT_MAX_SLICES } from '@/features/dashboard/analytics/lib/donutSlices';
+
 import { cn } from '@/lib/utils';
 
 export type AnalyticsDonutSlice = {
@@ -101,13 +103,14 @@ export function AnalyticsDonutChart({
 }: Props) {
   const [activeIndex, setActiveIndex] = useState<number | undefined>(undefined);
 
-  const chartData = useMemo(() => {
-    const total = slices.reduce((sum, s) => sum + s.count, 0);
-    return slices.map((slice) => ({
-      ...slice,
-      pct: total > 0 ? Math.round((slice.count / total) * 100) : 0,
-    }));
-  }, [slices]);
+  const chartData = useMemo(
+    () =>
+      buildDonutPoints(slices, {
+        maxSlices: DONUT_MAX_SLICES,
+        othersColor: analyticsDonutColor(DONUT_MAX_SLICES - 1),
+      }),
+    [slices]
+  );
 
   const chartSummary = useMemo(
     () =>
@@ -120,74 +123,94 @@ export function AnalyticsDonutChart({
   );
 
   return (
-    <div
-      className={cn(
-        'relative flex flex-1 items-center justify-center overflow-visible',
-        compact ? 'min-h-[160px] sm:min-h-[180px]' : 'min-h-[220px] sm:min-h-[260px]',
-        className
-      )}
-      role="img"
-      aria-label={chartSummary}
-    >
-      {chartData.length > 0 ? (
-        <>
-          {/* The outer container's role="img" + aria-label already carries the full
+    <div className={cn('flex flex-1 flex-col gap-2 overflow-visible', className)}>
+      <div
+        className={cn(
+          'relative flex flex-1 items-center justify-center overflow-visible',
+          compact ? 'min-h-[160px] sm:min-h-[180px]' : 'min-h-[220px] sm:min-h-[260px]'
+        )}
+        role="img"
+        aria-label={chartSummary}
+      >
+        {chartData.length > 0 ? (
+          <>
+            {/* The outer container's role="img" + aria-label already carries the full
               per-slice summary to assistive tech - role="img" flattens descendant
               content out of the accessibility tree (same as <img>'s children), so a
               nested sr-only list here would never actually be announced. The SVG
               itself is aria-hidden since it's now purely decorative/visual. */}
-          <div className="size-full" aria-hidden>
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={chartData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius="58%"
-                  outerRadius="88%"
-                  paddingAngle={2.5}
-                  dataKey="count"
-                  nameKey="label"
-                  stroke="hsl(var(--card))"
-                  strokeWidth={2}
-                  isAnimationActive={false}
-                  activeIndex={activeIndex}
-                  activeShape={ActiveDonutShape}
-                  onMouseEnter={(_, index) => setActiveIndex(index)}
-                  onMouseLeave={() => setActiveIndex(undefined)}
-                >
-                  {chartData.map((entry) => (
-                    <Cell key={entry.key} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  content={<DonutTooltip />}
-                  offset={16}
-                  allowEscapeViewBox={{ x: true, y: true }}
-                  wrapperStyle={{ zIndex: 40, outline: 'none' }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
+            <div className="size-full" aria-hidden>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={chartData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius="58%"
+                    outerRadius="88%"
+                    paddingAngle={2.5}
+                    dataKey="count"
+                    nameKey="label"
+                    stroke="hsl(var(--card))"
+                    strokeWidth={2}
+                    isAnimationActive={false}
+                    activeIndex={activeIndex}
+                    activeShape={ActiveDonutShape}
+                    onMouseEnter={(_, index) => setActiveIndex(index)}
+                    onMouseLeave={() => setActiveIndex(undefined)}
+                  >
+                    {chartData.map((entry) => (
+                      <Cell key={entry.key} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    content={<DonutTooltip />}
+                    offset={16}
+                    allowEscapeViewBox={{ x: true, y: true }}
+                    wrapperStyle={{ zIndex: 40, outline: 'none' }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
 
-          <div className="pointer-events-none absolute left-1/2 top-1/2 z-[1] flex w-[45%] max-w-[7.5rem] -translate-x-1/2 -translate-y-1/2 flex-col items-center text-center">
-            <p className="truncate text-center text-base font-bold tabular-nums tracking-tight sm:text-2xl">
-              {centerValue}
-            </p>
-            <p className="text-muted-foreground mt-0.5 text-[11px] font-medium sm:text-xs">
-              {centerLabel}
-            </p>
+            <div className="pointer-events-none absolute left-1/2 top-1/2 z-[1] flex w-[45%] max-w-[7.5rem] -translate-x-1/2 -translate-y-1/2 flex-col items-center text-center">
+              <p className="truncate text-center text-base font-bold tabular-nums tracking-tight sm:text-2xl">
+                {centerValue}
+              </p>
+              <p className="text-muted-foreground mt-0.5 text-[11px] font-medium sm:text-xs">
+                {centerLabel}
+              </p>
+            </div>
+          </>
+        ) : (
+          <div className="flex flex-col items-center gap-2">
+            <div
+              className="border-muted size-[160px] rounded-full border-[18px] sm:size-[200px] sm:border-[22px]"
+              aria-hidden
+            />
+            <p className="text-muted-foreground text-sm">{emptyMessage}</p>
           </div>
-        </>
-      ) : (
-        <div className="flex flex-col items-center gap-2">
-          <div
-            className="border-muted size-[160px] rounded-full border-[18px] sm:size-[200px] sm:border-[22px]"
-            aria-hidden
-          />
-          <p className="text-muted-foreground text-sm">{emptyMessage}</p>
-        </div>
-      )}
+        )}
+      </div>
+      {chartData.length > 0 ? (
+        <ul className="grid w-full gap-1 sm:gap-1.5">
+          {chartData.map((slice) => (
+            <li key={slice.key} className="flex items-center gap-2 text-[11px] sm:text-xs">
+              <span
+                className="size-2.5 shrink-0 rounded-full"
+                style={{ backgroundColor: slice.color }}
+                aria-hidden
+              />
+              <span className="min-w-0 flex-1 truncate" title={slice.label}>
+                {slice.label}
+              </span>
+              <span className="text-muted-foreground shrink-0 tabular-nums">
+                {slice.count} · {slice.pct}%
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </div>
   );
 }

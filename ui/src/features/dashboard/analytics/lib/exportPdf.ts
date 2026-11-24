@@ -2,6 +2,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 import type { AnalyticsAiReviewRecord } from '@/features/dashboard/analytics/lib/aiReviewTypes';
+import { prettyChannelLabel } from '@/features/dashboard/analytics/lib/channelLabels';
 import { collapseTopGuestOrigins } from '@/features/dashboard/analytics/lib/guestOriginsDisplay';
 import type {
   AnalyticsBundle,
@@ -9,7 +10,7 @@ import type {
 } from '@/features/dashboard/analytics/lib/types';
 
 import { registerPdfFonts } from '@/lib/pdf/pdfFonts';
-import { pdfMoney } from '@/lib/pdf/pdfFormatters';
+import { pdfIsoDate, pdfMoney } from '@/lib/pdf/pdfFormatters';
 import {
   addPageFooter,
   advanceSectionGap,
@@ -26,7 +27,7 @@ import {
   paintPageBackground,
   type PdfKpiItem,
 } from '@/lib/pdf/pdfReportLayout';
-import { PDF_COLORS, beginPdfTheme } from '@/lib/pdf/pdfTheme';
+import { PDF_COLORS, PDF_LAYOUT, beginPdfTheme } from '@/lib/pdf/pdfTheme';
 
 const OCCUPANCY_STATE_LABEL: Record<string, string> = {
   underbooked: 'Underbooked',
@@ -40,6 +41,11 @@ const BALANCE_STATE_LABEL: Record<string, string> = {
   attention_needed: 'Balances need attention',
   at_risk: 'Balances at risk',
 };
+
+/** `PHP 3,500.00` — ASCII code, because the embedded PDF font has no peso glyph. */
+export function pdfPeso(value: number): string {
+  return value < 0 ? `-PHP ${pdfMoney(Math.abs(value))}` : `PHP ${pdfMoney(value)}`;
+}
 
 function pct(n: number | null): string {
   if (n === null) return '';
@@ -62,22 +68,22 @@ function buildKpiItems(bundle: AnalyticsBundle): PdfKpiItem[] {
     },
     {
       label: 'ADR',
-      value: `${pdfMoney(k.adr.value)}${pct(k.adr.changePctVsPrior)}`,
+      value: `${pdfPeso(k.adr.value)}${pct(k.adr.changePctVsPrior)}`,
       accent: accentForChange(k.adr.changePctVsPrior),
     },
     {
       label: 'RevPAR',
-      value: `${pdfMoney(k.revpar.value)}${pct(k.revpar.changePctVsPrior)}`,
+      value: `${pdfPeso(k.revpar.value)}${pct(k.revpar.changePctVsPrior)}`,
       accent: accentForChange(k.revpar.changePctVsPrior),
     },
     {
       label: 'Gross revenue',
-      value: `${pdfMoney(k.grossRevenue.value)}${pct(k.grossRevenue.changePctVsPrior)}`,
+      value: `${pdfPeso(k.grossRevenue.value)}${pct(k.grossRevenue.changePctVsPrior)}`,
       accent: accentForChange(k.grossRevenue.changePctVsPrior),
     },
     {
       label: 'Net profit',
-      value: `${pdfMoney(k.netProfit.value)}${pct(k.netProfit.changePctVsPrior)}`,
+      value: `${pdfPeso(k.netProfit.value)}${pct(k.netProfit.changePctVsPrior)}`,
       accent: accentForChange(k.netProfit.changePctVsPrior),
     },
     { label: 'Reservations', value: String(Math.round(k.reservations.value)) },
@@ -107,7 +113,7 @@ function appendStateSection(doc: jsPDF, y: number, bundle: AnalyticsBundle): num
   ];
   if (bundle.stateAssessment.balanceCollectionState !== 'clear') {
     lines.push(
-      `${BALANCE_STATE_LABEL[bundle.stateAssessment.balanceCollectionState]}: ${bundle.stateAssessment.unpaidBalanceUpcomingCount} upcoming booking(s) with ${pdfMoney(bundle.stateAssessment.unpaidBalanceUpcomingTotal)} outstanding in the next 14 days.`
+      `${BALANCE_STATE_LABEL[bundle.stateAssessment.balanceCollectionState]}: ${bundle.stateAssessment.unpaidBalanceUpcomingCount} upcoming booking(s) with ${pdfPeso(bundle.stateAssessment.unpaidBalanceUpcomingTotal)} outstanding in the next 14 days.`
     );
   } else {
     lines.push('Balances: clear - no upcoming bookings with unpaid balances at risk.');
@@ -191,38 +197,84 @@ function appendPlaybookSection(
 
 function appendDistributionsSection(doc: jsPDF, y: number, bundle: AnalyticsBundle): number {
   const tableW = contentWidth(doc);
-  y = ensurePageSpace(doc, y, 60);
+  const gap = 6;
+  const halfW = (tableW - gap) / 2;
+  const left = PDF_LAYOUT.margin;
+  const right = doc.internal.pageSize.getWidth() - PDF_LAYOUT.margin;
+
+  const channelRows = buildChannelRows(bundle);
+  const originRows = buildOriginRows(bundle);
+
+  if (channelRows.length === 0 && originRows.length === 0) return y;
+
+  y = ensurePageSpace(doc, y, 62);
   y = drawSectionEyebrow(doc, y, 'Channel mix & guest origins');
 
-  const topChannels = [...bundle.distributions.channelMix]
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 6);
-  const topOrigins = collapseTopGuestOrigins(bundle.distributions.guestOrigins);
-  const rowCount = Math.max(topChannels.length, topOrigins.length);
-  const rows: string[][] = [];
-  for (let i = 0; i < rowCount; i += 1) {
-    const ch = topChannels[i];
-    const origin = topOrigins[i];
-    rows.push([
-      ch ? `${ch.channel} (${ch.count})` : '',
-      origin ? `${origin.origin} - ${origin.pct}%` : '',
-    ]);
-  }
-
-  if (rows.length === 0) return y;
-
-  autoTable(doc, {
-    ...baseAutoTableOptions(tableW),
+  const shared = {
+    ...baseAutoTableOptions(halfW),
     startY: y,
-    head: [['Booking channel', 'Guest origin']],
-    body: rows,
-    columnStyles: {
-      0: { cellWidth: tableW * 0.5 },
-      1: { cellWidth: tableW * 0.5 },
-    },
-  });
+    tableWidth: halfW,
+    margin: { left, right: right - halfW - gap, top: 14, bottom: 18 },
+  };
 
-  return lastTableY(doc, y) + 10;
+  if (channelRows.length > 0) {
+    autoTable(doc, {
+      ...shared,
+      head: [['Booking channel', 'Bookings']],
+      body: channelRows,
+      columnStyles: {
+        0: { cellWidth: halfW * 0.68 },
+        1: { cellWidth: halfW * 0.32, halign: 'right' },
+      },
+    });
+  }
+  const leftEnd = lastTableY(doc, y);
+
+  if (originRows.length > 0) {
+    autoTable(doc, {
+      ...shared,
+      margin: {
+        left: left + halfW + gap,
+        right: right - (left + halfW + gap) + left,
+        top: 14,
+        bottom: 18,
+      },
+      head: [['Guest origin', 'Share']],
+      body: originRows,
+      columnStyles: {
+        0: { cellWidth: halfW * 0.68 },
+        1: { cellWidth: halfW * 0.32, halign: 'right' },
+      },
+    });
+  }
+  const rightEnd = originRows.length > 0 ? lastTableY(doc, y) : y;
+
+  return Math.max(leftEnd, rightEnd) + 10;
+}
+
+/** Human period line used in the report masthead. */
+export function formatPdfPeriod(
+  period: { from: string; to: string },
+  periodLabel?: string | null
+): string {
+  const range = `${pdfIsoDate(period.from)} to ${pdfIsoDate(period.to)}`;
+  return periodLabel ? `${range} (${periodLabel})` : range;
+}
+
+/** Channel table rows: name and booking count only. */
+export function buildChannelRows(bundle: AnalyticsBundle): string[][] {
+  return [...bundle.distributions.channelMix]
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 6)
+    .map((channel) => [prettyChannelLabel(channel.channel), String(channel.count)]);
+}
+
+/** Origin table rows: place and share only. Kept separate from channels (no cross-join). */
+export function buildOriginRows(bundle: AnalyticsBundle): string[][] {
+  return collapseTopGuestOrigins(bundle.distributions.guestOrigins).map((origin) => [
+    origin.origin,
+    `${origin.pct}%`,
+  ]);
 }
 
 export type AnalyticsPdfPayload = {
@@ -246,16 +298,17 @@ async function buildAnalyticsReportPdf(payload: AnalyticsPdfPayload): Promise<js
     buildPdfReportHeaderOptions(
       'Analytics report',
       payload.scopeLabel,
-      `${bundle.period.from} – ${bundle.period.to}${payload.periodLabel ? ` (${payload.periodLabel})` : ''}`
+      formatPdfPeriod(bundle.period, payload.periodLabel)
     )
   );
 
   y = appendStateSection(doc, y, bundle);
-  y = advanceSectionGap(y);
+  // Tighter than the shared section gap: this report has 12 KPIs and two tables on page 1.
+  y += 4;
 
   y = drawSectionEyebrow(doc, y, 'Key metrics', 'vs prior period');
   y += 2;
-  y = drawKpiGrid(doc, y, buildKpiItems(bundle));
+  y = drawKpiGrid(doc, y, buildKpiItems(bundle), 4);
 
   if (bundle.benchmark.available) {
     y = advanceSectionGap(y);
@@ -265,13 +318,13 @@ async function buildAnalyticsReportPdf(payload: AnalyticsPdfPayload): Promise<js
     ];
     if (bundle.benchmark.medianAdr !== null) {
       lines.push(
-        `ADR: median ${pdfMoney(bundle.benchmark.medianAdr)}${bundle.benchmark.adrPercentile !== null ? ` - this property is at the ${bundle.benchmark.adrPercentile}th percentile` : ''}.`
+        `ADR: median ${pdfPeso(bundle.benchmark.medianAdr)}${bundle.benchmark.adrPercentile !== null ? ` - this property is at the ${bundle.benchmark.adrPercentile}th percentile` : ''}.`
       );
     }
     y = drawBulletNotes(doc, y, lines);
   }
 
-  y = advanceSectionGap(y);
+  y += 4;
   y = appendDistributionsSection(doc, y, bundle);
 
   if (payload.aiReview) {

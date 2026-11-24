@@ -118,6 +118,9 @@ export function OrgAnalyticsSkeleton({ view }: { view: OrgListingViewMode }) {
   );
 }
 
+/** Cards whose real body ends in a legend list, so the placeholder keeps that height. */
+const LEGEND_CARD_TITLES = new Set(['Where bookings come from', 'Listing visits']);
+
 /** Default property analytics overview tab: KPIs + tabs + two rows of three chart cards. */
 export function PropertyAnalyticsSkeleton() {
   return (
@@ -139,6 +142,13 @@ export function PropertyAnalyticsSkeleton() {
                 iconClassName="bg-muted/80"
               />
               <Skeleton className="h-[180px] w-full rounded-xl sm:h-[220px]" />
+              {LEGEND_CARD_TITLES.has(header.title) ? (
+                <div className="mt-2 space-y-1.5" aria-hidden>
+                  {[0, 1, 2].map((line) => (
+                    <Skeleton key={line} className="h-3 w-full rounded-full" />
+                  ))}
+                </div>
+              ) : null}
             </div>
           ))}
         </div>

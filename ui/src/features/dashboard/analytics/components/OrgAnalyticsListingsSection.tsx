@@ -34,7 +34,7 @@ import { useOrgListingViewMode } from '@/features/dashboard/org/hooks/useOrgList
 import { sliceOrgListingPage } from '@/features/dashboard/org/lib/orgListingPagination';
 
 import { FloatingToolbar } from '@/components/mobile/FloatingPanel';
-import { useIsBelowLg } from '@/hooks/useMediaQuery';
+import { useIsBelowXl } from '@/hooks/useMediaQuery';
 
 type Props = {
   rows: OrgPortfolioRow[];
@@ -54,7 +54,7 @@ const KIND_OPTIONS = [
 
 export function OrgAnalyticsListingsSection({ rows }: Props) {
   const { orgSlug = '' } = useParams<{ orgSlug: string }>();
-  const isMobileLayout = useIsBelowLg();
+  const isBelowXl = useIsBelowXl();
   const [filters, setFilters] = useState<OrgAnalyticsFilters>({
     search: '',
     attention: 'all',
@@ -67,7 +67,8 @@ export function OrgAnalyticsListingsSection({ rows }: Props) {
   const showKindFilter = hasProperties && hasParkings;
 
   const { viewMode, onViewModeChange } = useOrgListingViewMode(rows.length, false, orgSlug, {
-    hideTable: isMobileLayout,
+    // Seven columns do not fit at 1024; the table only earns its place from xl up.
+    hideTable: isBelowXl,
   });
 
   const promoteById = useMemo(() => promotionHintsByListingId(rows), [rows]);
@@ -107,7 +108,7 @@ export function OrgAnalyticsListingsSection({ rows }: Props) {
           typeOptions={showKindFilter ? KIND_OPTIONS : KIND_OPTIONS.slice(0, 1)}
           viewMode={viewMode}
           limit={pagination.limit}
-          hideTableView={isMobileLayout}
+          hideTableView={isBelowXl}
           labels={{
             searchPlaceholder: 'Search listings…',
             searchAriaLabel: 'Search listings',
@@ -127,12 +128,12 @@ export function OrgAnalyticsListingsSection({ rows }: Props) {
       </FloatingToolbar>
 
       {visible.length === 0 ? (
-        <p className="text-muted-foreground surface-card py-8 sm:py-12 text-center text-sm">
+        <p className="text-muted-foreground surface-card py-8 text-center text-sm sm:py-12">
           {filtered ? 'No listings match your filters' : 'No listings yet'}
         </p>
       ) : (
         <>
-          {viewMode === 'table' && !isMobileLayout ? (
+          {viewMode === 'table' && !isBelowXl ? (
             <OrgAnalyticsListingsTable
               rows={pageRows}
               orgSlug={orgSlug}

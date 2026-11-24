@@ -10,10 +10,14 @@ import { AnalyticsDistributionCard } from '@/features/dashboard/analytics/compon
 import { AnalyticsGuestSignalsCard } from '@/features/dashboard/analytics/components/AnalyticsGuestSignalsCard';
 import { AnalyticsKpiStrip } from '@/features/dashboard/analytics/components/AnalyticsKpiStrip';
 import { AnalyticsOverviewSection } from '@/features/dashboard/analytics/components/AnalyticsOverviewSection';
+import { AnalyticsSectionTabs } from '@/features/dashboard/analytics/components/AnalyticsSectionTabs';
 import {
-  AnalyticsSectionTabs,
+  analyticsPanelId,
+  analyticsTabId,
+  resolveAnalyticsSection,
+  writeAnalyticsSectionParam,
   type AnalyticsSection,
-} from '@/features/dashboard/analytics/components/AnalyticsSectionTabs';
+} from '@/features/dashboard/analytics/lib/analyticsSection';
 import { BookingPaceCard } from '@/features/dashboard/analytics/components/BookingPaceCard';
 import { ChannelMixCard } from '@/features/dashboard/analytics/components/ChannelMixCard';
 import { GuestAgeCard } from '@/features/dashboard/analytics/components/GuestAgeCard';
@@ -25,6 +29,7 @@ import {
   useRegenerateAnalyticsAiReview,
 } from '@/features/dashboard/analytics/hooks/useAnalyticsAiReview';
 import { usePropertyAnalyticsSummary } from '@/features/dashboard/analytics/hooks/usePropertyAnalyticsSummary';
+import { humanizeAiReview } from '@/features/dashboard/analytics/lib/aiReviewCopy';
 import {
   aiReviewMatchesPeriod,
   resolveAiReviewPeriodApplicability,
@@ -77,7 +82,14 @@ export function PropertyAnalyticsPage() {
   const isBelowMd = useIsBelowMd();
   const compactChrome = useDashboardCompactChrome();
   const reducedMotion = usePrefersReducedMotion();
-  const [section, setSection] = useState<AnalyticsSection>('overview');
+  // The tab lives in the URL so Back, reload and a shared link keep it.
+  const section = resolveAnalyticsSection(searchParams);
+  const setSection = useCallback(
+    (next: AnalyticsSection) => {
+      setSearchParams(writeAnalyticsSectionParam(next, searchParams));
+    },
+    [searchParams, setSearchParams]
+  );
 
   // One event per section visit. `report` is the tab key rather than a remapped label, so
   // the funnel matches the UI a host actually sees.
@@ -145,9 +157,12 @@ export function PropertyAnalyticsPage() {
   const { open: openUpgradeModal } = useUpgradeModal();
   const aiReviewAvailability = useFeatureAvailability('analytics.ai_review');
   const aiReviewQueryEnabled = aiReviewAvailability.available && !aiReviewAvailability.isLoading;
-  const { data: aiReview, isLoading: isAiReviewLoading } = useAnalyticsAiReview({
+  const { data: aiReviewRecord, isLoading: isAiReviewLoading } = useAnalyticsAiReview({
     enabled: aiReviewQueryEnabled,
   });
+  // Model output is stored raw: turn state ids, ISO dates and `PHP 12000` into host copy once,
+  // so the card and the PDF export read the same cleaned record.
+  const aiReview = useMemo(() => humanizeAiReview(aiReviewRecord), [aiReviewRecord]);
   const regenerateAiReview = useRegenerateAnalyticsAiReview();
   const orgContext = useOptionalOrgContext();
   const brandColor = usePdfBrandColor();
@@ -321,76 +336,83 @@ export function PropertyAnalyticsPage() {
             <AnalyticsKpiStrip kpis={data.kpis} />
             <AnalyticsSectionTabs section={section} onSectionChange={setSection} />
 
-            {section === 'overview' ? <AnalyticsOverviewSection bundle={data} /> : null}
+            <div
+              role="tabpanel"
+              id={analyticsPanelId(section)}
+              aria-labelledby={analyticsTabId(section)}
+              className={SECTION_GAP}
+            >
+              {section === 'overview' ? <AnalyticsOverviewSection bundle={data} /> : null}
 
-            {section === 'trends' ? (
-              <div className={SECTION_GAP}>
-                <BookingPaceCard pace={data.bookingPace} />
-                <div className="grid gap-2.5 sm:gap-3 lg:grid-cols-3 lg:gap-4">
-                  <AnalyticsDistributionCard
-                    icon={CalendarRange}
-                    title="Lead time"
-                    sectionLabel="Booked this far ahead"
-                    data={data.distributions.leadTime}
-                    bucketOrder={LEAD_TIME_BUCKET_ORDER}
-                    dataKeyLabel="bookings"
-                    color={CHART_INFO_COLOR}
-                  />
-                  <AnalyticsDistributionCard
-                    icon={Moon}
-                    title="Length of stay"
-                    sectionLabel="Nights per stay"
-                    data={data.distributions.lengthOfStay}
-                    bucketOrder={LENGTH_OF_STAY_BUCKET_ORDER}
-                    dataKeyLabel="bookings"
-                    color={CHART_INCOME_COLOR}
-                  />
-                  <AnalyticsGuestSignalsCard kpis={data.kpis} />
+              {section === 'trends' ? (
+                <div className={SECTION_GAP}>
+                  <BookingPaceCard pace={data.bookingPace} />
+                  <div className="grid gap-2.5 sm:gap-3 lg:grid-cols-3 lg:gap-4">
+                    <AnalyticsDistributionCard
+                      icon={CalendarRange}
+                      title="Lead time"
+                      sectionLabel="Booked this far ahead"
+                      data={data.distributions.leadTime}
+                      bucketOrder={LEAD_TIME_BUCKET_ORDER}
+                      dataKeyLabel="bookings"
+                      color={CHART_INFO_COLOR}
+                    />
+                    <AnalyticsDistributionCard
+                      icon={Moon}
+                      title="Length of stay"
+                      sectionLabel="Nights per stay"
+                      data={data.distributions.lengthOfStay}
+                      bucketOrder={LENGTH_OF_STAY_BUCKET_ORDER}
+                      dataKeyLabel="bookings"
+                      color={CHART_INCOME_COLOR}
+                    />
+                    <AnalyticsGuestSignalsCard kpis={data.kpis} />
+                  </div>
                 </div>
-              </div>
-            ) : null}
+              ) : null}
 
-            {section === 'guests' ? (
-              <div className="grid gap-2.5 sm:gap-3 lg:grid-cols-2 lg:gap-4">
-                <ChannelMixCard channelMix={data.distributions.channelMix} />
-                <GuestAgeCard guestAge={data.distributions.guestAge} />
-                <GuestPartySizeCard partySize={data.distributions.partySize} />
-                <GuestOriginsCard guestOrigins={data.distributions.guestOrigins} />
-              </div>
-            ) : null}
+              {section === 'guests' ? (
+                <div className="grid gap-2.5 sm:gap-3 lg:grid-cols-2 lg:gap-4">
+                  <ChannelMixCard channelMix={data.distributions.channelMix} />
+                  <GuestAgeCard guestAge={data.distributions.guestAge} />
+                  <GuestPartySizeCard partySize={data.distributions.partySize} />
+                  <GuestOriginsCard guestOrigins={data.distributions.guestOrigins} />
+                </div>
+              ) : null}
 
-            {section === 'ai-review' ? (
-              <div className={SECTION_GAP}>
-                {!aiReviewAvailability.available && !aiReviewAvailability.isLoading ? (
-                  <FeatureUnavailablePanel
-                    label={aiReviewAvailability.label}
-                    message={aiReviewAvailability.message}
-                    expectedBackLabel={aiReviewAvailability.expectedBackLabel}
-                    reason={aiReviewAvailability.reason}
-                    tone={aiReviewAvailability.tone}
+              {section === 'ai-review' ? (
+                <div className={SECTION_GAP}>
+                  {!aiReviewAvailability.available && !aiReviewAvailability.isLoading ? (
+                    <FeatureUnavailablePanel
+                      label={aiReviewAvailability.label}
+                      message={aiReviewAvailability.message}
+                      expectedBackLabel={aiReviewAvailability.expectedBackLabel}
+                      reason={aiReviewAvailability.reason}
+                      tone={aiReviewAvailability.tone}
+                    />
+                  ) : (
+                    <AiPerformanceReviewCard
+                      review={aiReviewPeriod.applicable ? (aiReview ?? null) : null}
+                      isLoading={aiReviewPeriod.applicable && isAiReviewLoading}
+                      applicable={aiReviewPeriod.applicable}
+                      periodKind={aiReviewPeriod.applicable ? aiReviewPeriod.kind : null}
+                      reviewMatchesPeriod={aiReviewPeriod.applicable && reviewMatchesPeriod}
+                      playbookArticles={data.playbook}
+                      onOpenPlaybook={handleOpenPlaybook}
+                      onRefresh={canRefreshAiReview ? handleRefreshAiReview : undefined}
+                      isRefreshing={regenerateAiReview.isPending}
+                      refreshUsedToday={refreshUsedToday}
+                      enoughHistory={data.sufficiency.enough}
+                    />
+                  )}
+                  <PlaybookList
+                    articles={data.playbook}
+                    openSlug={openPlaybookSlug}
+                    onOpenSlugChange={setOpenPlaybookSlug}
                   />
-                ) : (
-                  <AiPerformanceReviewCard
-                    review={aiReviewPeriod.applicable ? (aiReview ?? null) : null}
-                    isLoading={aiReviewPeriod.applicable && isAiReviewLoading}
-                    applicable={aiReviewPeriod.applicable}
-                    periodKind={aiReviewPeriod.applicable ? aiReviewPeriod.kind : null}
-                    reviewMatchesPeriod={aiReviewPeriod.applicable && reviewMatchesPeriod}
-                    playbookArticles={data.playbook}
-                    onOpenPlaybook={handleOpenPlaybook}
-                    onRefresh={canRefreshAiReview ? handleRefreshAiReview : undefined}
-                    isRefreshing={regenerateAiReview.isPending}
-                    refreshUsedToday={refreshUsedToday}
-                    enoughHistory={data.sufficiency.enough}
-                  />
-                )}
-                <PlaybookList
-                  articles={data.playbook}
-                  openSlug={openPlaybookSlug}
-                  onOpenSlugChange={setOpenPlaybookSlug}
-                />
-              </div>
-            ) : null}
+                </div>
+              ) : null}
+            </div>
           </>
         )}
       </div>

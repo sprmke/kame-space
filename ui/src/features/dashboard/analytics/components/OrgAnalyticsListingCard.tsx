@@ -51,10 +51,15 @@ function Metric({
   );
 }
 
-function RevenueValue({ row }: { row: UnlockedRow }) {
+function RevenueValue({ row, stacked = false }: { row: UnlockedRow; stacked?: boolean }) {
   return (
-    <span className="inline-flex max-w-full items-baseline gap-1.5 truncate">
-      <span className="truncate whitespace-nowrap">{formatMoneyCompact(row.grossRevenue)}</span>
+    <span
+      className={cn(
+        'inline-flex min-w-0 gap-1.5',
+        stacked ? 'flex-col items-start gap-0.5' : 'items-baseline'
+      )}
+    >
+      <span className="whitespace-nowrap">{formatMoneyCompact(row.grossRevenue)}</span>
       <OrgAnalyticsRevenueChange pct={row.revenueChangePct} />
     </span>
   );
@@ -155,8 +160,8 @@ export function OrgAnalyticsListingCard({ row, orgSlug, promote }: Props) {
 /** List view: one wide row per listing. */
 export function OrgAnalyticsListingRow({ row, orgSlug, promote }: Props) {
   return (
-    <article className={cn(CARD_CLASS, 'lg:flex-row lg:items-center lg:gap-5')}>
-      <div className="min-w-0 flex-1 space-y-1 lg:max-w-[18rem] lg:shrink-0">
+    <article className={cn(CARD_CLASS, 'xl:flex-row xl:items-center xl:gap-5')}>
+      <div className="min-w-0 flex-1 space-y-1 xl:max-w-[18rem] xl:shrink-0">
         <OrgAnalyticsKindBadge kind={orgPortfolioListingKind(row)} />
         <NameLink row={row} orgSlug={orgSlug} />
       </div>
@@ -165,17 +170,17 @@ export function OrgAnalyticsListingRow({ row, orgSlug, promote }: Props) {
         <p className="text-muted-foreground text-xs">Unavailable on your plan</p>
       ) : (
         <>
-          <div className="relative z-[1] min-w-0 lg:w-36 lg:shrink-0">
+          <div className="relative z-[1] min-w-0 xl:w-36 xl:shrink-0">
             <OrgAnalyticsAttention row={row} hideOutlookReasons showDetail={false} />
           </div>
-          <div className="grid min-w-0 flex-1 grid-cols-3 gap-3 lg:max-w-md">
+          <div className="grid min-w-0 flex-1 grid-cols-3 gap-3 xl:max-w-md">
             <Metric label="Occupancy">{row.occupancyRate}%</Metric>
             <Metric label="Revenue">
-              <RevenueValue row={row} />
+              <RevenueValue row={row} stacked />
             </Metric>
             <Metric label="Bookings">{row.reservations}</Metric>
           </div>
-          <div className="relative z-[1] flex min-w-0 items-end justify-between gap-3 lg:w-48 lg:shrink-0 lg:flex-col lg:items-start lg:justify-start lg:gap-1.5">
+          <div className="relative z-[1] flex min-w-0 items-end justify-between gap-3 xl:w-48 xl:shrink-0 xl:flex-col xl:items-start xl:justify-start xl:gap-1.5">
             <div className="min-w-0">
               <p className="text-muted-foreground text-[11px] font-medium leading-none">Outlook</p>
               <OrgAnalyticsOutlook

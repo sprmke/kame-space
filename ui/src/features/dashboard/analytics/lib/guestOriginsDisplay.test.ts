@@ -58,7 +58,7 @@ describe('collapseTopGuestOrigins', () => {
     expect(collapsed[5]).toMatchObject({
       origin: GUEST_ORIGINS_OTHERS_LABEL,
       count: 4,
-      pct: 16.67,
+      pct: 17,
     });
   });
 

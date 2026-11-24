@@ -5,8 +5,9 @@ export const GUEST_ORIGINS_OTHERS_LABEL = 'Others';
 
 type GuestOrigin = AnalyticsDistributions['guestOrigins'][number];
 
+/** Display shares are whole percent, matching the donut legend (one rounding rule). */
 function roundPct(value: number): number {
-  return Math.round(value * 100) / 100;
+  return Math.round(value);
 }
 
 /**

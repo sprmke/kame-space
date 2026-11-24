@@ -110,8 +110,52 @@ export function SlidingTabsList({
   size = 'primary',
   ...props
 }: SlidingTabsListProps) {
-  const { value } = useSlidingTabsContext();
+  const { value, onValueChange } = useSlidingTabsContext();
   const { containerRef, setItemRef, bounds } = useSlidingActivePill(value, remeasureDeps);
+
+  // Keep the selected tab in view. The phone strip is wider than the viewport, so a
+  // deep link or keyboard move must not leave the active tab off-screen.
+  React.useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const active = container.querySelector<HTMLElement>(`[data-tab-value="${value}"]`);
+    if (!active) return;
+    const left = active.offsetLeft;
+    const right = left + active.offsetWidth;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (left < container.scrollLeft) {
+      container.scrollTo({ left: Math.max(0, left - 8), behavior: reduced ? 'auto' : 'smooth' });
+    } else if (right > container.scrollLeft + container.clientWidth) {
+      container.scrollTo({
+        left: right + 8 - container.clientWidth,
+        behavior: reduced ? 'auto' : 'smooth',
+      });
+    }
+  }, [containerRef, value]);
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+    const tabs = Array.from(
+      event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]:not([disabled])')
+    );
+    if (tabs.length === 0) return;
+    event.preventDefault();
+    const focused = tabs.findIndex((tab) => tab === document.activeElement);
+    const selected = tabs.findIndex((tab) => tab.dataset.tabValue === value);
+    const start = focused >= 0 ? focused : selected >= 0 ? selected : 0;
+    const nextIndex =
+      event.key === 'Home'
+        ? 0
+        : event.key === 'End'
+          ? tabs.length - 1
+          : event.key === 'ArrowRight'
+            ? (start + 1) % tabs.length
+            : (start - 1 + tabs.length) % tabs.length;
+    const next = tabs[nextIndex];
+    next.focus();
+    const nextValue = next.dataset.tabValue;
+    if (nextValue) onValueChange(nextValue);
+  };
 
   const listCtx = React.useMemo(() => ({ setItemRef, size }), [setItemRef, size]);
 
@@ -120,6 +164,7 @@ export function SlidingTabsList({
       <div
         ref={containerRef}
         role="tablist"
+        onKeyDown={handleKeyDown}
         className={cn(
           'bg-muted text-muted-foreground relative',
           slidingTabsListClass[size],
@@ -141,10 +186,15 @@ export function SlidingTabsList({
 
 type SlidingTabsTriggerProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   value: string;
+  /** Id of the panel this tab controls, for the complete tab/tabpanel pattern. */
+  panelId?: string;
 };
 
 export const SlidingTabsTrigger = React.forwardRef<HTMLButtonElement, SlidingTabsTriggerProps>(
-  function SlidingTabsTrigger({ value, children, className, disabled, onClick, ...props }, ref) {
+  function SlidingTabsTrigger(
+    { value, panelId, children, className, disabled, onClick, ...props },
+    ref
+  ) {
     const { value: activeValue, onValueChange } = useSlidingTabsContext();
     const { setItemRef, size } = useSlidingTabsListContext();
     const active = activeValue === value;
@@ -164,6 +214,9 @@ export const SlidingTabsTrigger = React.forwardRef<HTMLButtonElement, SlidingTab
         type="button"
         role="tab"
         aria-selected={active}
+        aria-controls={panelId}
+        tabIndex={active ? 0 : -1}
+        data-tab-value={value}
         disabled={disabled}
         onClick={(event) => {
           onClick?.(event);

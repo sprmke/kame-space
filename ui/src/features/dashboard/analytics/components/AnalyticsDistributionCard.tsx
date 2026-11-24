@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 
-import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Bar, BarChart, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 import { fillDistributionRange } from '@/features/dashboard/analytics/lib/analyticsDistributionRange';
 
@@ -41,7 +41,7 @@ function MiniBarChart({
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={data}
-          margin={{ ...defaultChartMargin(isBelowMd), top: 8 }}
+          margin={{ ...defaultChartMargin(isBelowMd), top: 18 }}
           barCategoryGap="18%"
         >
           <XAxis
@@ -68,7 +68,15 @@ function MiniBarChart({
               );
             }}
           />
-          <Bar dataKey="count" fill={color} radius={[4, 4, 0, 0]} maxBarSize={44} />
+          <Bar dataKey="count" fill={color} radius={[4, 4, 0, 0]} maxBarSize={44}>
+            <LabelList
+              dataKey="count"
+              position="top"
+              fontSize={11}
+              fill="hsl(var(--foreground))"
+              formatter={(value: number | string) => (Number(value) > 0 ? String(value) : '')}
+            />
+          </Bar>
         </BarChart>
       </ResponsiveContainer>
     </div>

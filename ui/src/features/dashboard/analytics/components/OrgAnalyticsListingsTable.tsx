@@ -34,7 +34,7 @@ import {
 } from '@/features/dashboard/bookings/components/AdminDataTable';
 
 import { cn } from '@/lib/utils';
-import { formatMoney } from '@/utils/format/currency';
+import { formatMoneyCompact } from '@/utils/format/currency';
 
 type Props = {
   rows: OrgPortfolioRow[];
@@ -186,7 +186,7 @@ export function OrgAnalyticsListingsTable({
                   <td className={cn(adminTableCell.money, 'whitespace-nowrap')}>
                     <div className="flex flex-col items-start gap-0.5">
                       <span className={adminTableMoneyClass('text-foreground')}>
-                        {formatMoney(row.grossRevenue)}
+                        {formatMoneyCompact(row.grossRevenue)}
                       </span>
                       <OrgAnalyticsRevenueChange pct={row.revenueChangePct} />
                     </div>
