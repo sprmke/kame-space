@@ -21,6 +21,7 @@ import { withUntrustedDataRule, wrapUntrusted } from './ai/untrusted.ts';
 import { assertOrgAndPropertyAiQuota, type AiActorType } from './aiUsageService.ts';
 import { findBrandGuardViolation } from './marketingTrends/brandGuard.ts';
 import { buildTrendPromptBlock, type TrendContext } from './marketingTrends/trendContext.ts';
+import { fetchFirstPartyOrPublic, firstPartySupabaseOrigins } from './safeOutboundUrl.ts';
 
 const FEATURE = 'marketing_template' as const;
 
@@ -487,10 +488,16 @@ export async function loadPosterPhotos(
   const loaded = await Promise.all(
     candidates.map(async (url) => {
       try {
-        const response = await fetch(url, {
-          signal: AbortSignal.timeout(PHOTO_FETCH_TIMEOUT_MS),
-          redirect: 'follow',
-        });
+        // Host-stored URLs, so revalidate every hop instead of following redirects blindly: a
+        // public URL must not be able to bounce the fetch onto a private address (SSRF). DNS is
+        // best-effort here (a gallery CDN's resolver hiccup must not drop the photo); literal
+        // private IPs, local names and redirects are always blocked.
+        const response = await fetchFirstPartyOrPublic(
+          url,
+          firstPartySupabaseOrigins(),
+          { signal: AbortSignal.timeout(PHOTO_FETCH_TIMEOUT_MS) },
+          { httpsOnly: true, maxHops: 3 }
+        );
         const mimeType = (response.headers.get('content-type') ?? '').split(';')[0]!.trim();
         if (!response.ok || !/^image\/(jpeg|png|webp)$/.test(mimeType)) return null;
         const bytes = new Uint8Array(await response.arrayBuffer());

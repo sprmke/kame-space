@@ -3,6 +3,8 @@
  * production once operators set ENVIRONMENT=production and provision Vault secrets.
  */
 
+import { constantTimeEqualSync } from './cryptoCompare.ts';
+
 function isProductionEnvironment(): boolean {
   const env = Deno.env.get('ENVIRONMENT')?.trim().toLowerCase();
   // Unset ENVIRONMENT is treated as production so a misconfigured hosted project
@@ -29,6 +31,6 @@ export function verifyCronSecret(req: Request, options: CronSecretGateOptions): 
     }
     return true;
   }
-  const got = req.headers.get(options.headerName)?.trim();
-  return got === expected;
+  const got = req.headers.get(options.headerName)?.trim() ?? '';
+  return constantTimeEqualSync(got, expected);
 }

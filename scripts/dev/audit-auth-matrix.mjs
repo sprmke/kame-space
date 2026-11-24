@@ -278,8 +278,35 @@ function detectAny(src, patterns) {
  * tenant resource to scope to, or scope by an unguessable capability token
  * (audited separately, doc 21 Phase 21.3) or webhook signature.
  */
+/**
+ * Public / raw entrypoints whose tenant boundary is a capability token, an OAuth state row,
+ * or public-listing-only data rather than an org/property scope resolver. Each was read once
+ * and confirmed; re-read when the handler changes.
+ */
+const PUBLIC_SELF_GUARDED_ALLOWLIST = new Set([
+  // Booking UUID acts as the capability; PII (endorsement, host contact, note) only for the
+  // owning signed-in guest; 30/min per-IP limit.
+  'get-parking-booking-status',
+  // Booking UUID + optional HMAC `?access=`; guest PII only for the owning guest; 30/min.
+  'get-pay-parking',
+  // Feed token compared in constant time + per-property export row + 30/min; no guest data.
+  'ical-export',
+  // Single-use OAuth `state` row (expiry + allowed return origin) before any Graph call.
+  'meta-inbox-oauth-callback',
+  // Writes an analytics row for an ACTIVE property only; no tenant data returned; 1/30s.
+  'property-page-view',
+  // UUID + rate limit; returns a public property slug only, 404 for cancelled/imported.
+  'resolve-booking-property',
+  // Public typeahead over ACTIVE listings only; rate limited; no tenant/PII rows.
+  'search-suggestions',
+]);
+
 function scopeCheckApplies(fnDir, wrapper, src) {
   if (wrapper === 'serveCronPost') return false;
+  // `serveSuperAdmin` verifies platform-wide authority itself (SUPER_ADMIN_EMAILS), so there is
+  // no per-tenant resource to scope. Treat the wrapper check as the scope check.
+  if (wrapper === 'serveSuperAdmin') return false;
+  if (PUBLIC_SELF_GUARDED_ALLOWLIST.has(fnDir)) return false;
   if (NO_SCOPE_NEEDED_ALLOWLIST.has(fnDir)) return false;
   if (wrapper === 'servePublic') {
     // A public function IS still expected to scope if it reads/writes a
@@ -351,7 +378,7 @@ function main() {
   const noServe = valid.filter((r) => r.gaps.includes('no-serve-detected'));
 
   if (checkMode) {
-    if (noServe.length || missingAnyAuthz.length) {
+    if (noServe.length || missingAnyAuthz.length || missingScope.length) {
       if (noServe.length) {
         console.error('Functions with no serve*/Deno.serve detected (doc 21):');
         for (const r of noServe) console.error(`  ${r.fn}`);
@@ -362,9 +389,17 @@ function main() {
         );
         for (const r of missingAnyAuthz) console.error(`  ${r.fn}`);
       }
+      if (missingScope.length) {
+        console.error(
+          'Tenant functions with no resource-scope check (doc 21). Register the check, or add the function to PUBLIC_SELF_GUARDED_ALLOWLIST / SCOPE_VIA_CALLEE_ALLOWLIST with a reason after reading it:'
+        );
+        for (const r of missingScope) console.error(`  ${r.fn}`);
+      }
       process.exit(1);
     }
-    console.error(`ok: ${valid.length} functions; 0 with zero authz signal beyond identity`);
+    console.error(
+      `ok: ${valid.length} functions; 0 without authz, 0 tenant functions without a resource-scope check`
+    );
     return;
   }
 

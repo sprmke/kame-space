@@ -14,6 +14,10 @@ Deno.env.set('EDGE_HANDLER_TEST', '1');
 Deno.env.set('SUPABASE_URL', FUNCTIONS_URL);
 Deno.env.set('SUPABASE_SERVICE_ROLE_KEY', 'test-service-role-key');
 Deno.env.set('SUPABASE_ANON_KEY', 'test-anon-key');
+// Pin the CAPTCHA state: with a usable Turnstile secret in the ambient environment the
+// anti-spam gate blocks before the refund guards this file is testing.
+Deno.env.delete('CAPTCHA_MODE');
+Deno.env.delete('TURNSTILE_SECRET_KEY');
 
 type StubState = { maintenance: boolean };
 let state: StubState = { maintenance: false };

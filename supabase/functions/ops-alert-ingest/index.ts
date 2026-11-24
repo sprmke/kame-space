@@ -47,6 +47,14 @@ servePublic('ops-alert-ingest', async (req) => {
   const rawBody = await req.text();
   const signature = req.headers.get('x-ops-signature');
   if (!(await verifyOpsAlertSignature(rawBody, signature, secret))) {
+    // Cap unauthenticated probing so a bad-signature flood cannot burn isolate time.
+    const limited = await rateLimitGate(req, {
+      scope: 'ops-alert-ingest-bad-signature',
+      identity: identityFromRequest(req),
+      limit: 30,
+      windowSec: 60,
+    });
+    if (limited) return limited;
     return jsonError(req, 'Invalid signature', 401);
   }
 

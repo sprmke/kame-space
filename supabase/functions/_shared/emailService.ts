@@ -59,6 +59,11 @@ import { escapeHtml } from './renderEmailHtml.ts';
 import { resolvePublicGuestAppOrigin } from './publicAppOrigin.ts';
 import { buildSupportTicketThreadUrl } from './supportTicketStatus.ts';
 import { sendResendEmail } from './sendResendEmail.ts';
+import {
+  fetchFirstPartyOrPublic,
+  firstPartySupabaseOrigins,
+  readResponseBytesBounded,
+} from './safeOutboundUrl.ts';
 
 /** Resolve property scope for operator settings (email routing, GCash, logos, etc.). */
 
@@ -179,18 +184,31 @@ async function fetchPaymentQrBytes(
   url: string
 ): Promise<{ bytes: Uint8Array; contentType: string; filename: string } | null> {
   try {
-    const res = await fetch(url);
+    // A payment QR URL is host-supplied settings data, not a trusted constant: route it through
+    // the SSRF guard (literal private hosts, local names, per-hop redirect revalidation) and cap
+    // the body so an untrusted host cannot exhaust the isolate or smuggle HTML into an email.
+    const res = await fetchFirstPartyOrPublic(
+      url,
+      firstPartySupabaseOrigins(),
+      { signal: AbortSignal.timeout(10_000) },
+      { maxHops: 3, timeoutMs: 10_000 }
+    );
     if (!res.ok) {
-      console.warn('[emailService] Payment QR fetch failed:', res.status, url);
+      console.warn('[emailService] Payment QR fetch failed:', res.status);
       return null;
     }
-    const bytes = new Uint8Array(await res.arrayBuffer());
+    const rawType = res.headers.get('content-type')?.split(';')[0]?.trim().toLowerCase() ?? '';
+    if (rawType === 'text/html' || rawType === 'application/xhtml+xml') {
+      console.warn('[emailService] Payment QR is not an image; skipping inline attachment');
+      return null;
+    }
+    const contentType = rawType || 'image/jpeg';
+    const bytes = await readResponseBytesBounded(res, 5 * 1024 * 1024);
     if (bytes.length === 0) return null;
-    const contentType = res.headers.get('content-type')?.split(';')[0]?.trim() || 'image/jpeg';
     const ext = contentType === 'image/png' ? 'png' : contentType === 'image/webp' ? 'webp' : 'jpg';
     return { bytes, contentType, filename: `payment-qr.${ext}` };
   } catch (err) {
-    console.warn('[emailService] Payment QR fetch error:', err);
+    console.warn('[emailService] Payment QR fetch error:', err instanceof Error ? err.message : err);
     return null;
   }
 }

@@ -53,6 +53,7 @@ scripts/README.md  # documents the seed slugs
 supabase/functions/tests/_agentHarness.ts  # local seed tenant
 supabase/functions/tests/assistantParity*.ts  # local seed tenant
 supabase/functions/tests/reviewsLifecycleLocal.integration_test.ts  # local seed tenant
+supabase/functions/tests/handlers/get-pay-parking-privacy.test.ts  # local seed tenant slug
 ui/e2e/features/assistant/shared/assistantLiveLocalHarness.ts  # local seed tenant
 ui/e2e/features/parking/shared/parkingLiveLocalHarness.ts  # local seed tenant
 
