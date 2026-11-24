@@ -128,6 +128,7 @@ for (const viewport of [
         action: 'addFeed',
         provider: 'agoda',
         icsUrl: 'https://ycs.agoda.com/ical/abc.ics',
+        createBookings: false,
       });
     });
 

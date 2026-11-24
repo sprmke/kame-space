@@ -133,7 +133,13 @@ async function patch<T>(propertyId: string, body: Record<string, unknown>): Prom
 
 export function addCalendarFeed(
   propertyId: string,
-  input: { provider: CalendarFeedProvider; label?: string; icsUrl: string }
+  input: {
+    provider: CalendarFeedProvider;
+    label?: string;
+    icsUrl: string;
+    /** Defaults from the channel registry when omitted (Airbnb on, Agoda / Booking.com off). */
+    createBookings?: boolean;
+  }
 ) {
   return patch<{ feed: unknown; initialSync?: FeedSyncResult | null }>(propertyId, {
     action: 'addFeed',
