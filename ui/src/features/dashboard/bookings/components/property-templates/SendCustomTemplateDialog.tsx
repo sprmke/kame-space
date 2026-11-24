@@ -121,7 +121,17 @@ export function SendCustomTemplateDialog({ templateKey, templateName, open, onOp
                     )}
                     aria-hidden
                   />
-                  <span className="min-w-0 flex-1 truncate">{bookingRowLabel(row)}</span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate">{bookingRowLabel(row)}</span>
+                    {row.guest_email ? (
+                      <span className="text-muted-foreground block truncate text-xs">
+                        {row.guest_email}
+                      </span>
+                    ) : null}
+                  </span>
+                  {selectedBooking?.id === row.id ? (
+                    <span className="sr-only">Selected</span>
+                  ) : null}
                 </CommandItem>
               ))}
             </CommandGroup>

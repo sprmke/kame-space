@@ -85,7 +85,7 @@ function TemplatePaneMessage({
   action,
 }: {
   title: string;
-  body: string;
+  body?: string;
   action?: React.ReactNode;
 }) {
   return (
@@ -95,7 +95,7 @@ function TemplatePaneMessage({
       </div>
       <div className="space-y-1">
         <p className="text-card-title">{title}</p>
-        <p className="text-muted-foreground mx-auto max-w-xs text-sm">{body}</p>
+        {body ? <p className="text-muted-foreground mx-auto max-w-xs text-sm">{body}</p> : null}
       </div>
       {action}
     </div>
@@ -371,8 +371,8 @@ export function TemplatesPage() {
   }, [canAddCustom, openAddTemplate, openNewGroup]);
 
   const templateHeaderActions = canAddCustom ? (
-    <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end sm:gap-2">
-      <TierBadgeAnchor feature="customTemplates">
+    <TierBadgeAnchor feature="customTemplates" className="w-full sm:w-auto">
+      <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end sm:gap-2">
         <Button
           type="button"
           variant="outline"
@@ -382,8 +382,6 @@ export function TemplatesPage() {
           <FolderPlus className="size-4" aria-hidden />
           New group
         </Button>
-      </TierBadgeAnchor>
-      <TierBadgeAnchor feature="customTemplates">
         <Button
           type="button"
           variant="default"
@@ -393,8 +391,8 @@ export function TemplatesPage() {
           <Plus className="size-4" aria-hidden />
           New template
         </Button>
-      </TierBadgeAnchor>
-    </div>
+      </div>
+    </TierBadgeAnchor>
   ) : null;
 
   const canEditActive = activeEntry
@@ -409,17 +407,7 @@ export function TemplatesPage() {
 
   const detail = (() => {
     if (!activeEntry) {
-      return (
-        <TemplatePaneMessage
-          title="No templates yet"
-          body="Reload to try again."
-          action={
-            <Button type="button" variant="outline" size="sm" onClick={() => void refetch()}>
-              Reload
-            </Button>
-          }
-        />
-      );
+      return <TemplatePaneMessage title="No templates yet" />;
     }
 
     const isCustom = activeEntry.organisable;
@@ -450,7 +438,7 @@ export function TemplatesPage() {
   return (
     <AdminMobilePage
       title="Templates"
-      subtitle="Manage your property's house rules, instructions, and email templates."
+      subtitle="Manage the text guests and your team receive."
       titleId="templates-heading"
       heroTrailing={
         heroMenuItems.length > 0 ? (
@@ -462,12 +450,17 @@ export function TemplatesPage() {
       {isLoading ? <TemplateWorkbenchSkeleton /> : null}
 
       {error && !data ? (
-        <div className="border-border bg-card flex min-h-0 flex-1 flex-col items-center justify-center gap-3 rounded-xl border p-6 text-center">
-          <p className="text-card-title">Templates did not load</p>
-          <p className="text-muted-foreground max-w-sm text-sm">
-            Check your connection and try again.
-          </p>
-          <Button type="button" variant="outline" onClick={() => void refetch()}>
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 p-6 text-center">
+          <div className="bg-muted text-muted-foreground flex size-10 items-center justify-center rounded-lg">
+            <RefreshCw className="size-5" aria-hidden />
+          </div>
+          <div className="space-y-1">
+            <p className="text-card-title">Templates did not load</p>
+            <p className="text-muted-foreground mx-auto max-w-xs text-sm">
+              Check your connection and try again.
+            </p>
+          </div>
+          <Button type="button" variant="outline" size="sm" onClick={() => void refetch()}>
             <RefreshCw className="size-4" aria-hidden />
             Try again
           </Button>

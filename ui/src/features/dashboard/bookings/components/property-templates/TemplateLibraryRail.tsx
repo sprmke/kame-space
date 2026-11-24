@@ -81,9 +81,7 @@ function TemplateRowMeta({ entry, active }: { entry: TemplateLibraryEntry; activ
         <span
           className={cn(
             'inline-flex shrink-0 items-center gap-1 rounded px-1.5 py-px text-[10px] font-semibold uppercase tracking-wide',
-            active
-              ? 'bg-black/20 text-primary-foreground'
-              : 'bg-muted text-muted-foreground'
+            active ? 'text-primary-foreground bg-black/20' : 'bg-muted text-muted-foreground'
           )}
         >
           <EyeOff className="size-3" aria-hidden />
@@ -156,7 +154,7 @@ const TemplateRow = React.forwardRef<
 
       {canOrganise || canDelete ? (
         <ResponsiveOverflowMenu
-          label={`Actions for ${entry.name}`}
+          label={`Template actions for ${entry.name}`}
           sheetTitle={entry.name}
           triggerClassName={cn(
             templateRowMenuTriggerClassName,
@@ -210,9 +208,11 @@ function RailFolderEmptyState({
   const emptyHint =
     group.kind === 'builtin'
       ? canAdd
-        ? 'Add a custom template here.'
+        ? 'Add a template here.'
         : 'No templates yet.'
-      : 'Move a template here.';
+      : canAdd
+        ? 'Add or move a template here.'
+        : 'Move a template here.';
 
   return (
     <div
@@ -305,7 +305,7 @@ function RailGroupHeading({
 
       {showGroupMenu ? (
         <ResponsiveOverflowMenu
-          label={`Actions for ${group.label}`}
+          label={`Group actions for ${group.label}`}
           sheetTitle={group.label}
           triggerClassName={cn(railMenuTriggerClassName)}
           actionGroups={actionGroups}
@@ -427,8 +427,11 @@ export function TemplateLibraryRail({
         ref={containerRef}
         className={cn(
           'relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-0.5 pb-1',
-          /* As the page's only scrollport on phone, the list clears the tab dock itself. */
-          isList && bottomTabBarOffsetClassName()
+          /* As the page's only scrollport on phone, the list clears the tab dock itself.
+           * The extra half-rem band keeps the last row out from under the Quick Access hub,
+           * which floats a full button above the dock. */
+          isList &&
+            cn(bottomTabBarOffsetClassName(), 'max-lg:pb-[calc(var(--mobile-bottom-bar-h)+4.5rem)]')
         )}
       >
         {bounds ? (
