@@ -57,9 +57,9 @@ test.describe('@ci dashboard module shells', () => {
     await expect(page.getByRole('region', { name: 'Key metrics' })).toBeVisible({
       timeout: 20_000,
     });
-    await expect(page.getByRole('region', { name: /Needs attention|Recent bookings/i })).toBeVisible(
-      { timeout: 20_000 }
-    );
+    await expect(
+      page.getByRole('region', { name: /Needs attention|Recent bookings/i })
+    ).toBeVisible({ timeout: 20_000 });
     await expect(page.getByRole('region', { name: 'Rates' })).toBeVisible({ timeout: 20_000 });
   });
 
@@ -308,6 +308,6 @@ test.describe('@ci dashboard module shells', () => {
     });
     await expect(page.getByRole('searchbox', { name: 'Search activity' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Export CSV' })).toBeVisible();
-    await expect(page.getByText('No activity in this range.')).toBeVisible();
+    await expect(page.getByText('No activity yet.')).toBeVisible();
   });
 });
