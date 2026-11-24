@@ -112,7 +112,9 @@ const IsoDateInput = React.forwardRef<HTMLButtonElement, IsoDateInputProps>(
             id={id}
             name={name}
             disabled={disabled}
-            aria-label={ariaLabel ?? 'Date'}
+            /* Include the visible value so the accessible name matches the text
+             * (axe label-content-name-mismatch) and screen readers hear the date. */
+            aria-label={`${ariaLabel ?? 'Date'}${display ? `, ${display}` : ''}`}
             aria-invalid={isInvalid || undefined}
             aria-haspopup="dialog"
             aria-expanded={open}

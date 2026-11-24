@@ -4,7 +4,7 @@ import type {
   FinanceReminderInterval,
 } from '@/features/dashboard/finance/lib/recurrence';
 
-export type MaintenanceReminderStatus = 'pending' | 'completed';
+export type MaintenanceReminderStatus = 'pending' | 'overdue' | 'completed';
 
 export type MaintenanceTelegramFilter = 'all' | 'enabled' | 'disabled';
 
@@ -32,7 +32,7 @@ export const DEFAULT_MAINTENANCE_QUERY: MaintenanceQuery = {
   page: 1,
   limit: 31,
   view: 'table',
-  sort: 'date:desc',
+  sort: 'date:asc',
   statusFilter: [],
   categoryFilter: [],
   telegramFilter: 'all',
@@ -47,6 +47,7 @@ export type MaintenanceSummary = {
   telegramEnabled: number;
   completed: number;
   pending: number;
+  overdue: number;
   byCategory: { category: string; count: number }[];
 };
 

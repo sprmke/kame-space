@@ -8,7 +8,7 @@ import {
 } from '@/features/dashboard/finance/lib/recurrence';
 
 import { cn } from '@/lib/utils';
-import { formatIsoDateForDisplay } from '@/utils/format/dates';
+import { formatIsoDate } from '@/utils/format/bookingDisplay';
 
 export type MaintenanceItemPreviewValues = {
   label: string;
@@ -62,17 +62,21 @@ export function MaintenanceItemFormPreview({
   showRepeat,
   className,
 }: Props) {
-  const dateLabel = values.scheduled_on ? formatIsoDateForDisplay(values.scheduled_on) : '-';
+  const dateLabel = values.scheduled_on ? formatIsoDate(values.scheduled_on) : '-';
   const notes = values.notes?.trim() || null;
   const repeats = values.recurrence_interval !== 'none';
   const repeatLine = repeats
     ? `${labelForInterval(values.recurrence_interval)}${
-        values.recurrence_until ? ` until ${formatIsoDateForDisplay(values.recurrence_until)}` : ''
+        values.recurrence_until ? ` until ${formatIsoDate(values.recurrence_until)}` : ''
       }`
     : labelForInterval('none');
 
   const telegramLine = values.telegram_reminder_enabled
-    ? `${values.telegram_days_before}d before · ${labelForReminderInterval(values.telegram_reminder_interval)}`
+    ? `${
+        values.telegram_days_before === 0
+          ? 'On the due date'
+          : `${values.telegram_days_before} day${values.telegram_days_before === 1 ? '' : 's'} before`
+      } · ${labelForReminderInterval(values.telegram_reminder_interval)}`
     : 'Off';
 
   return (
@@ -88,9 +92,9 @@ export function MaintenanceItemFormPreview({
         {isEdit && isRecurringEdit ? (
           <PreviewRow label="Apply to" value={labelForScope(values.edit_scope)} />
         ) : null}
-        <PreviewRow label="Telegram" value={telegramLine} />
-        {isEdit && values.telegram_reminder_enabled ? (
-          <PreviewRow label="Done" value={values.marked_complete ? 'Yes' : 'No'} />
+        <PreviewRow label="Telegram reminders" value={telegramLine} />
+        {isEdit ? (
+          <PreviewRow label="Status" value={values.marked_complete ? 'Done' : 'Open'} />
         ) : null}
         {notes ? <PreviewRow label="Notes" value={notes} /> : null}
       </ul>

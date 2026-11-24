@@ -20,6 +20,7 @@ serveAuthenticated('maintenance-summary', async (req) => {
     from: url.searchParams.get('from'),
     to: url.searchParams.get('to'),
     includeDueInRange: url.searchParams.get('include_due_in_range') === 'true',
+    includeOverdue: url.searchParams.get('include_overdue') !== 'false',
   });
 
   return jsonSuccess(req, data);

@@ -43,6 +43,7 @@ export function pdfEstimateTextColor(): PdfRgb {
 /** Maintenance reminder row status labels from exportPdf. */
 export function pdfMaintenanceStatusColor(label: string): PdfRgb {
   if (label === 'Done') return pdfToneTextColor('green');
+  if (label === 'Overdue') return pdfToneTextColor('red');
   if (label === 'Pending') return pdfToneTextColor('amber');
   return [...PDF_COLORS.foreground];
 }

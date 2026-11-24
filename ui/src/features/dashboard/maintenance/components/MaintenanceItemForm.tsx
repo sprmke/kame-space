@@ -1,11 +1,4 @@
-import {
-  forwardRef,
-  useEffect,
-  useImperativeHandle,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Controller, useForm } from 'react-hook-form';
@@ -15,6 +8,7 @@ import { useTelegramMaintenanceSettings } from '@/features/dashboard/bookings/ho
 import { CategoryCombobox } from '@/features/dashboard/finance/components/CategoryCombobox';
 import { TelegramReminderSchedulePreview } from '@/features/dashboard/finance/components/TelegramReminderSchedulePreview';
 import {
+  countRecurrenceOccurrences,
   defaultRecurrenceUntil,
   FINANCE_REMINDER_INTERVAL_OPTIONS,
   normalizeFinanceReminderInterval,
@@ -40,7 +34,6 @@ import {
 import type { MaintenanceItem } from '@/features/dashboard/maintenance/lib/types';
 
 import { FormFieldBlock } from '@/components/forms/FormFieldBlock';
-import { WizardStepHeading } from '@/components/wizard/WizardStepHeading';
 import { Checkbox } from '@/components/ui/checkbox';
 import { IsoDateInput } from '@/components/ui/iso-date-input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -51,6 +44,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { WizardStepHeading } from '@/components/wizard/WizardStepHeading';
 import { cn } from '@/lib/utils';
 
 const schema = z
@@ -237,12 +231,18 @@ export const MaintenanceItemForm = forwardRef<MaintenanceItemFormHandle, Props>(
     }, [safeStepIndex]);
 
     const recurrenceInterval = watch('recurrence_interval');
-    const recurrenceUntil = watch('recurrence_until');
-    const scheduledOn = watch('scheduled_on');
+    const recurrenceUntil = watch('recurrence_until') ?? '';
+    const scheduledOn = watch('scheduled_on') ?? '';
     const telegramReminderEnabled = watch('telegram_reminder_enabled');
     const telegramDaysBefore = watch('telegram_days_before');
     const telegramReminderInterval = watch('telegram_reminder_interval');
     const previewValues = watch();
+
+    const recurrenceCount = useMemo(() => {
+      if (!showRepeat || recurrenceInterval === 'none') return 1;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(recurrenceUntil)) return 0;
+      return countRecurrenceOccurrences(scheduledOn, recurrenceInterval, recurrenceUntil);
+    }, [recurrenceInterval, recurrenceUntil, scheduledOn, showRepeat]);
 
     const canProceed = useMemo(() => {
       const stepKind = activeStep?.kind ?? 'details';
@@ -368,11 +368,12 @@ export const MaintenanceItemForm = forwardRef<MaintenanceItemFormHandle, Props>(
               <input
                 className="border-input bg-card text-foreground field-focus h-10 w-full rounded-lg border px-3 text-sm transition-colors"
                 aria-invalid={errors.label ? true : undefined}
+                aria-label="Label"
                 {...register('label')}
               />
             </FormFieldBlock>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <FormFieldBlock label="Category" required error={errors.category?.message}>
                 <Controller
                   name="category"
@@ -399,6 +400,7 @@ export const MaintenanceItemForm = forwardRef<MaintenanceItemFormHandle, Props>(
                       onChange={field.onChange}
                       onBlur={field.onBlur}
                       name={field.name}
+                      aria-label="Scheduled date"
                       aria-invalid={errors.scheduled_on ? true : undefined}
                     />
                   )}
@@ -408,26 +410,26 @@ export const MaintenanceItemForm = forwardRef<MaintenanceItemFormHandle, Props>(
 
             <FormFieldBlock label="Notes" error={errors.notes?.message}>
               <textarea
-                rows={5}
+                rows={3}
                 className="border-input bg-card text-foreground field-focus w-full rounded-lg border px-3 py-2 text-sm transition-colors"
                 aria-invalid={errors.notes ? true : undefined}
+                aria-label="Notes"
                 {...register('notes')}
               />
             </FormFieldBlock>
-          </div>
-        ) : null}
 
-        {activeStep?.kind === 'reminders' ? (
-          <div className="space-y-4">
             {showRepeat ? (
-              <>
+              <div className="space-y-3">
                 <FormFieldBlock label="Repeat" error={errors.recurrence_interval?.message}>
                   <Controller
                     name="recurrence_interval"
                     control={control}
                     render={({ field: { value, onChange } }) => (
                       <Select value={value} onValueChange={onChange}>
-                        <SelectTrigger aria-invalid={errors.recurrence_interval ? true : undefined}>
+                        <SelectTrigger
+                          aria-label="Repeat"
+                          aria-invalid={errors.recurrence_interval ? true : undefined}
+                        >
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -443,20 +445,31 @@ export const MaintenanceItemForm = forwardRef<MaintenanceItemFormHandle, Props>(
                 </FormFieldBlock>
 
                 {recurrenceInterval !== 'none' ? (
-                  <FormFieldBlock label="Repeats until" error={errors.recurrence_until?.message}>
+                  <FormFieldBlock
+                    label="Repeats until"
+                    error={errors.recurrence_until?.message}
+                    hint={
+                      recurrenceCount >= 500
+                        ? 'Creates 500 reminders (the maximum for one series).'
+                        : recurrenceCount > 0
+                          ? `Creates ${recurrenceCount} reminder${recurrenceCount === 1 ? '' : 's'}.`
+                          : undefined
+                    }
+                  >
                     <Controller
                       name="recurrence_until"
                       control={control}
                       render={({ field }) => (
                         <IsoDateInput
                           {...field}
+                          aria-label="Repeats until"
                           aria-invalid={errors.recurrence_until ? true : undefined}
                         />
                       )}
                     />
                   </FormFieldBlock>
                 ) : null}
-              </>
+              </div>
             ) : null}
 
             {isEdit && isRecurringEdit ? (
@@ -501,6 +514,29 @@ export const MaintenanceItemForm = forwardRef<MaintenanceItemFormHandle, Props>(
               </fieldset>
             ) : null}
 
+            {isEdit ? (
+              <Controller
+                name="marked_complete"
+                control={control}
+                render={({ field: { value, onChange, onBlur, name } }) => (
+                  <label className="border-border/50 bg-muted/20 flex min-h-[44px] cursor-pointer items-start gap-3 rounded-xl border px-3 py-2.5">
+                    <Checkbox
+                      name={name}
+                      checked={value}
+                      onCheckedChange={onChange}
+                      onBlur={onBlur}
+                      className="mt-1"
+                    />
+                    <span className="min-w-0">
+                      <span className="text-foreground block text-sm font-semibold">
+                        Mark as done
+                      </span>
+                    </span>
+                  </label>
+                )}
+              />
+            ) : null}
+
             <fieldset className="border-border/50 bg-muted/20 space-y-3 rounded-xl border p-3">
               <legend className="sr-only">Telegram reminders</legend>
               <Controller
@@ -517,7 +553,7 @@ export const MaintenanceItemForm = forwardRef<MaintenanceItemFormHandle, Props>(
                     />
                     <span className="min-w-0">
                       <span className="text-foreground block text-sm font-semibold">
-                        Send reminders
+                        Telegram reminders
                       </span>
                     </span>
                   </label>
@@ -534,6 +570,7 @@ export const MaintenanceItemForm = forwardRef<MaintenanceItemFormHandle, Props>(
                       type="number"
                       min={0}
                       max={90}
+                      aria-label="Days before due"
                       className="border-input bg-card text-foreground field-focus h-10 w-full rounded-lg border px-3 text-sm"
                       aria-invalid={errors.telegram_days_before ? true : undefined}
                       {...register('telegram_days_before', { valueAsNumber: true })}
@@ -589,40 +626,15 @@ export const MaintenanceItemForm = forwardRef<MaintenanceItemFormHandle, Props>(
                     singleOccurrenceOnly={isEdit}
                   />
 
-                  <FormFieldBlock
-                    label="Message"
-                    error={errors.telegram_message_template?.message}
-                  >
+                  <FormFieldBlock label="Message" error={errors.telegram_message_template?.message}>
                     <textarea
-                      rows={7}
+                      rows={5}
+                      aria-label="Message"
                       className="border-input bg-card text-foreground field-focus w-full rounded-lg border px-3 py-2 font-mono text-xs"
                       aria-invalid={errors.telegram_message_template ? true : undefined}
                       {...register('telegram_message_template')}
                     />
                   </FormFieldBlock>
-
-                  {isEdit ? (
-                    <Controller
-                      name="marked_complete"
-                      control={control}
-                      render={({ field: { value, onChange, onBlur, name } }) => (
-                        <label className="flex min-h-[44px] cursor-pointer items-start gap-3">
-                          <Checkbox
-                            name={name}
-                            checked={value}
-                            onCheckedChange={onChange}
-                            onBlur={onBlur}
-                            className="mt-1"
-                          />
-                          <span className="min-w-0">
-                            <span className="text-foreground block text-sm font-semibold">
-                              Mark as done
-                            </span>
-                          </span>
-                        </label>
-                      )}
-                    />
-                  ) : null}
                 </div>
               ) : null}
             </fieldset>
@@ -641,4 +653,3 @@ export const MaintenanceItemForm = forwardRef<MaintenanceItemFormHandle, Props>(
     );
   }
 );
-

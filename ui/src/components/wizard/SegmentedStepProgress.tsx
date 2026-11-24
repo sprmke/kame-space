@@ -4,6 +4,8 @@ type SegmentedStepProgressProps = {
   labels: readonly string[];
   currentIndex: number;
   disabled?: boolean;
+  /** Accessible name for the progressbar (e.g. "Reminder steps"). */
+  ariaLabel?: string;
 };
 
 /**
@@ -14,6 +16,7 @@ export function SegmentedStepProgress({
   labels,
   currentIndex,
   disabled,
+  ariaLabel = 'Progress',
 }: SegmentedStepProgressProps) {
   const current = labels[currentIndex] ?? '';
 
@@ -22,6 +25,7 @@ export function SegmentedStepProgress({
       <div
         className="flex flex-1 items-center gap-1"
         role="progressbar"
+        aria-label={ariaLabel}
         aria-valuemin={1}
         aria-valuemax={labels.length}
         aria-valuenow={currentIndex + 1}

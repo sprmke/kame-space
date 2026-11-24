@@ -295,7 +295,12 @@ export function AdminListDesktopToolbar({
         role="toolbar"
         aria-label={ariaLabel}
         aria-orientation="horizontal"
-        className={cn('hidden w-full min-w-0 items-center gap-2 lg:flex', className)}
+        className={cn(
+          /* Wrap instead of crushing the search field between 1024 and 1279, where all
+           * filter + sort + view controls cannot share one row with a usable search. */
+          'hidden w-full min-w-0 flex-wrap items-center gap-2 gap-y-2 lg:flex',
+          className
+        )}
       >
         {hasFilters ? (
           <div role="group" aria-label="Filter by" className="flex shrink-0 items-center gap-2">
@@ -304,10 +309,14 @@ export function AdminListDesktopToolbar({
           </div>
         ) : null}
 
-        <div className="min-w-0 flex-1">{search}</div>
+        <div className="min-w-[10rem] flex-1">{search}</div>
 
         {hasChrome ? (
-          <div role="group" aria-label="Sort and view" className="flex shrink-0 items-center gap-2">
+          <div
+            role="group"
+            aria-label="Sort and view"
+            className="ml-auto flex shrink-0 items-center gap-2"
+          >
             {sort}
             {perPage}
             {view}

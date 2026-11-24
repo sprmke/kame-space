@@ -4,12 +4,6 @@ export type MaintenanceItemFormDetailsStep = {
   label: string;
 };
 
-export type MaintenanceItemFormRemindersStep = {
-  kind: 'reminders';
-  id: 'reminders';
-  label: string;
-};
-
 export type MaintenanceItemFormPreviewStep = {
   kind: 'preview';
   id: 'preview';
@@ -17,20 +11,12 @@ export type MaintenanceItemFormPreviewStep = {
 };
 
 export type MaintenanceItemFormStep =
-  | MaintenanceItemFormDetailsStep
-  | MaintenanceItemFormRemindersStep
-  | MaintenanceItemFormPreviewStep;
+  MaintenanceItemFormDetailsStep | MaintenanceItemFormPreviewStep;
 
 const DETAILS_STEP: MaintenanceItemFormDetailsStep = {
   kind: 'details',
   id: 'details',
   label: 'Details',
-};
-
-const REMINDERS_STEP: MaintenanceItemFormRemindersStep = {
-  kind: 'reminders',
-  id: 'reminders',
-  label: 'Reminders',
 };
 
 const PREVIEW_STEP: MaintenanceItemFormPreviewStep = {
@@ -40,11 +26,13 @@ const PREVIEW_STEP: MaintenanceItemFormPreviewStep = {
 };
 
 /**
- * Wizard steps for create/edit maintenance reminder.
- * Details → Reminders (repeat + Telegram) → Preview
+ * Wizard steps for create/edit maintenance reminder: Details → Preview.
+ *
+ * The repeat + Telegram controls live in Details. They used to own a second step with two
+ * controls, which added a tap (and a large empty panel) without adding clarity.
  */
 export function buildMaintenanceItemFormSteps(): MaintenanceItemFormStep[] {
-  return [DETAILS_STEP, REMINDERS_STEP, PREVIEW_STEP];
+  return [DETAILS_STEP, PREVIEW_STEP];
 }
 
 export function maintenanceItemFormStepLabels(steps: readonly MaintenanceItemFormStep[]): string[] {
@@ -68,8 +56,11 @@ export const MAINTENANCE_ITEM_STEP_FIELDS: Record<
   MaintenanceItemFormStep['kind'],
   readonly string[]
 > = {
-  details: ['label', 'category', 'scheduled_on', 'notes'],
-  reminders: [
+  details: [
+    'label',
+    'category',
+    'scheduled_on',
+    'notes',
     'recurrence_interval',
     'recurrence_until',
     'edit_scope',

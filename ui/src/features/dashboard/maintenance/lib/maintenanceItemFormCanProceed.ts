@@ -31,12 +31,8 @@ export function canProceedMaintenanceItemFormStep(
   if (input.stepKind === 'details') {
     const label = input.label.trim();
     const category = input.category.trim();
-    return label.length > 0 && category.length > 0 && ISO_DATE.test(input.scheduledOn);
-  }
-
-  if (input.stepKind === 'reminders') {
-    if (!input.showRepeat) return true;
-    if (input.recurrenceInterval === 'none') return true;
+    if (!label || !category || !ISO_DATE.test(input.scheduledOn)) return false;
+    if (!input.showRepeat || input.recurrenceInterval === 'none') return true;
     if (!ISO_DATE.test(input.recurrenceUntil)) return false;
     return input.recurrenceUntil >= input.scheduledOn;
   }

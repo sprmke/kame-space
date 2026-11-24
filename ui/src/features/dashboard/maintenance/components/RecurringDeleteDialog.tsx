@@ -1,11 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Loader2 } from 'lucide-react';
 
-import {
-  RECURRENCE_SCOPE_OPTIONS,
-  recurrenceIntervalLabel,
-} from '@/features/dashboard/finance/lib/recurrence';
+import { RECURRENCE_SCOPE_OPTIONS } from '@/features/dashboard/finance/lib/recurrence';
 import type {
   MaintenanceItem,
   RecurrenceEditScope,
@@ -40,6 +37,11 @@ export function RecurringDeleteDialog({
 }: Props) {
   const [scope, setScope] = useState<RecurrenceEditScope>('this');
 
+  // Never carry a previous "All occurrences" choice into the next delete.
+  useEffect(() => {
+    setScope('this');
+  }, [item?.id]);
+
   if (!item) return null;
 
   const isSeries = Boolean(item.recurrence_series_id) && !singleOccurrenceOnly;
@@ -60,10 +62,7 @@ export function RecurringDeleteDialog({
           {singleOccurrenceOnly ? (
             <> on {formatIsoDate(item.scheduled_on)}?</>
           ) : isSeries ? (
-            <>
-              {' '}
-              from this {recurrenceIntervalLabel(item.recurrence_interval)?.toLowerCase()} series?
-            </>
+            <> from this series?</>
           ) : (
             '?'
           )}

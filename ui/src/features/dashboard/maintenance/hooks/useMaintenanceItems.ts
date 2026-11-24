@@ -104,7 +104,7 @@ export function useMaintenanceItemMutations(query: MaintenanceQuery) {
       toast.success(
         result.created_count > 1
           ? `${result.created_count} recurring reminders created`
-          : 'Reminder saved'
+          : 'Reminder added'
       );
       if (result.created_count === 1 && itemMatchesQuery(result.row, query)) {
         qc.setQueryData<MaintenanceItem[]>(listKey, (current) => {
@@ -146,6 +146,55 @@ export function useMaintenanceItemMutations(query: MaintenanceQuery) {
     onError: (e: Error) => toast.error(maintenanceMutationErrorMessage(e)),
   });
 
+  /**
+   * Quick complete / reopen from the list. The API requires label + category on every
+   * PATCH, so we send the row's current values and flip `marked_complete` only. Telegram
+   * fields are omitted on purpose so the server preserves them.
+   */
+  const setDone = useMutation({
+    mutationFn: ({ item, done }: { item: MaintenanceItem; done: boolean }) =>
+      updateMaintenanceItemApi(
+        item.id,
+        { label: item.label, category: item.category ?? '', marked_complete: done },
+        'this',
+        propertyId
+      ),
+    onSuccess: async (result, { item, done }) => {
+      qc.setQueryData<MaintenanceItem[]>(
+        listKey,
+        (current) => current?.map((row) => (row.id === result.row.id ? result.row : row)) ?? current
+      );
+      if (done) {
+        toast.success('Marked done', {
+          action: { label: 'Undo', onClick: () => void reopen(item) },
+        });
+      } else {
+        toast.success('Reminder reopened');
+      }
+      await refreshMaintenanceCaches(qc, propertyId, query);
+    },
+    onError: (e: Error) => toast.error(maintenanceMutationErrorMessage(e)),
+  });
+
+  async function reopen(item: MaintenanceItem) {
+    try {
+      const result = await updateMaintenanceItemApi(
+        item.id,
+        { label: item.label, category: item.category ?? '', marked_complete: false },
+        'this',
+        propertyId
+      );
+      qc.setQueryData<MaintenanceItem[]>(
+        listKey,
+        (current) => current?.map((row) => (row.id === result.row.id ? result.row : row)) ?? current
+      );
+      toast.success('Reminder reopened');
+      await refreshMaintenanceCaches(qc, propertyId, query);
+    } catch (e) {
+      toast.error(maintenanceMutationErrorMessage(e as Error));
+    }
+  }
+
   const remove = useMutation({
     mutationFn: ({ id, scope }: { id: string; scope?: RecurrenceEditScope }) =>
       deleteMaintenanceItemApi(id, scope, propertyId),
@@ -163,7 +212,7 @@ export function useMaintenanceItemMutations(query: MaintenanceQuery) {
     onError: (e: Error) => toast.error(friendlyToastError(e, 'Could not delete reminder')),
   });
 
-  return { create, update, remove };
+  return { create, update, remove, setDone };
 }
 
 export function useRecurringSeries(seriesId: string | null) {

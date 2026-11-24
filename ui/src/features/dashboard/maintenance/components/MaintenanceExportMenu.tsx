@@ -7,6 +7,10 @@ import {
   fetchMaintenanceItems,
   fetchMaintenanceSummary,
 } from '@/features/dashboard/maintenance/hooks/useMaintenanceApi';
+import {
+  filterMaintenanceItems,
+  sortMaintenanceItems,
+} from '@/features/dashboard/maintenance/lib/maintenanceReminders';
 import type {
   MaintenanceExportType,
   MaintenanceItem,
@@ -90,13 +94,17 @@ export function MaintenanceExportMenu({
     try {
       const needsItems = type === 'reminders' || type === 'combined';
 
-      const [{ downloadMaintenanceReportPdf }, summary, items] = await Promise.all([
+      const [{ downloadMaintenanceReportPdf }, summary, rawItems] = await Promise.all([
         import('@/features/dashboard/maintenance/lib/exportPdf'),
         cachedSummary ?? fetchMaintenanceSummary(query, propertyId),
         needsItems
           ? (cachedItems ?? fetchMaintenanceItems(query, { includeDueInRange: true }, propertyId))
           : Promise.resolve([]),
       ]);
+
+      // Status/category/Telegram filters are client-side, so the page's rows are not
+      // filtered. Apply the same filter and sort the list is showing.
+      const items = sortMaintenanceItems(filterMaintenanceItems(rawItems, query), query.sort);
 
       await downloadMaintenanceReportPdf(
         {

@@ -5,10 +5,13 @@ import type {
   MaintenanceRemindersSort,
 } from '@/features/dashboard/maintenance/lib/types';
 
+import { manilaTodayIso } from '@/lib/date/manilaPeriod';
+
 export const MAINTENANCE_STATUS_OPTIONS: {
   value: MaintenanceReminderStatus;
   label: string;
 }[] = [
+  { value: 'overdue', label: 'Overdue' },
   { value: 'pending', label: 'Pending' },
   { value: 'completed', label: 'Completed' },
 ];
@@ -17,14 +20,23 @@ export const MAINTENANCE_SORT_OPTIONS: {
   value: MaintenanceRemindersSort;
   label: string;
 }[] = [
+  { value: 'date:asc', label: 'Due soonest' },
   { value: 'date:desc', label: 'Newest scheduled' },
-  { value: 'date:asc', label: 'Oldest scheduled' },
   { value: 'label:asc', label: 'Label A–Z' },
   { value: 'label:desc', label: 'Label Z–A' },
 ];
 
-export function maintenanceReminderStatus(item: MaintenanceItem): MaintenanceReminderStatus {
-  return item.completed_at ? 'completed' : 'pending';
+/**
+ * Completed wins over overdue: a task finished late is done, not still late.
+ * `todayIso` is injectable so tests do not depend on the wall clock.
+ */
+export function maintenanceReminderStatus(
+  item: MaintenanceItem,
+  todayIso: string = manilaTodayIso()
+): MaintenanceReminderStatus {
+  if (item.completed_at) return 'completed';
+  if (item.scheduled_on < todayIso) return 'overdue';
+  return 'pending';
 }
 
 export function collectMaintenanceCategories(items: MaintenanceItem[]): string[] {
@@ -38,11 +50,12 @@ export function collectMaintenanceCategories(items: MaintenanceItem[]): string[]
 
 export function filterMaintenanceItems(
   items: MaintenanceItem[],
-  query: MaintenanceQuery
+  query: MaintenanceQuery,
+  todayIso: string = manilaTodayIso()
 ): MaintenanceItem[] {
   return items.filter((item) => {
     if (query.statusFilter.length > 0) {
-      const status = maintenanceReminderStatus(item);
+      const status = maintenanceReminderStatus(item, todayIso);
       if (!query.statusFilter.includes(status)) return false;
     }
     if (query.categoryFilter.length > 0) {
@@ -59,6 +72,10 @@ export function filterMaintenanceItems(
   });
 }
 
+/**
+ * "Due soonest" is overdue first, then today, then upcoming. Ties fall back to label so
+ * equal dates never shuffle between renders because the API returned them in another order.
+ */
 export function sortMaintenanceItems(
   items: MaintenanceItem[],
   sort: MaintenanceRemindersSort
@@ -67,9 +84,9 @@ export function sortMaintenanceItems(
   rows.sort((a, b) => {
     switch (sort) {
       case 'date:asc':
-        return a.scheduled_on.localeCompare(b.scheduled_on);
+        return a.scheduled_on.localeCompare(b.scheduled_on) || a.label.localeCompare(b.label);
       case 'date:desc':
-        return b.scheduled_on.localeCompare(a.scheduled_on);
+        return b.scheduled_on.localeCompare(a.scheduled_on) || a.label.localeCompare(b.label);
       case 'label:asc':
         return a.label.localeCompare(b.label);
       case 'label:desc':

@@ -84,7 +84,6 @@
     "ui/src/features/dashboard/lib/storedMediaDisplay.ts",
     "ui/src/features/dashboard/maintenance/lib/maintenancePeriod.ts",
     "ui/src/features/dashboard/maintenance/lib/maintenanceReminderTemplate.ts",
-    "ui/src/features/dashboard/maintenance/lib/maintenanceReminders.ts",
     "ui/src/features/dashboard/marketing/lib/calendarAiGenerateOptions.ts",
     "ui/src/features/dashboard/marketing/lib/calendarAutosave.ts",
     "ui/src/features/dashboard/marketing/lib/calendarBrandColors.ts",

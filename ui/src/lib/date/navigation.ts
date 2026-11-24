@@ -34,6 +34,8 @@ export interface DateNavigationState {
   datePreset: DatePreset;
   setDatePreset: (preset: DatePreset) => void;
   setDateRange: (range: DateRange) => void;
+  /** Clear the applied range and switch to All dates. */
+  clearDateRange: () => void;
   navigatePeriod: (direction: 'prev' | 'next') => void;
   goToToday: () => void;
 }

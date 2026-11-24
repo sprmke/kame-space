@@ -15,12 +15,12 @@ const base = {
 
 describe('canProceedMaintenanceItemFormStep', () => {
   it('blocks details when label or category is empty', () => {
-    expect(
-      canProceedMaintenanceItemFormStep({ ...base, stepKind: 'details', label: '  ' })
-    ).toBe(false);
-    expect(
-      canProceedMaintenanceItemFormStep({ ...base, stepKind: 'details', category: '' })
-    ).toBe(false);
+    expect(canProceedMaintenanceItemFormStep({ ...base, stepKind: 'details', label: '  ' })).toBe(
+      false
+    );
+    expect(canProceedMaintenanceItemFormStep({ ...base, stepKind: 'details', category: '' })).toBe(
+      false
+    );
     expect(canProceedMaintenanceItemFormStep({ ...base, stepKind: 'details' })).toBe(true);
   });
 
@@ -34,11 +34,11 @@ describe('canProceedMaintenanceItemFormStep', () => {
     ).toBe(false);
   });
 
-  it('requires end date when repeating', () => {
+  it('requires an end date on or after the start when repeating', () => {
     expect(
       canProceedMaintenanceItemFormStep({
         ...base,
-        stepKind: 'reminders',
+        stepKind: 'details',
         recurrenceInterval: 'monthly',
         recurrenceUntil: '',
       })
@@ -46,7 +46,7 @@ describe('canProceedMaintenanceItemFormStep', () => {
     expect(
       canProceedMaintenanceItemFormStep({
         ...base,
-        stepKind: 'reminders',
+        stepKind: 'details',
         recurrenceInterval: 'monthly',
         recurrenceUntil: '2026-10-01',
       })
@@ -54,9 +54,29 @@ describe('canProceedMaintenanceItemFormStep', () => {
     expect(
       canProceedMaintenanceItemFormStep({
         ...base,
-        stepKind: 'reminders',
+        stepKind: 'details',
         recurrenceInterval: 'monthly',
         recurrenceUntil: '2027-01-01',
+      })
+    ).toBe(true);
+  });
+
+  it('skips repeat validation when repeat is hidden or off', () => {
+    expect(
+      canProceedMaintenanceItemFormStep({
+        ...base,
+        stepKind: 'details',
+        showRepeat: false,
+        recurrenceInterval: 'monthly',
+        recurrenceUntil: '',
+      })
+    ).toBe(true);
+    expect(
+      canProceedMaintenanceItemFormStep({
+        ...base,
+        stepKind: 'details',
+        recurrenceInterval: 'none',
+        recurrenceUntil: '',
       })
     ).toBe(true);
   });
