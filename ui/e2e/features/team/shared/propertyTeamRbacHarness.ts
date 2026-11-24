@@ -209,6 +209,7 @@ export const teamRbacPaths = {
   settings: `/org/${TEAM_E2E_ORG_SLUG}/property/${TEAM_E2E_PROPERTY_SLUG}/settings`,
   team: `/org/${TEAM_E2E_ORG_SLUG}/property/${TEAM_E2E_PROPERTY_SLUG}/team`,
   publicPages: `/org/${TEAM_E2E_ORG_SLUG}/property/${TEAM_E2E_PROPERTY_SLUG}/public-pages`,
+  maintenance: `/org/${TEAM_E2E_ORG_SLUG}/property/${TEAM_E2E_PROPERTY_SLUG}/maintenance`,
   activity: `/org/${TEAM_E2E_ORG_SLUG}/property/${TEAM_E2E_PROPERTY_SLUG}/activity`,
 } as const;
 
@@ -1722,8 +1723,12 @@ export async function installPropertyTeamRbacMocks(
         await fulfillJson(route, {
           success: true,
           data: {
-            period: { basis: 'due_date', from: null, to: null },
-            totals: { open: 0, overdue: 0, completed: 0, upcoming: 0 },
+            period: { from: null, to: null },
+            total: 0,
+            telegramEnabled: 0,
+            completed: 0,
+            pending: 0,
+            byCategory: [],
           },
         });
         return;

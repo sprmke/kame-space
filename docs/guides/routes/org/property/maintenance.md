@@ -131,11 +131,15 @@ The guest AI receptionist (web/Meta auto-reply, host Suggest) can file a reminde
 
 ## Testing
 
-| Layer | Path / spec                                                                         | Manual |
-| ----- | ----------------------------------------------------------------------------------- | ------ |
-| Unit  | `maintenanceItemFormSteps.test.ts`; recurrence helpers mirror finance               | —      |
-| E2E   | `ui/e2e/features/dashboard/dashboardModulesSmoke.spec.ts` maintenance shell (`@ci`) | —      |
-| N/A   | PDF export layout checks                                                            | Manual |
+| Layer | Path / spec                                                                                                                                                                   | Manual |
+| ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| Unit  | `maintenanceItemFormSteps.test.ts`; recurrence helpers mirror finance                                                                                                         | —      |
+| E2E   | `ui/e2e/features/dashboard/maintenanceWorkspace.spec.ts` (`@ci`) — KPI, filter, wizard POST, edit done state, delete scopes, RBAC, empty state, phone card view, PDF download | —      |
+| Demo  | `ui/e2e/features/dashboard/maintenance/maintenanceTour.slowmo.spec.ts` (`@demo`) — slow-motion walkthrough + video                                                            | —      |
+| N/A   | PDF layout checks                                                                                                                                                             | Manual |
+
+Full UX/a11y audit, findings and recorded walkthroughs:
+[`docs/workflow/qa/property-dashboard/06-maintenance.md`](../../../../workflow/qa/property-dashboard/06-maintenance.md).
 
 ---
 
