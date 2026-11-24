@@ -35,7 +35,7 @@ Routes:
 
 Browse and view rental listings. Ported from PMA `features/marketing/properties/**`. Uses **`MarketingLayoutShell`**.
 
-**Reserve / booking:** `BookingCard` and mobile sticky **Reserve** call **`usePropertyReserve`**. With check-in and check-out selected, **Reserve** runs **`requireGuestAuth`** when anonymous (same as Contact host), then opens **`GuestBookingFormModal`** on the listing — the same reusable **`GuestForm`** as `/properties/:propertySlug/form`, seeded with the selected dates (no page navigation). OAuth return uses `?reserveForm=open` (+ dates/guests). Without dates, opens the booking calendar modal first (desktop + mobile). After a full range is selected in **`BookingCalendarModal`**, **Continue** closes the calendar and opens the guest form modal (same auth/resume path as **Reserve**). Listing modals (calendar, guest form, house rules, amenities) share **`GuestDialogShell`** (header + optional action footer with separators). Direct `/form` links and calendar **Book Now** navigate to the standalone form page, which opens **`GuestAuthModal`** on entry when anonymous (same as **`/messages`**).
+**Reserve / booking:** `BookingCard` and mobile sticky **Reserve** call **`usePropertyReserve`**. With check-in and check-out selected, **Reserve** runs **`requireGuestAuth`** when anonymous (same as Contact host), then opens **`GuestBookingFormModal`** on the listing — the same reusable **`GuestForm`** as `/properties/:propertySlug/form`, seeded with the selected dates (no page navigation). The modal header carries the compact step position (`Guest · 1 of 5`, from `GuestFormEmbedNav.currentTitle` / `currentIndex`), so the sheet and the full page tell the same story. OAuth return uses `?reserveForm=open` (+ dates/guests). Without dates, opens the booking calendar modal first (desktop + mobile); its primary CTA is **disabled until a full range is picked** and renders on the neutral disabled surface, not the brand gradient. After a full range is selected in **`BookingCalendarModal`**, **Continue** closes the calendar and opens the guest form modal (same auth/resume path as **Reserve**). Listing modals (calendar, guest form, house rules, amenities) share **`GuestDialogShell`** (header + optional action footer with separators). Direct `/form` links and calendar **Book Now** navigate to the standalone form page, which opens **`GuestAuthModal`** on entry when anonymous (same as **`/messages`**).
 
 **Contact host:** **`ListingHostCard`** → auth if needed → **`ContactHostSheet`** centered modal (text thread + **Talk to receptionist** when enabled). See **[chat.md](./properties/chat.md)**.
 
@@ -247,11 +247,12 @@ JSON-LD.
 
 ## Testing
 
-| Layer | Path / spec                                                                             | Manual |
-| ----- | --------------------------------------------------------------------------------------- | ------ |
-| Unit  | Amenity/facet helpers when pure                                                         | —      |
-| E2E   | `ui/e2e/features/public/publicPagesSmoke.spec.ts` list + detail mock (`@smoke` / `@ci`) | —      |
-| N/A   | —                                                                                       | —      |
+| Layer | Path / spec                                                                                                  | Manual |
+| ----- | ------------------------------------------------------------------------------------------------------------ | ------ |
+| Unit  | Amenity/facet helpers when pure                                                                              | —      |
+| E2E   | `ui/e2e/features/public/publicPagesSmoke.spec.ts` list + detail mock (`@smoke` / `@ci`)                      | —      |
+| E2E   | `ui/e2e/features/guest-form/guestJourneyEndToEnd.spec.ts` — listing → reservation sheet (`@smoke @critical`) | —      |
+| N/A   | —                                                                                                            | —      |
 
 ---
 

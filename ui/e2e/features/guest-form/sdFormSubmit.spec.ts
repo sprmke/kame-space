@@ -43,7 +43,7 @@ test.describe('@ci @critical sd form submit smoke', () => {
     );
 
     await page.goto(`/properties/solea-mactan/sd-form?bookingId=${BOOKING_ID}`);
-    await expect(page.getByRole('heading', { name: 'SD Refund Form' })).toBeVisible({
+    await expect(page.getByRole('heading', { name: 'Security deposit refund' })).toBeVisible({
       timeout: 20_000,
     });
     await expect(page.getByText('Maria Santos')).toBeVisible();

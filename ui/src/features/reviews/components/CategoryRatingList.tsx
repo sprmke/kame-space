@@ -37,7 +37,7 @@ export function CategoryRatingList({ value, onChange, disabled }: CategoryRating
             value={value[id] ?? 0}
             onChange={(rating) => setRating(id, rating)}
             disabled={disabled}
-            className="-ml-3 shrink-0 sm:ml-0"
+            className="shrink-0 sm:ml-0"
             ariaLabel={`${GUEST_REVIEW_CATEGORY_LABELS[id]} rating`}
           />
         </div>

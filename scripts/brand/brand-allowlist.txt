@@ -55,6 +55,8 @@ supabase/functions/tests/assistantParity*.ts  # local seed tenant
 supabase/functions/tests/reviewsLifecycleLocal.integration_test.ts  # local seed tenant
 ui/e2e/features/assistant/shared/assistantLiveLocalHarness.ts  # local seed tenant
 ui/e2e/features/parking/shared/parkingLiveLocalHarness.ts  # local seed tenant
+ui/e2e/features/guest-form/guestFlowVisualCapture.spec.ts  # local seed tenant (capture harness)
+docs/workflow/in-progress/guest-flow-ux-audit/README.md  # audit quotes the seed slugs
 
 # K-12 legacy redirect / slug fixtures
 ui/vercel.json  # legacy slug redirect destinations

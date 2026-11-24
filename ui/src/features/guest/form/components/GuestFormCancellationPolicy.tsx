@@ -94,15 +94,19 @@ export function GuestFormCancellationPolicy({
       ) : null}
 
       {showAgreement ? (
-        <label className="border-border/70 mt-4 flex items-start gap-3 border-t pt-4 text-sm">
+        <label className="border-border/70 mt-4 flex min-h-[44px] items-start gap-3 border-t pt-4 text-sm">
           <Checkbox
             checked={accepted}
             onCheckedChange={(checked) => onAcceptedChange(checked === true)}
             aria-describedby="cancellation-agreement-hint"
+            className="mt-0.5 size-5"
           />
           <span>
             <span className="block font-medium">I agree to the cancellation policy</span>
-            <span id="cancellation-agreement-hint" className="text-muted-foreground mt-0.5 block text-xs">
+            <span
+              id="cancellation-agreement-hint"
+              className="text-muted-foreground mt-0.5 block text-xs"
+            >
               This is the policy that applies to this booking.
             </span>
           </span>

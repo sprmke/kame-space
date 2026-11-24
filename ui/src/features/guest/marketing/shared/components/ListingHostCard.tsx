@@ -63,7 +63,7 @@ export function ListingHostCard({ host, motionDelay = 0.2, className, onContactH
 
       <div className="min-w-0 flex-1">
         <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
-          <p className="text-foreground min-w-0 truncate text-sm font-semibold sm:text-base">
+          <p className="text-foreground min-w-0 break-words text-sm font-semibold sm:text-base">
             Hosted by{' '}
             {orgHref ? (
               <Link to={orgHref} className="underline-offset-2 hover:underline">

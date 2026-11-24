@@ -58,7 +58,7 @@ export function SearchResultsTabs({ active, totals, onChange, focus = null }: Pr
     <div
       role="tablist"
       aria-label="Result types"
-      className="scrollbar-hide -mx-1 flex gap-2 overflow-x-auto px-1"
+      className="scrollbar-hide -mx-1 flex gap-2 overflow-x-auto px-1 pr-6"
     >
       {tabs.map((tab) => {
         const selected = tab.id === active;

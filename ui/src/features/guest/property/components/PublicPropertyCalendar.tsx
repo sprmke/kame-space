@@ -208,6 +208,16 @@ export function PublicPropertyCalendar({
 
   const showFooter = !compact && showDateSummary;
 
+  /*
+   * "Why are half the numbers pale?" was the most common guest question on this screen.
+   * Show the key only when the month actually has a booked night to explain.
+   */
+  const hasBookedThisMonth =
+    !isLoading &&
+    Array.from({ length: calendarData.daysInMonth }, (_, i) => i + 1).some(
+      (day) => getDayState(day) === 'booked'
+    );
+
   const emptyCellClass = cn(
     compact && 'aspect-square max-h-14',
     embedded && 'aspect-square w-full',
@@ -283,6 +293,28 @@ export function PublicPropertyCalendar({
           </button>
         </div>
       </div>
+
+      {!isCustom && hasBookedThisMonth ? (
+        <ul
+          className={cn(
+            'text-muted-foreground mb-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px]',
+            compact ? 'mb-2' : 'mb-3'
+          )}
+          aria-label="Calendar legend"
+        >
+          <li className="flex items-center gap-1.5">
+            <span
+              className="bg-primary/15 border-primary/40 size-2.5 shrink-0 rounded-full border"
+              aria-hidden
+            />
+            Available
+          </li>
+          <li className="flex items-center gap-1.5">
+            <span className="bg-muted-foreground/25 size-2.5 shrink-0 rounded-full" aria-hidden />
+            <span className="line-through">Booked</span>
+          </li>
+        </ul>
+      ) : null}
 
       <div className="mb-1 grid grid-cols-7">
         {DAY_NAMES.map((name) => (

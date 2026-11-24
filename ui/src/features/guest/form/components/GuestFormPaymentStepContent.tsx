@@ -120,6 +120,8 @@ function PaymentMethodCard({ method }: { method: GuestPaymentMethod }) {
 type Props = {
   form: UseFormReturn<GuestFormData>;
   estimatedStayPhp?: number | null;
+  /** Refundable security deposit from the listing, shown before the guest pays. */
+  securityDepositPhp?: number | null;
   voucherDiscountPhp?: number;
   voucherLabel?: string | null;
 };
@@ -131,6 +133,7 @@ function nightLabel(count: number): string {
 export function GuestFormPaymentStepContent({
   form,
   estimatedStayPhp,
+  securityDepositPhp,
   voucherDiscountPhp = 0,
   voucherLabel,
 }: Props) {
@@ -172,27 +175,45 @@ export function GuestFormPaymentStepContent({
       >
         <p className="text-foreground font-semibold">Payment breakdown</p>
         <dl className="text-muted-foreground space-y-2">
-          <div className="flex items-start justify-between gap-3">
-            <dt>
-              Downpayment
-              <span className="mt-0.5 block text-xs">{nightLabel(breakdown.stayNights)} stay</span>
-            </dt>
-            <dd className="text-foreground shrink-0 font-medium tabular-nums">
-              {formatMoney(breakdown.downPayment)}
-            </dd>
-          </div>
-          {estimatedStayPhp != null && voucherLabel && voucherDiscountPhp > 0 ? (
-            <div className="border-primary/15 space-y-1 border-t pt-2">
-              <div className="flex justify-between gap-3">
-                <dt>Estimated stay</dt>
-                <dd className="tabular-nums">{formatMoney(estimatedStayPhp)}</dd>
-              </div>
-              <div className="flex justify-between gap-3 text-emerald-700 dark:text-emerald-300">
-                <dt>{voucherLabel}</dt>
-                <dd className="tabular-nums">−{formatMoney(voucherDiscountPhp)}</dd>
-              </div>
+          {estimatedStayPhp != null ? (
+            <div className="flex items-start justify-between gap-3">
+              <dt>
+                Estimated stay
+                <span className="mt-0.5 block text-xs">{nightLabel(breakdown.stayNights)}</span>
+              </dt>
+              <dd className="text-foreground shrink-0 font-medium tabular-nums">
+                {formatMoney(estimatedStayPhp)}
+              </dd>
             </div>
           ) : null}
+          {securityDepositPhp != null && securityDepositPhp > 0 ? (
+            <div className="flex items-start justify-between gap-3">
+              <dt>
+                Security deposit
+                <span className="mt-0.5 block text-xs">Refundable after check-out</span>
+              </dt>
+              <dd className="text-foreground shrink-0 font-medium tabular-nums">
+                {formatMoney(securityDepositPhp)}
+              </dd>
+            </div>
+          ) : null}
+          {voucherLabel && voucherDiscountPhp > 0 ? (
+            <div className="flex justify-between gap-3 text-emerald-700 dark:text-emerald-300">
+              <dt>{voucherLabel}</dt>
+              <dd className="tabular-nums">−{formatMoney(voucherDiscountPhp)}</dd>
+            </div>
+          ) : null}
+          <div className="border-primary/15 border-t pt-2">
+            <div className="flex items-start justify-between gap-3">
+              <dt>
+                Downpayment
+                <span className="mt-0.5 block text-xs">Pay this now to hold your dates</span>
+              </dt>
+              <dd className="text-foreground shrink-0 font-medium tabular-nums">
+                {formatMoney(breakdown.downPayment)}
+              </dd>
+            </div>
+          </div>
           <div className="border-primary/15 flex items-center justify-between gap-3 border-t pt-2">
             <dt className="text-foreground font-semibold">Total due now</dt>
             <dd className="text-primary text-base font-bold tabular-nums tracking-tight sm:text-lg">
@@ -200,6 +221,10 @@ export function GuestFormPaymentStepContent({
             </dd>
           </div>
         </dl>
+        <p className="text-muted-foreground border-primary/15 border-t pt-2 text-xs leading-relaxed">
+          Your host confirms the final stay total and the balance due on arrival after reviewing
+          your request.
+        </p>
       </div>
 
       <div className="space-y-4">

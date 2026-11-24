@@ -215,6 +215,10 @@ const apiUrl = import.meta.env.VITE_API_URL;
 /** Step actions lifted into a host footer (e.g. GuestDialogShell). */
 export type GuestFormEmbedNav = {
   currentStep: GuestFormStepId;
+  /** 1-based position among the steps this property actually shows. */
+  currentIndex: number;
+  /** Title of the current step ("Guest", "Stay", ...). */
+  currentTitle: string;
   stepCount: number;
   isSubmitting: boolean;
   canProceed: boolean;
@@ -505,8 +509,17 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
           JSON.stringify((form.getValues() as Record<string, unknown>)[key])
       );
       if (!differing) return;
+      const savedAt = new Intl.DateTimeFormat('en-PH', {
+        timeZone: 'Asia/Manila',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+      }).format(new Date(draft.savedAt));
+      // Bottom placement keeps the phone header and the listing identity visible behind it.
       toast('Continue where you left off?', {
-        description: `Saved ${new Date(draft.savedAt).toLocaleString()}`,
+        position: 'bottom-center',
+        description: `Saved ${savedAt}`,
         duration: 15000,
         action: {
           label: 'Restore',
@@ -1560,8 +1573,17 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
     return () => window.clearTimeout(timer);
   }, [currentStep]);
 
+  /**
+   * The last step's Submit stays disabled until the guest ticks the cancellation agreement,
+   * so a click never silently does nothing.
+   */
+  const agreementRequired = Boolean(
+    !bookingId && !isCompletionMode && publicProperty && !publicProperty.cancellationPolicy.unset
+  );
+  const submitUnlocked = submitReady && (!agreementRequired || cancellationAccepted);
+
   const handleSubmitGuestForm = () => {
-    if (!submitReady || isSubmitting || !canProceed) return;
+    if (!submitUnlocked || isSubmitting || !canProceed) return;
     if (skipAuthGate) {
       pendingSubmitAfterAuthRef.current = false;
       void form.handleSubmit(onSubmit)();
@@ -1587,10 +1609,12 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
     const show = !bookingId || guestCanUpdate;
     report({
       currentStep,
+      currentIndex: currentStep,
+      currentTitle: guestFormSteps[currentStep - 1]?.title ?? '',
       stepCount: guestFormStepCount,
       isSubmitting,
       canProceed,
-      submitReady,
+      submitReady: submitUnlocked,
       show,
       onBack: handleBackStep,
       onNext: () => {
@@ -1602,10 +1626,11 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
     bookingId,
     guestCanUpdate,
     currentStep,
+    guestFormSteps,
     guestFormStepCount,
     isSubmitting,
     canProceed,
-    submitReady,
+    submitUnlocked,
     onNavChange,
   ]);
 
@@ -2681,6 +2706,7 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
                     <GuestFormPaymentStepContent
                       form={form}
                       estimatedStayPhp={estimatedStayPhp}
+                      securityDepositPhp={publicProperty?.pricing?.securityDeposit ?? null}
                       voucherDiscountPhp={estimatedVoucherDiscount}
                       voucherLabel={
                         selectedVoucher
@@ -2923,7 +2949,7 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
                 stepCount={guestFormStepCount}
                 isSubmitting={isSubmitting}
                 canProceed={canProceed}
-                submitReady={submitReady}
+                submitReady={submitUnlocked}
                 onBack={handleBackStep}
                 onNext={handleNextStep}
                 onSubmit={handleSubmitGuestForm}

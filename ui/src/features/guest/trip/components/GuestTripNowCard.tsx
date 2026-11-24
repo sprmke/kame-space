@@ -47,7 +47,9 @@ function ProgressSegments({ done, active }: { done: number; active: number }) {
                 <motion.span
                   className={cn(
                     'absolute inset-y-0 left-0 rounded-full',
-                    filled ? 'bg-primary w-full' : 'bg-primary/45 w-1/2'
+                    // Done = solid, current step = full width at lower opacity so the bar
+                    // matches the "Step N of M" caption instead of reading as N-1.5.
+                    filled ? 'bg-primary w-full' : 'bg-primary/45 w-full'
                   )}
                   style={{ originX: 0 }}
                   initial={reduceMotion ? false : { scaleX: 0 }}
@@ -98,6 +100,15 @@ function ChecklistRow({ item, index }: { item: GuestTripChecklistItem; index: nu
         <span className={cn('min-w-0 flex-1', item.done ? 'text-muted-foreground' : 'font-medium')}>
           <span className="sr-only">{item.done ? 'Done: ' : 'To do: '}</span>
           {item.label}
+        </span>
+        <span
+          className={cn(
+            'shrink-0 text-[11px] font-semibold',
+            item.done ? 'text-muted-foreground' : 'text-primary'
+          )}
+          aria-hidden
+        >
+          {item.done ? 'Done' : 'To do'}
         </span>
         <ChevronRight className="text-muted-foreground size-4 shrink-0" aria-hidden />
       </GuestTripSmartLink>
@@ -188,7 +199,9 @@ export function GuestTripNowCard({
           <Button asChild size="lg" className="w-full sm:w-auto">
             <GuestTripSmartLink
               to={primary.to}
-              onClick={() => captureAppEvent('guest_next_action_clicked', { action: primary.label })}
+              onClick={() =>
+                captureAppEvent('guest_next_action_clicked', { action: primary.label })
+              }
             >
               <primary.Icon aria-hidden />
               {primary.label}

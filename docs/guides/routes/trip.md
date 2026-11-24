@@ -276,6 +276,12 @@ this route (it isn't one of the tabs).
 All state comes from one model in `guestTripPhase.ts`, so the pill, progress bar, headline,
 checklist and main button never disagree.
 
+**Progress and checklist rendering (2026-11-24).** Each of the five segments fills fully when it
+is done **or current**; the current step is drawn at 45% opacity instead of half width, so
+"Step 3 of 5" paints three segments, not two and a half. Checklist rows show a visible **Done** /
+**To do** label beside the chevron in addition to the filled or dashed circle, so the state does
+not depend on circle styling alone.
+
 ### Phase
 
 - **Listing state:** the trip portal, documents, cancellation, refunds, and chat keep working when the
