@@ -551,6 +551,7 @@ export default defineConfig({
             './src/features/dashboard/bookings/pages/BookingsListPage.tsx',
             './src/features/dashboard/bookings/components/AdminLayout.tsx',
             './src/features/dashboard/org/components/OrgAdminShell.tsx',
+            './src/features/dashboard/org/pages/OrgPropertiesPage.tsx',
             './src/features/dashboard/org/components/PropertyAdminShell.tsx',
             // Shard 3 opens the parking pages first, so they are the cold compile there.
             './src/features/dashboard/parking/pages/ParkingFinancePage.tsx',

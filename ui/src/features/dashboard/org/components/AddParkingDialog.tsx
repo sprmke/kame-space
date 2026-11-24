@@ -10,7 +10,7 @@ type Props = {
   onCreated?: (parking: Parking) => void;
 };
 
-/** @deprecated Prefer AddEntityDialog — kept for org parkings page entry point */
+/** Parking-only entry point for the Parkings page. */
 export function AddParkingDialog({
   open,
   onOpenChange,

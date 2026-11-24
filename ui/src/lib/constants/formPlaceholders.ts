@@ -18,7 +18,7 @@ export const FORM_PLACEHOLDERS = {
   airbnbListing: 'https://airbnb.com/rooms/your-listing',
   instagramProfile: 'https://instagram.com/your-page',
   tiktokProfile: 'https://tiktok.com/@your-page',
-  unitNumber: '2604',
+  unitNumber: 'Ex. 1204',
   bookingRate: '2500',
   downPayment: '1500',
   securityDeposit: '1500',

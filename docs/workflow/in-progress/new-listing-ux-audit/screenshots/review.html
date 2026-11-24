@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>New listing — before / after</title>
+    <style>
+      :root {
+        --teal: #2daa97;
+        --ink: #0f172a;
+        --muted: #64748b;
+        --line: #e2e8f0;
+        --bg: #f6f8fa;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font:
+          14px/1.5 'Plus Jakarta Sans',
+          system-ui,
+          -apple-system,
+          sans-serif;
+      }
+      header {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 20px;
+        background: #fff;
+        border-bottom: 1px solid var(--line);
+      }
+      h1 {
+        margin: 0;
+        font-size: 18px;
+      }
+      .sub {
+        margin: 2px 0 0;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .actions {
+        display: flex;
+        gap: 8px;
+      }
+      button {
+        cursor: pointer;
+        border: 1px solid var(--line);
+        background: #fff;
+        color: var(--ink);
+        border-radius: 999px;
+        padding: 7px 13px;
+        font: inherit;
+        font-weight: 600;
+      }
+      button[aria-pressed='true'] {
+        border-color: var(--teal);
+        background: #e8f7f4;
+        color: #10695d;
+      }
+      main {
+        display: grid;
+        gap: 18px;
+        padding: 20px;
+        max-width: 1500px;
+        margin: 0 auto;
+      }
+      .card {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        overflow: hidden;
+      }
+      .card-head {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--line);
+      }
+      .card-head h2 {
+        margin: 0;
+        font-size: 13px;
+      }
+      .note {
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .frame {
+        background: #eef2f5;
+        padding: 10px;
+      }
+      img {
+        display: block;
+        width: 100%;
+        height: auto;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        background: #fff;
+      }
+      .pair {
+        display: grid;
+        gap: 10px;
+      }
+      @media (min-width: 1100px) {
+        .pair.split {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      footer {
+        padding: 8px 20px 40px;
+        color: var(--muted);
+        font-size: 12px;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div>
+        <h1>New listing — before / after</h1>
+        <p class="sub">
+          Property and parking creation, 1440 / 1024 / 768 / 390. Click a card to flip.
+        </p>
+      </div>
+      <div class="actions">
+        <button type="button" data-all="before" aria-pressed="false">All before</button>
+        <button type="button" data-all="after" aria-pressed="true">All after</button>
+      </div>
+    </header>
+    <main id="grid"></main>
+    <footer>
+      Before = updated main (c1cc929d6). After = feat/new-listing-ux. Captures from the mocked
+      Playwright harness, not production data.
+    </footer>
+    <script>
+      const pairs = [
+        [
+          'properties-1440',
+          'Properties inventory (desktop)',
+          'No change expected; confirms the shell',
+        ],
+        ['properties-1024', 'Properties inventory (small laptop)', 'No change expected'],
+        ['properties-768', 'Properties inventory (tablet)', 'No change expected'],
+        ['properties-390', 'Properties inventory (phone)', 'No change expected'],
+        [
+          'new-property-1440',
+          'Add property dialog',
+          'Title "Add property"; Unit reads as an example',
+        ],
+        ['new-property-1024', 'Add property at 1024', 'Same title and placeholder'],
+        ['new-property-768', 'Add property at 768', 'Bottom sheet title'],
+        ['new-property-390', 'Add property on a phone', 'Bottom sheet title and unit placeholder'],
+        [
+          'new-property-quote-error-1440',
+          'Price quote fails',
+          'Silent before; visible Retry note after',
+        ],
+        [
+          'new-property-filled-1440',
+          'Filled form with plan quote',
+          'Submit now waits for the name check',
+        ],
+        ['new-property-free-1440', 'Free plan', 'Unchanged: no plan note'],
+        ['new-property-overdue-1440', 'Overdue plan', 'Unchanged: stays on Free note'],
+        ['new-property-invalid-1440', 'Invalid unit', 'Unchanged validation'],
+        ['new-parking-1440', 'Add parking dialog', 'Title "Add parking"; slot reads as an example'],
+        ['new-parking-390', 'Add parking on a phone', 'Sheet title'],
+        ['properties-empty-1440', 'Empty inventory', 'Unchanged'],
+        ['properties-empty-390', 'Empty inventory on a phone', 'Unchanged'],
+        ['properties-read-only-1440', 'No create permission', 'Unchanged: no Add control'],
+      ];
+
+      const grid = document.getElementById('grid');
+      const cards = [];
+
+      for (const [name, title, note] of pairs) {
+        const card = document.createElement('section');
+        card.className = 'card';
+        card.innerHTML = `
+          <div class="card-head">
+            <div><h2>${title}</h2><div class="note">${note}</div></div>
+            <button type="button" class="toggle" aria-pressed="true">After</button>
+          </div>
+          <div class="frame"><img alt="${title} after" src="after/${name}.png" /></div>
+        `;
+        const img = card.querySelector('img');
+        const toggle = card.querySelector('.toggle');
+        let mode = 'after';
+        const paint = () => {
+          img.src = `${mode}/${name}.png`;
+          img.alt = `${title} ${mode}`;
+          toggle.textContent = mode === 'after' ? 'After' : 'Before';
+          toggle.setAttribute('aria-pressed', mode === 'after' ? 'true' : 'false');
+          card.dataset.mode = mode;
+        };
+        toggle.addEventListener('click', () => {
+          mode = mode === 'after' ? 'before' : 'after';
+          paint();
+        });
+        img.addEventListener('error', () => {
+          img.alt = `${title}: ${mode} image missing`;
+          img.src =
+            'data:image/svg+xml;utf8,' +
+            encodeURIComponent(
+              `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500"><rect width="100%" height="100%" fill="#f1f5f9"/><text x="50%" y="50%" fill="#94a3b8" font-family="system-ui" font-size="18" text-anchor="middle">${mode}/${name}.png missing</text></svg>`
+            );
+        });
+        paint();
+        cards.push({ card, set: (next) => ((mode = next), paint()) });
+        grid.appendChild(card);
+      }
+
+      document.querySelectorAll('[data-all]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const next = button.dataset.all;
+          document
+            .querySelectorAll('[data-all]')
+            .forEach((b) => b.setAttribute('aria-pressed', String(b === button)));
+          cards.forEach((entry) => entry.set(next));
+        });
+      });
+    </script>
+  </body>
+</html>

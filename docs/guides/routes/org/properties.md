@@ -33,7 +33,7 @@ Org-level inventory of all properties. On **phone/tablet**, uses the shared **br
 
 **Access:** Requires **`org.properties:view`** (org owner, org hub member with the leaf, platform admin). **Property-only members** (`accessKind: property_member`) cannot open org routes — `RequireOrgPermission` redirects them to an assigned property dashboard. Scoped org admins (`all_listings = false`) only see assigned properties.
 
-**Add property:** Requires **`org.properties:create`** (grantable on org templates; owners and platform admins always have it). On a paid plan the dialog shows a billing note before you create: **"Adds ₱X a month to your {plan} plan from {renewal date}. ₱Y for the rest of this period is added to your next payment."** The numbers come from the server (`preview-org-plan-change`, `kind: add_property`), so they match what is billed. The property is covered at once; the prorated share lands in the account credit ledger as a true-up. While a payment is **overdue** the note says the property stays on Free until the owner pays, and nothing is added. On Free there is no note.
+**Add property:** Requires **`org.properties:create`** (grantable on org templates; owners and platform admins always have it). The entry button says **Add property** and so does the dialog title; the umbrella **New listing** title is only used where one dialog offers both property and parking. On a paid plan the dialog shows a billing note before you create: **"Adds ₱X a month to your {plan} plan from {renewal date}. ₱Y for the rest of this period is added to your next payment."** The numbers come from the server (`preview-org-plan-change`, `kind: add_property`), so they match what is billed. The property is covered at once; the prorated share lands in the account credit ledger as a true-up. While a payment is **overdue** the note says the property stays on Free until the owner pays, and nothing is added. On Free there is no note. If the quote request fails, the note is replaced by **Could not load the plan price.** with a **Retry**, so a failed quote never looks like the Free case; creating still works and the post-create toast states what was billed. **Add property** stays disabled while the display-name availability check is in flight, so a reserved or duplicate name cannot be submitted before the check answers.
 
 **Copy settings:** Shown when the org has **at least two** properties (header button + property ⋯ menu). Server enforces per-target edit permissions and plan gates (skip + report).
 
@@ -51,6 +51,8 @@ This page is the catalog of every rental you operate under the organization. Sum
   A: Revenue and occupancy on this page use the **current calendar month** (Philippines time), not lifetime totals. Active booking counts are pipeline bookings still in progress.
 - Q: What happens to my bill when I add a property?
   A: On a paid plan the new property joins your plan right away. Before you add it, the dialog tells you the new monthly price and the share for the rest of this period, which is added to your next payment. If a payment is overdue, the property stays on Free until you pay. Archived properties are not billed.
+- Q: The price did not load while I was adding a property.
+  A: Use **Retry** in the dialog. You can still add the property; the confirmation afterwards tells you what the plan is now and what lands on your next payment.
 - Q: Why can’t I see the **Add property** button?
   A: Your org role needs permission to add properties. Owners always have it; invited members only if their template or custom permissions include it.
 - Q: How do I send a guest to book a specific unit?
@@ -139,7 +141,7 @@ Toolbar layout matches Bookings / Finance: phone uses search + refine icon + seg
 
 ## Add property
 
-**Add property** (header button, empty state, sidebar switcher **+**) → `AddPropertyDialog` → **`POST create-property`** (`org:properties:create`) → navigates to new property **Settings**. Hidden for org **Admin** and property-only members.
+**Add property** (header button, empty state, mobile **+**) → `AddPropertyDialog` → **`POST create-property`** (`org:properties:create`) → navigates to new property **Settings**. Hidden for org **Admin** and property-only members. The dialog is titled **Add property**; Tower and Unit drive the generated display name, Unit expects four digits, and a quote failure shows **Could not load the plan price.** with **Retry**.
 
 ---
 
@@ -218,10 +220,12 @@ Server: `list-properties` loads org properties, batch-loads `guest_submissions` 
 | Layer | Path / spec                                                                      | Manual                   |
 | ----- | -------------------------------------------------------------------------------- | ------------------------ |
 | Unit  | `orgListingViewMode.test.ts`, `orgListingPagination.test.ts`                     | —                        |
+| Unit  | `newListingCopy.test.ts` (dialog title by entry point)                           | —                        |
 | Unit  | `supabase/functions/_shared/propertySettingsClone_test.ts`                       | —                        |
 | E2E   | `ui/e2e/features/org/orgHubSmoke.spec.ts` inventory shell load (`@ci`)           | —                        |
+| E2E   | `ui/e2e/features/org/newListing.spec.ts` full create flow (`@ci`)                | —                        |
 | E2E   | `ui/e2e/features/org/copyPropertySettingsDryRun.spec.ts` dry-run preview (`@ci`) | Real multi-property copy |
-| N/A   | Add property dialog full create flow                                             | —                        |
+| Demo  | `ui/e2e/features/org/newListingScreens.spec.ts` before/after captures (`@demo`)  | —                        |
 
 ---
 
