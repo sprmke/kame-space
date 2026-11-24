@@ -2,6 +2,7 @@ import {
   Suspense,
   lazy,
   useCallback,
+  useContext,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -59,6 +60,8 @@ import {
   splitAdminBottomNav,
 } from '@/features/dashboard/bookings/lib/adminBottomNav';
 import {
+  AdminLayoutFabSuppressedActiveContext,
+  AdminLayoutFabSuppressedContext,
   AdminLayoutFillMainActiveContext,
   AdminLayoutFillMainContext,
 } from '@/features/dashboard/bookings/lib/adminLayoutFillMain';
@@ -273,6 +276,7 @@ export function AdminLayout({ children, fillMain: fillMainProp = false }: Props)
     setFillMainOptIn(fillCountRef.current > 0);
   }, []);
   const fillMain = fillMainProp || fillMainOptIn;
+  const [fabSuppressed, setFabSuppressed] = useState(false);
   const location = useLocation();
   const { session } = useAdminSession();
   const superAdmin = isSuperAdminPath(location.pathname);
@@ -281,22 +285,29 @@ export function AdminLayout({ children, fillMain: fillMainProp = false }: Props)
   return (
     <AdminLayoutFillMainContext.Provider value={setFill}>
       <AdminLayoutFillMainActiveContext.Provider value={fillMain}>
-        <AdminBrandTheme>
-          <UpgradeModalProvider>
-            <ListingContractRenewalProvider>
-              <SetupGuideProvider>
-                <DashboardModeProvider userId={session?.user.id ?? null} superAdmin={superAdmin}>
-                  {/* One assistant session per shell, shared by the sheet and AI mode. */}
-                  {superAdmin ? (
-                    shell
-                  ) : (
-                    <AiAssistantSessionProvider>{shell}</AiAssistantSessionProvider>
-                  )}
-                </DashboardModeProvider>
-              </SetupGuideProvider>
-            </ListingContractRenewalProvider>
-          </UpgradeModalProvider>
-        </AdminBrandTheme>
+        <AdminLayoutFabSuppressedContext.Provider value={setFabSuppressed}>
+          <AdminLayoutFabSuppressedActiveContext.Provider value={fabSuppressed}>
+            <AdminBrandTheme>
+              <UpgradeModalProvider>
+                <ListingContractRenewalProvider>
+                  <SetupGuideProvider>
+                    <DashboardModeProvider
+                      userId={session?.user.id ?? null}
+                      superAdmin={superAdmin}
+                    >
+                      {/* One assistant session per shell, shared by the sheet and AI mode. */}
+                      {superAdmin ? (
+                        shell
+                      ) : (
+                        <AiAssistantSessionProvider>{shell}</AiAssistantSessionProvider>
+                      )}
+                    </DashboardModeProvider>
+                  </SetupGuideProvider>
+                </ListingContractRenewalProvider>
+              </UpgradeModalProvider>
+            </AdminBrandTheme>
+          </AdminLayoutFabSuppressedActiveContext.Provider>
+        </AdminLayoutFabSuppressedContext.Provider>
       </AdminLayoutFillMainActiveContext.Provider>
     </AdminLayoutFillMainContext.Provider>
   );
@@ -320,6 +331,7 @@ function PropertyLifecycleBannerSlot() {
 }
 
 function AdminLayoutShell({ children, fillMain = false }: Props) {
+  const fabSuppressed = useContext(AdminLayoutFabSuppressedActiveContext);
   const brandStyle = useAdminBrandThemeStyle();
   const location = useLocation();
   const navigate = useNavigate();
@@ -644,12 +656,7 @@ function AdminLayoutShell({ children, fillMain = false }: Props) {
     [navSections, openMoreSheet]
   );
 
-  const tabActiveKey = resolveBottomTabActiveKey(
-    activeNavHref,
-    primaryHrefs,
-    moreSheetOpen,
-    null
-  );
+  const tabActiveKey = resolveBottomTabActiveKey(activeNavHref, primaryHrefs, moreSheetOpen, null);
 
   const settingsIssueOnTabs =
     (propertySettingsHasIssues && isPropertyAdminPath(location.pathname)) ||
@@ -938,7 +945,7 @@ function AdminLayoutShell({ children, fillMain = false }: Props) {
                   }
                   setToolsOpen(open);
                 }}
-                showFab={!aiMode}
+                showFab={!aiMode && !fabSuppressed}
                 unreadCount={unreadNotificationCount}
                 showAssistant={!aiMode && showAssistantFab}
                 messagesHref={quickAccessPaths.messagesHref}
@@ -1187,9 +1194,8 @@ function AdminSidebarNav({
   collapsed,
   superAdmin,
 }: AdminSidebarNavProps) {
-  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>(
-    readCollapsedGroups
-  );
+  const [collapsedGroups, setCollapsedGroups] =
+    useState<Record<string, boolean>>(readCollapsedGroups);
   const collapsedGroupsKey = Object.keys(collapsedGroups)
     .filter((key) => collapsedGroups[key])
     .sort()

@@ -25,11 +25,11 @@ import { GuestStayContextBar } from '@/features/guest/property/components/GuestS
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useChatThreadSearch } from '@/lib/chat/useChatThreadSearch';
+import { captureError } from '@/lib/sentry/capture';
 import { cn } from '@/lib/utils';
 import { parseGuestInquiryDateRange } from '@/utils/format/dates';
 
-const BOOKING_ID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const BOOKING_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * A `?bookingId=` deep link. A malformed value is ignored rather than sent to the server,
@@ -155,19 +155,33 @@ function PropertyChatContent({
   const threadSearch = useChatThreadSearch(messages);
 
   if (startQuery.isError && !startQuery.data) {
+    // Keep the transport detail in logs. A guest gets a sentence they can act on.
+    captureError(startQuery.error, {
+      level: 'warning',
+      tags: { chat: 'start', surface: 'guest_property_chat' },
+      fingerprint: ['guest_chat', 'start'],
+    });
     return (
-      <div className="mx-auto max-w-2xl space-y-4 p-4">
-        <Link
-          to={propertyPath}
-          className="text-muted-foreground inline-flex min-h-[44px] items-center gap-1 text-sm"
-        >
-          <ChevronLeft className="size-4" aria-hidden />
-          Back
-        </Link>
-        <p className="text-destructive text-sm">{(startQuery.error as Error).message}</p>
-        <Button type="button" variant="outline" onClick={() => void startQuery.refetch()}>
-          Try again
-        </Button>
+      <div className="mx-auto w-full max-w-2xl p-4">
+        <div className="bg-card border-border rounded-2xl border p-4 shadow-sm sm:p-6">
+          <Link
+            to={propertyPath}
+            className="text-muted-foreground mb-4 inline-flex min-h-[44px] items-center gap-1 text-sm"
+          >
+            <ChevronLeft className="size-4" aria-hidden />
+            Back
+          </Link>
+          <h1 className="text-base font-semibold">We couldn&apos;t open this chat</h1>
+          <p className="text-muted-foreground mt-1 text-sm">Check your connection and try again.</p>
+          <Button
+            type="button"
+            variant="outline"
+            className="mt-4 min-h-[44px]"
+            onClick={() => void startQuery.refetch()}
+          >
+            Try again
+          </Button>
+        </div>
       </div>
     );
   }

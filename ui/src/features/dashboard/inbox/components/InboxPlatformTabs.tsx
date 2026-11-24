@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 import { PlatformLogo } from '@/features/dashboard/inbox/components/PlatformLogo';
 import { platformLabel } from '@/features/dashboard/inbox/lib/inboxFormat';
@@ -28,6 +28,19 @@ export function InboxPlatformTabs({
   metaFeatureOff = false,
   trailing,
 }: Props) {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [overflowing, setOverflowing] = useState(false);
+
+  useEffect(() => {
+    const track = trackRef.current?.querySelector<HTMLElement>('[role="tablist"]');
+    if (!track) return;
+    const update = () => setOverflowing(track.scrollWidth > track.clientWidth + 1);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(track);
+    return () => observer.disconnect();
+  }, [platforms.length]);
+
   // Single channel (e.g. parking Chat-only) — no platform switcher needed.
   if (platforms.length <= 1) {
     if (!trailing) return null;
@@ -41,41 +54,53 @@ export function InboxPlatformTabs({
   return (
     <div
       className={cn(
-        'border-border flex shrink-0 items-center gap-2 border-b',
-        'px-2 py-2 sm:gap-3 sm:px-3'
+        'border-border flex shrink-0 flex-col border-b',
+        'px-2 py-2 sm:flex-row sm:items-center sm:gap-3 sm:px-3'
       )}
     >
-      <SlidingTabs
-        value={value}
-        onValueChange={(next) => onChange(next as ThreadPlatformFilter)}
-        className="min-w-0 flex-1"
-      >
-        <SlidingTabsList
-          size="compact"
-          className="h-11 w-full max-w-none justify-start gap-0.5 overflow-x-auto rounded-none bg-transparent p-1"
-          pillClassName="bg-muted rounded-md shadow-none"
-          aria-label="Platform"
-          remeasureDeps={[platforms.length, value]}
+      <div ref={trackRef} className="relative min-w-0 flex-1">
+        <SlidingTabs
+          value={value}
+          onValueChange={(next) => onChange(next as ThreadPlatformFilter)}
+          className="min-w-0 flex-1"
         >
-          {platforms.map((platform) => {
-            const label = platform === 'all' ? 'All' : platformLabel(platform);
-            return (
-              <SlidingTabsTrigger
-                key={platform}
-                value={platform}
-                className="shrink-0 gap-2 px-3 font-medium"
-              >
-                {platform !== 'all' && <PlatformLogo platform={platform} size="xs" />}
-                {metaFeatureOff && (platform === 'facebook' || platform === 'instagram') ? (
-                  <FeatureStatusDot label={`${label} unavailable`} />
-                ) : null}
-                {label}
-              </SlidingTabsTrigger>
-            );
-          })}
-        </SlidingTabsList>
-      </SlidingTabs>
-      {trailing ? <div className="shrink-0 pr-0.5">{trailing}</div> : null}
+          <SlidingTabsList
+            size="compact"
+            className="h-11 w-full max-w-none snap-x snap-mandatory justify-start gap-0 overflow-x-auto rounded-none bg-transparent p-0.5 sm:gap-0.5 sm:p-1"
+            pillClassName="bg-muted rounded-md shadow-none"
+            aria-label="Platform"
+            remeasureDeps={[platforms.length, value]}
+          >
+            {platforms.map((platform) => {
+              const label = platform === 'all' ? 'All' : platformLabel(platform);
+              return (
+                <SlidingTabsTrigger
+                  key={platform}
+                  value={platform}
+                  className="shrink-0 snap-start gap-1 px-1.5 font-medium sm:gap-2 sm:px-3"
+                >
+                  {platform !== 'all' && <PlatformLogo platform={platform} size="xs" />}
+                  {metaFeatureOff && (platform === 'facebook' || platform === 'instagram') ? (
+                    <FeatureStatusDot label={`${label} unavailable`} />
+                  ) : null}
+                  {label}
+                </SlidingTabsTrigger>
+              );
+            })}
+          </SlidingTabsList>
+        </SlidingTabs>
+        {/* Narrow widths scroll; the fade says so instead of looking cut off. */}
+        {overflowing ? (
+          <div
+            className="from-card pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l to-transparent"
+            aria-hidden
+          />
+        ) : null}
+      </div>
+      {/* Phone: the status chip gets its own row so the four channel tabs keep the width. */}
+      {trailing ? (
+        <div className="flex shrink-0 justify-end pb-0.5 sm:pb-0 sm:pr-0.5">{trailing}</div>
+      ) : null}
     </div>
   );
 }

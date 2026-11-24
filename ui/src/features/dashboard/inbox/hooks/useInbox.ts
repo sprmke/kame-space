@@ -8,6 +8,7 @@ import {
   type InfiniteData,
   type QueryClient,
 } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
 import {
   completeMetaOAuthPage,
@@ -37,12 +38,13 @@ import {
   fetchInboxMessageDelta,
   type InboxApiScope,
 } from '@/features/dashboard/inbox/lib/inboxApi';
-import { uploadInboxChatAttachment } from '@/features/dashboard/inbox/lib/inboxChatAttachment';
 import {
+  conversationMatchesThreadFilters,
   patchMessageRows,
   patchThreadRows,
+  readInboxThreadFilters,
 } from '@/features/dashboard/inbox/lib/inboxCachePatch';
-import { handleFeatureUnavailableMutationError } from '@/lib/featureAvailability/featureUnavailableError';
+import { uploadInboxChatAttachment } from '@/features/dashboard/inbox/lib/inboxChatAttachment';
 import { isInboxMockMode } from '@/features/dashboard/inbox/lib/inboxMockMode';
 import {
   mockAiSuggest,
@@ -76,9 +78,9 @@ import {
   markDirectionMessagesReadInCache,
 } from '@/lib/chat/chatMessageCache';
 import { useChatReadReceiptSync } from '@/lib/chat/useChatReadReceiptSync';
+import { handleFeatureUnavailableMutationError } from '@/lib/featureAvailability/featureUnavailableError';
 import { runOfflineMutation } from '@/lib/pwa/offlineMutation';
 import { supabase } from '@/lib/supabase/client';
-import { toast } from 'sonner';
 
 export const INBOX_THREADS_KEY = 'inbox-threads';
 export const INBOX_MESSAGES_KEY = 'inbox-messages';
@@ -768,9 +770,16 @@ type InboxBroadcastSignal = {
 /** Apply a thread delta and a message delta to the cache. Pure logic lives in the lib. */
 function mergeThreadRowsIntoCache(qc: QueryClient, rows: InboxConversation[]) {
   if (!rows.length) return;
-  qc.setQueriesData<InfiniteData<InboxThreadsPage>>({ queryKey: [INBOX_THREADS_KEY] }, (old) =>
-    patchThreadRows(old, rows)
-  );
+  // A delta is not filtered by the server, so each cached list only takes rows that still
+  // match its platform / status / search filters.
+  for (const query of qc.getQueryCache().findAll({ queryKey: [INBOX_THREADS_KEY] })) {
+    const filters = readInboxThreadFilters(query.queryKey);
+    qc.setQueryData<InfiniteData<InboxThreadsPage>>(query.queryKey, (old) =>
+      patchThreadRows(old, rows, {
+        matches: (row) => conversationMatchesThreadFilters(row, filters),
+      })
+    );
+  }
 }
 
 function mergeMessageRowsIntoCache(

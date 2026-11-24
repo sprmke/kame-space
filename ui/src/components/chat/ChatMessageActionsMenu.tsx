@@ -1,61 +1,46 @@
-import {
-  useCallback,
-  useEffect,
-  useState,
-  type ComponentPropsWithoutRef,
-  type ReactNode,
-} from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 
 import { MoreVertical } from 'lucide-react';
 
+import { MobileChoiceItem, MobileChoiceSheet } from '@/components/mobile/MobileChoiceSheet';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useIsBelowLg } from '@/hooks/useMediaQuery';
 import { cn } from '@/lib/utils';
+
+export type ChatMessageAction = {
+  key: string;
+  label: string;
+  icon: ReactNode;
+  destructive?: boolean;
+  /** Inline reactions cover this on desktop; the row only belongs in the phone sheet. */
+  hideOnDesktop?: boolean;
+  onSelect: () => void;
+};
 
 type Props = {
   outbound: boolean;
-  children: ReactNode;
+  actions: ChatMessageAction[];
   className?: string;
 };
 
-type ActionItemProps = ComponentPropsWithoutRef<typeof DropdownMenuItem> & {
-  destructive?: boolean;
-};
-
-/** Dense chat-native row — hugs content, no admin-dropdown width. */
-export function ChatMessageActionItem({
-  className,
-  destructive = false,
-  ...props
-}: ActionItemProps) {
-  return (
-    <DropdownMenuItem
-      className={cn(
-        'min-h-[36px] gap-2 rounded-md px-2 py-1.5 text-[13px] font-medium',
-        destructive &&
-          'text-destructive focus:bg-destructive/10 focus:text-destructive [&>svg]:text-destructive',
-        className
-      )}
-      {...props}
-    />
-  );
-}
-
 /**
- * Per-message ⋮ — opens a compact menu beside the bubble (WhatsApp / Messenger style),
- * not a wide form dropdown over the message.
+ * Per-message ⋮. Compact Messenger-style menu beside the bubble on desktop, a bottom sheet
+ * on phone (repo rule: no floating dropdown for actions below `lg`).
  */
-export function ChatMessageActionsMenu({ outbound, children, className }: Props) {
+export function ChatMessageActionsMenu({ outbound, actions, className }: Props) {
   const [open, setOpen] = useState(false);
+  const isMobile = useIsBelowLg();
 
+  const desktopActions = actions.filter((action) => !action.hideOnDesktop);
   const dismiss = useCallback(() => setOpen(false), []);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || isMobile) return;
 
     const dismissFromScroll = () => dismiss();
     let attached = false;
@@ -74,22 +59,55 @@ export function ChatMessageActionsMenu({ outbound, children, className }: Props)
       document.removeEventListener('wheel', dismissFromScroll, true);
       window.removeEventListener('resize', dismissFromScroll);
     };
-  }, [open, dismiss]);
+  }, [open, isMobile, dismiss]);
+
+  const triggerClass = cn(
+    'text-muted-foreground/60 hover:text-foreground focus-visible:ring-ring flex shrink-0 items-center justify-center rounded-full transition-[color,opacity,background-color] duration-150 focus-visible:outline-none focus-visible:ring-2',
+    "relative size-9 min-h-[36px] min-w-[36px] before:absolute before:-inset-1 before:content-[''] [@media(hover:hover)]:size-7 [@media(hover:hover)]:min-h-0 [@media(hover:hover)]:min-w-0",
+    'opacity-70 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-focus-within/msg:opacity-100 [@media(hover:hover)]:group-hover/msg:opacity-100',
+    'hover:bg-muted/70 active:bg-muted data-[state=open]:bg-muted data-[state=open]:text-foreground data-[state=open]:opacity-100',
+    className
+  );
+
+  if (isMobile) {
+    return (
+      <>
+        <button
+          type="button"
+          className={triggerClass}
+          aria-label="Message actions"
+          aria-haspopup="dialog"
+          aria-expanded={open}
+          onClick={() => setOpen(true)}
+        >
+          <MoreVertical className="size-3.5" strokeWidth={2.25} aria-hidden />
+        </button>
+        <MobileChoiceSheet open={open} onOpenChange={setOpen} title="Message">
+          <div role="listbox" aria-label="Message actions">
+            {actions.map((action) => (
+              <MobileChoiceItem
+                key={action.key}
+                label={action.label}
+                icon={action.icon}
+                destructive={action.destructive}
+                onSelect={() => {
+                  setOpen(false);
+                  action.onSelect();
+                }}
+              />
+            ))}
+          </div>
+        </MobileChoiceSheet>
+      </>
+    );
+  }
+
+  if (desktopActions.length === 0) return null;
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen} modal={false}>
       <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          className={cn(
-            'text-muted-foreground/60 hover:text-foreground focus-visible:ring-ring flex shrink-0 items-center justify-center rounded-full transition-[color,opacity,background-color] duration-150 focus-visible:outline-none focus-visible:ring-2',
-            'size-9 min-h-[36px] min-w-[36px] [@media(hover:hover)]:size-7 [@media(hover:hover)]:min-h-0 [@media(hover:hover)]:min-w-0',
-            'opacity-70 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-focus-within/msg:opacity-100 [@media(hover:hover)]:group-hover/msg:opacity-100',
-            'hover:bg-muted/70 active:bg-muted data-[state=open]:bg-muted data-[state=open]:text-foreground data-[state=open]:opacity-100',
-            className
-          )}
-          aria-label="Message actions"
-        >
+        <button type="button" className={triggerClass} aria-label="Message actions">
           <MoreVertical className="size-3.5" strokeWidth={2.25} aria-hidden />
         </button>
       </DropdownMenuTrigger>
@@ -104,7 +122,20 @@ export function ChatMessageActionsMenu({ outbound, children, className }: Props)
         )}
         onCloseAutoFocus={(event: Event) => event.preventDefault()}
       >
-        {children}
+        {desktopActions.map((action) => (
+          <DropdownMenuItem
+            key={action.key}
+            onSelect={() => action.onSelect()}
+            className={cn(
+              'min-h-[36px] gap-2 rounded-md px-2 py-1.5 text-[13px] font-medium',
+              action.destructive &&
+                'text-destructive focus:bg-destructive/10 focus:text-destructive [&>svg]:text-destructive'
+            )}
+          >
+            {action.icon}
+            {action.label}
+          </DropdownMenuItem>
+        ))}
       </DropdownMenuContent>
     </DropdownMenu>
   );

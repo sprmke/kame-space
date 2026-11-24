@@ -85,6 +85,7 @@ export function BottomTabBar({
 
   return (
     <nav
+      data-bottom-tab-bar
       className={cn('fixed inset-x-0 bottom-0 z-40', mobileBottomBarClassName, className)}
       aria-label={ariaLabel}
     >
@@ -233,6 +234,14 @@ export function moreTabItem(onClick: () => void): BottomTabItem {
  */
 export function bottomTabBarOffsetClassName(): string {
   return 'max-lg:pb-[calc(var(--mobile-bottom-bar-h)+1rem)]';
+}
+
+/**
+ * Dock clearance plus any fixed bottom notice (cookie consent) stacked above it. The notice
+ * publishes `--cookie-consent-h` and unmounts to 0px, so the class is safe to keep applied.
+ */
+export function bottomTabBarAndNoticeOffsetClassName(): string {
+  return 'max-lg:pb-[calc(var(--mobile-bottom-bar-h)+1rem+var(--cookie-consent-h,0px))] lg:pb-[var(--cookie-consent-h,0px)]';
 }
 
 /**

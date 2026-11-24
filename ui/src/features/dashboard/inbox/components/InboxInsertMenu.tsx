@@ -47,9 +47,11 @@ import { buildPropertyGuestPublicPages } from '@/features/dashboard/property/lib
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { MobileChoiceSheet } from '@/components/mobile/MobileChoiceSheet';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useIsBelowLg } from '@/hooks/useMediaQuery';
 import { cn } from '@/lib/utils';
 
 /** Guest pages that only open on Pro+ (`propertyShowcase`): Showcase and Stay Guide. */
@@ -163,6 +165,7 @@ export function InboxInsertMenu({
   onInsertTemplateText,
 }: Props) {
   const [open, setOpen] = useState(false);
+  const isMobileLayout = useIsBelowLg();
   const [query, setQuery] = useState('');
   const [selectedBooking, setSelectedBooking] = useState<BookingRow | null>(null);
   const orgSlug = useOrgSlugParam();
@@ -275,10 +278,7 @@ export function InboxInsertMenu({
   const cardTemplates =
     chatTemplates.data?.filter((template) => template.category !== 'message') ?? [];
 
-  const pinnedIdSet = useMemo(
-    () => new Set(pinnedSnippets.map((row) => row.id)),
-    [pinnedSnippets]
-  );
+  const pinnedIdSet = useMemo(() => new Set(pinnedSnippets.map((row) => row.id)), [pinnedSnippets]);
   const snippetTemplates = templates.filter((t) => !pinnedIdSet.has(t.id)).slice(0, 8);
 
   const mapsLink = mapsUrl?.trim() ?? '';
@@ -296,17 +296,277 @@ export function InboxInsertMenu({
     });
   }, [propertySlug, checkInTime, checkOutTime, mapsLink, bookingRows]);
 
-  return (
-    <Popover
-      open={open}
-      onOpenChange={(next) => {
-        setOpen(next);
-        if (!next) {
-          setQuery('');
-          setSelectedBooking(null);
-        }
-      }}
+  const trigger = (
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon"
+      className="text-muted-foreground hover:text-foreground size-10 min-h-[44px] min-w-[44px]"
+      disabled={disabled}
+      aria-label="Insert link or info"
+      onClick={() => setOpen(true)}
     >
+      <Plus className="size-4" />
+    </Button>
+  );
+
+  const menuContent = (
+    <div className="p-2">
+      {pinnedSnippets.length > 0 ? (
+        <>
+          <p className="text-muted-foreground px-2 pb-1.5 pt-1 text-xs font-medium">Pinned</p>
+          <div className="mb-1">
+            {pinnedSnippets.map((snippet) => (
+              <button
+                key={snippet.id}
+                type="button"
+                onClick={() => insertPinnedSnippet(snippet.bodyText)}
+                className={cn(
+                  'native-press focus-visible:ring-ring flex min-h-[44px] w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm',
+                  'hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2'
+                )}
+              >
+                <Pin className="text-muted-foreground size-4 shrink-0" aria-hidden />
+                <span className="min-w-0 flex-1 truncate font-medium">{snippet.title}</span>
+              </button>
+            ))}
+          </div>
+        </>
+      ) : null}
+
+      {snippetTemplates.length > 0 ? (
+        <>
+          <p className="text-muted-foreground px-2 pb-1.5 pt-1 text-xs font-medium">Snippets</p>
+          <div className="mb-1">
+            {snippetTemplates.map((template) => (
+              <button
+                key={template.id}
+                type="button"
+                onClick={() => insertSnippet(template.body_text)}
+                className={cn(
+                  'native-press focus-visible:ring-ring flex min-h-[44px] w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm',
+                  'hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2'
+                )}
+              >
+                <Zap className="text-muted-foreground size-4 shrink-0" aria-hidden />
+                <span className="min-w-0 flex-1 truncate font-medium">{template.title}</span>
+              </button>
+            ))}
+          </div>
+        </>
+      ) : null}
+
+      {messageTemplates.length > 0 ? (
+        <>
+          <p className="text-muted-foreground px-2 pb-1.5 pt-3 text-xs font-medium">Messages</p>
+          <div className="mb-1">
+            {messageTemplates.map((template) => (
+              <button
+                key={template.templateKey}
+                type="button"
+                onClick={() => insertTemplateText(template)}
+                className={cn(
+                  'native-press focus-visible:ring-ring flex min-h-[44px] w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm',
+                  'hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2'
+                )}
+              >
+                <MessageSquare className="text-muted-foreground size-4 shrink-0" aria-hidden />
+                <span className="min-w-0 flex-1 truncate font-medium">{template.name}</span>
+              </button>
+            ))}
+          </div>
+        </>
+      ) : null}
+
+      {cardTemplates.length > 0 ? (
+        <>
+          <p className="text-muted-foreground px-2 pb-1.5 pt-3 text-xs font-medium">Templates</p>
+          <div className="mb-1">
+            {cardTemplates.map((template) => (
+              <button
+                key={template.templateKey}
+                type="button"
+                onClick={() => selectTemplate(template)}
+                className={cn(
+                  'native-press focus-visible:ring-ring flex min-h-[44px] w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm',
+                  'hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2'
+                )}
+              >
+                <LayoutTemplate className="text-muted-foreground size-4 shrink-0" aria-hidden />
+                <span className="min-w-0 flex-1 truncate font-medium">{template.name}</span>
+                <span className="text-muted-foreground shrink-0 text-[10px]">
+                  {template.category === 'custom' ? 'Custom' : 'Stay guide'}
+                </span>
+              </button>
+            ))}
+          </div>
+        </>
+      ) : null}
+
+      <p className="text-muted-foreground px-2 pb-1.5 pt-1 text-xs font-medium">Property</p>
+      <div>
+        {propertyRows.map((row) => (
+          <ShareRowButton key={row.key} row={row} onSelect={insertUrl} />
+        ))}
+      </div>
+
+      {publicPages.length > 0 ? (
+        <>
+          <p className="text-muted-foreground px-2 pb-1.5 pt-3 text-xs font-medium">Pages</p>
+          <div>
+            {publicPages.map((page) => (
+              <ShareRowButton
+                key={page.id}
+                row={{
+                  key: page.id,
+                  label: page.label,
+                  url: `${window.location.origin}${page.path}`,
+                  ...(livePagesLocked && PROPERTY_SHOWCASE_PAGE_IDS.has(page.id)
+                    ? { lockedFeature: 'propertyShowcase' as const }
+                    : {}),
+                }}
+                onSelect={insertUrl}
+                onUpgrade={openUpgrade}
+              />
+            ))}
+          </div>
+        </>
+      ) : null}
+
+      {mapsLink ? (
+        <>
+          <p className="text-muted-foreground px-2 pb-1.5 pt-3 text-xs font-medium">Location</p>
+          <ShareRowButton
+            row={{ key: 'maps', label: 'Map link', url: mapsLink }}
+            onSelect={insertUrl}
+          />
+        </>
+      ) : null}
+
+      {paymentText ? (
+        <>
+          <p className="text-muted-foreground px-2 pb-1.5 pt-3 text-xs font-medium">Payment</p>
+          <button
+            type="button"
+            onClick={() => insertText(paymentText)}
+            className={cn(
+              'native-press focus-visible:ring-ring flex min-h-[44px] w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm',
+              'hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2'
+            )}
+          >
+            <CreditCard className="text-muted-foreground size-4 shrink-0" aria-hidden />
+            <span className="min-w-0 flex-1 truncate">Payment methods</span>
+          </button>
+        </>
+      ) : null}
+
+      {checkInPackText ? (
+        <>
+          <p className="text-muted-foreground px-2 pb-1.5 pt-3 text-xs font-medium">Packs</p>
+          <button
+            type="button"
+            onClick={() => insertText(checkInPackText)}
+            className={cn(
+              'native-press focus-visible:ring-ring flex min-h-[44px] w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm',
+              'hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2'
+            )}
+          >
+            <KeyRound className="text-muted-foreground size-4 shrink-0" aria-hidden />
+            <span className="min-w-0 flex-1 truncate">Check-in pack</span>
+          </button>
+        </>
+      ) : null}
+
+      <p className="text-muted-foreground px-2 pb-1.5 pt-3 text-xs font-medium">Booking</p>
+      {selectedBooking ? (
+        <div className="mb-1.5">
+          <BookingResultRow
+            row={selectedBooking}
+            selected
+            onSelect={() => setSelectedBooking(null)}
+          />
+          {matchedBooking?.id === selectedBooking.id ? (
+            <p className="text-muted-foreground px-2 pb-1 text-[11px]">Matched to this guest</p>
+          ) : null}
+          {bookingRows.length > 0 ? (
+            <div className="border-border/60 mt-1 border-t pt-1">
+              {bookingRows.map((row) => (
+                <ShareRowButton
+                  key={row.key}
+                  row={row}
+                  onSelect={insertUrl}
+                  onUpgrade={openUpgrade}
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground px-2 py-2 text-xs">
+              Nothing shareable for this booking yet.
+            </p>
+          )}
+        </div>
+      ) : (
+        <>
+          <div className="relative px-1 pb-1.5">
+            <Search
+              className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2"
+              aria-hidden
+            />
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Guest, date, or status"
+              aria-label="Search bookings"
+              className="h-9 pl-8"
+            />
+          </div>
+          {bookingsLoading ? (
+            <div className="space-y-1 p-1" aria-busy="true">
+              <Skeleton className="h-11 w-full rounded-lg" />
+              <Skeleton className="h-11 w-full rounded-lg" />
+            </div>
+          ) : filteredBookings.length === 0 ? (
+            <p className="text-muted-foreground px-2 py-4 text-center text-sm">No bookings</p>
+          ) : (
+            <div role="listbox" aria-label="Bookings" className="max-h-48 overflow-y-auto">
+              {filteredBookings.map((row) => (
+                <BookingResultRow
+                  key={row.id}
+                  row={row}
+                  selected={false}
+                  onSelect={() => setSelectedBooking(row)}
+                />
+              ))}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+
+  const closeMenu = () => {
+    setOpen(false);
+    setQuery('');
+    setSelectedBooking(null);
+  };
+
+  if (isMobileLayout) {
+    return (
+      <>
+        {trigger}
+        <MobileChoiceSheet
+          open={open}
+          onOpenChange={(next) => (next ? setOpen(true) : closeMenu())}
+          title="Insert"
+        >
+          <div className="px-1 pb-2">{menuContent}</div>
+        </MobileChoiceSheet>
+      </>
+    );
+  }
+
+  return (
+    <Popover open={open} onOpenChange={(next) => (next ? setOpen(true) : closeMenu())}>
       <Tooltip>
         <TooltipTrigger asChild>
           <PopoverTrigger asChild>
@@ -331,239 +591,7 @@ export function InboxInsertMenu({
         onWheel={(event) => event.stopPropagation()}
         onPointerDown={(event) => event.stopPropagation()}
       >
-        <div className="max-h-96 overflow-y-auto p-2">
-          {pinnedSnippets.length > 0 ? (
-            <>
-              <p className="text-muted-foreground px-2 pb-1.5 pt-1 text-xs font-medium">Pinned</p>
-              <div className="mb-1">
-                {pinnedSnippets.map((snippet) => (
-                  <button
-                    key={snippet.id}
-                    type="button"
-                    onClick={() => insertPinnedSnippet(snippet.bodyText)}
-                    className={cn(
-                      'native-press focus-visible:ring-ring flex min-h-[44px] w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm',
-                      'hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2'
-                    )}
-                  >
-                    <Pin className="text-muted-foreground size-4 shrink-0" aria-hidden />
-                    <span className="min-w-0 flex-1 truncate font-medium">{snippet.title}</span>
-                  </button>
-                ))}
-              </div>
-            </>
-          ) : null}
-
-          {snippetTemplates.length > 0 ? (
-            <>
-              <p className="text-muted-foreground px-2 pb-1.5 pt-1 text-xs font-medium">Snippets</p>
-              <div className="mb-1">
-                {snippetTemplates.map((template) => (
-                  <button
-                    key={template.id}
-                    type="button"
-                    onClick={() => insertSnippet(template.body_text)}
-                    className={cn(
-                      'native-press focus-visible:ring-ring flex min-h-[44px] w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm',
-                      'hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2'
-                    )}
-                  >
-                    <Zap className="text-muted-foreground size-4 shrink-0" aria-hidden />
-                    <span className="min-w-0 flex-1 truncate font-medium">{template.title}</span>
-                  </button>
-                ))}
-              </div>
-            </>
-          ) : null}
-
-          {messageTemplates.length > 0 ? (
-            <>
-              <p className="text-muted-foreground px-2 pb-1.5 pt-3 text-xs font-medium">Messages</p>
-              <div className="mb-1">
-                {messageTemplates.map((template) => (
-                  <button
-                    key={template.templateKey}
-                    type="button"
-                    onClick={() => insertTemplateText(template)}
-                    className={cn(
-                      'native-press focus-visible:ring-ring flex min-h-[44px] w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm',
-                      'hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2'
-                    )}
-                  >
-                    <MessageSquare className="text-muted-foreground size-4 shrink-0" aria-hidden />
-                    <span className="min-w-0 flex-1 truncate font-medium">{template.name}</span>
-                  </button>
-                ))}
-              </div>
-            </>
-          ) : null}
-
-          {cardTemplates.length > 0 ? (
-            <>
-              <p className="text-muted-foreground px-2 pb-1.5 pt-3 text-xs font-medium">
-                Templates
-              </p>
-              <div className="mb-1">
-                {cardTemplates.map((template) => (
-                  <button
-                    key={template.templateKey}
-                    type="button"
-                    onClick={() => selectTemplate(template)}
-                    className={cn(
-                      'native-press focus-visible:ring-ring flex min-h-[44px] w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm',
-                      'hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2'
-                    )}
-                  >
-                    <LayoutTemplate className="text-muted-foreground size-4 shrink-0" aria-hidden />
-                    <span className="min-w-0 flex-1 truncate font-medium">{template.name}</span>
-                    <span className="text-muted-foreground shrink-0 text-[10px]">
-                      {template.category === 'custom' ? 'Custom' : 'Stay guide'}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </>
-          ) : null}
-
-          <p className="text-muted-foreground px-2 pb-1.5 pt-1 text-xs font-medium">Property</p>
-          <div>
-            {propertyRows.map((row) => (
-              <ShareRowButton key={row.key} row={row} onSelect={insertUrl} />
-            ))}
-          </div>
-
-          {publicPages.length > 0 ? (
-            <>
-              <p className="text-muted-foreground px-2 pb-1.5 pt-3 text-xs font-medium">Pages</p>
-              <div>
-                {publicPages.map((page) => (
-                  <ShareRowButton
-                    key={page.id}
-                    row={{
-                      key: page.id,
-                      label: page.label,
-                      url: `${window.location.origin}${page.path}`,
-                      ...(livePagesLocked && PROPERTY_SHOWCASE_PAGE_IDS.has(page.id)
-                        ? { lockedFeature: 'propertyShowcase' as const }
-                        : {}),
-                    }}
-                    onSelect={insertUrl}
-                    onUpgrade={openUpgrade}
-                  />
-                ))}
-              </div>
-            </>
-          ) : null}
-
-          {mapsLink ? (
-            <>
-              <p className="text-muted-foreground px-2 pb-1.5 pt-3 text-xs font-medium">Location</p>
-              <ShareRowButton
-                row={{ key: 'maps', label: 'Map link', url: mapsLink }}
-                onSelect={insertUrl}
-              />
-            </>
-          ) : null}
-
-          {paymentText ? (
-            <>
-              <p className="text-muted-foreground px-2 pb-1.5 pt-3 text-xs font-medium">Payment</p>
-              <button
-                type="button"
-                onClick={() => insertText(paymentText)}
-                className={cn(
-                  'native-press focus-visible:ring-ring flex min-h-[44px] w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm',
-                  'hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2'
-                )}
-              >
-                <CreditCard className="text-muted-foreground size-4 shrink-0" aria-hidden />
-                <span className="min-w-0 flex-1 truncate">Payment methods</span>
-              </button>
-            </>
-          ) : null}
-
-          {checkInPackText ? (
-            <>
-              <p className="text-muted-foreground px-2 pb-1.5 pt-3 text-xs font-medium">Packs</p>
-              <button
-                type="button"
-                onClick={() => insertText(checkInPackText)}
-                className={cn(
-                  'native-press focus-visible:ring-ring flex min-h-[44px] w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm',
-                  'hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2'
-                )}
-              >
-                <KeyRound className="text-muted-foreground size-4 shrink-0" aria-hidden />
-                <span className="min-w-0 flex-1 truncate">Check-in pack</span>
-              </button>
-            </>
-          ) : null}
-
-          <p className="text-muted-foreground px-2 pb-1.5 pt-3 text-xs font-medium">Booking</p>
-          {selectedBooking ? (
-            <div className="mb-1.5">
-              <BookingResultRow
-                row={selectedBooking}
-                selected
-                onSelect={() => setSelectedBooking(null)}
-              />
-              {matchedBooking?.id === selectedBooking.id ? (
-                <p className="text-muted-foreground px-2 pb-1 text-[11px]">Matched to this guest</p>
-              ) : null}
-              {bookingRows.length > 0 ? (
-                <div className="border-border/60 mt-1 border-t pt-1">
-                  {bookingRows.map((row) => (
-                    <ShareRowButton
-                      key={row.key}
-                      row={row}
-                      onSelect={insertUrl}
-                      onUpgrade={openUpgrade}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <p className="text-muted-foreground px-2 py-2 text-xs">
-                  Nothing shareable for this booking yet.
-                </p>
-              )}
-            </div>
-          ) : (
-            <>
-              <div className="relative px-1 pb-1.5">
-                <Search
-                  className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2"
-                  aria-hidden
-                />
-                <Input
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Guest, date, or status"
-                  aria-label="Search bookings"
-                  className="h-9 pl-8"
-                />
-              </div>
-              {bookingsLoading ? (
-                <div className="space-y-1 p-1" aria-busy="true">
-                  <Skeleton className="h-11 w-full rounded-lg" />
-                  <Skeleton className="h-11 w-full rounded-lg" />
-                </div>
-              ) : filteredBookings.length === 0 ? (
-                <p className="text-muted-foreground px-2 py-4 text-center text-sm">No bookings</p>
-              ) : (
-                <div role="listbox" aria-label="Bookings" className="max-h-48 overflow-y-auto">
-                  {filteredBookings.map((row) => (
-                    <BookingResultRow
-                      key={row.id}
-                      row={row}
-                      selected={false}
-                      onSelect={() => setSelectedBooking(row)}
-                    />
-                  ))}
-                </div>
-              )}
-            </>
-          )}
-        </div>
+        <div className="max-h-96 overflow-y-auto">{menuContent}</div>
       </PopoverContent>
     </Popover>
   );

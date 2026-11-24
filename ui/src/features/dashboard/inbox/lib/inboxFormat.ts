@@ -77,3 +77,16 @@ export const PLATFORM_TAB_ACTIVE: Record<SocialPlatform | 'all', string> = {
   airbnb: 'bg-rose-500',
   web: 'bg-emerald-600',
 };
+
+/**
+ * One-line preview of a quick reply body, for the composer picker. Placeholder tokens are
+ * stripped so the host sees the sentence they will actually send.
+ */
+export function quickReplyPreview(body: string, maxLength = 72): string {
+  const plain = body
+    .replace(/\{\{[^}]+\}\}/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (plain.length <= maxLength) return plain;
+  return `${plain.slice(0, Math.max(0, maxLength - 1)).trimEnd()}…`;
+}

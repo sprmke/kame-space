@@ -12,6 +12,7 @@ import { jsonError, jsonSuccess, readJsonBody } from '../_shared/httpResponse.ts
 import { serveAuthenticated } from '../_shared/serveEdge.ts';
 import { isFeatureAvailable } from '../_shared/featureAvailability.ts';
 import { countOrgMetaConversations } from '../_shared/socialInboxService.ts';
+import { deriveMetaImportState } from '../_shared/metaSyncState.ts';
 
 /** A check-now is allowed at most this often per connection. */
 const CHECK_NOW_THROTTLE_MS = 60_000;
@@ -27,7 +28,8 @@ type SyncStateSnapshot = {
   consecutive_failures?: number;
   next_run_at?: string | null;
   rate_limit_pct?: number | null;
- };
+  created_at?: string | null;
+};
 
 serveAuthenticated('meta-inbox-sync', async (req, user) => {
   if (req.method !== 'POST') {
@@ -57,17 +59,23 @@ serveAuthenticated('meta-inbox-sync', async (req, user) => {
     .maybeSingle();
   const state = (stateRow ?? {}) as SyncStateSnapshot;
 
+  const conversationCount = await countOrgMetaConversations(ctx.orgId);
+  const importState = deriveMetaImportState({
+    stateRow: stateRow ? { ...state, created_at: state.created_at ?? null } : null,
+    conversationCount,
+  });
+
   const head = {
     connected: connection.status === 'connected',
     status: connection.status,
     errorMessage: connection.error_message ?? null,
     platform: connection.platform,
-    conversations: await countOrgMetaConversations(ctx.orgId),
+    conversations: conversationCount,
     conversationsImported: state.conversations_imported ?? 0,
     messagesImported: state.messages_imported ?? 0,
     importPhase: state.import_phase ?? 'messenger',
-    importComplete: Boolean(state.import_completed_at),
-    importRunning: !state.import_completed_at,
+    importComplete: importState.importComplete,
+    importRunning: importState.importRunning,
     lastCheckedAt: state.last_checked_at ?? null,
     lastErrorCode: state.last_error_code ?? null,
     consecutiveFailures: state.consecutive_failures ?? 0,

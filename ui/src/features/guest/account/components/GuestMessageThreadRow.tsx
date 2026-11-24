@@ -43,18 +43,20 @@ export function GuestMessageThreadRow({ thread, selected, onSelect }: Props) {
         <div className="flex items-start justify-between gap-2">
           <span
             className={cn(
-              'truncate text-sm font-medium',
-              thread.unreadCount > 0 ? 'text-foreground' : 'text-foreground'
+              'truncate text-sm',
+              thread.unreadCount > 0
+                ? 'text-foreground font-semibold'
+                : 'text-foreground font-medium'
             )}
           >
             {title}
           </span>
           <div className="flex shrink-0 items-center gap-1.5">
             {thread.unreadCount > 0 ? (
-              <span
-                className="bg-primary size-2 rounded-full"
-                aria-label={`${thread.unreadCount} unread`}
-              />
+              <span className="flex items-center gap-1">
+                <span className="bg-primary size-2 rounded-full" aria-hidden />
+                <span className="sr-only">{thread.unreadCount} unread</span>
+              </span>
             ) : null}
             {thread.lastMessageAt ? (
               <span className="text-muted-foreground text-[11px] tabular-nums">

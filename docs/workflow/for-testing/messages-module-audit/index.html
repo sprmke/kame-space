@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Messages module audit — Kame Space</title>
+    <style>
+      :root {
+        --teal: #2daa97;
+        --ink: #0f1f24;
+        --muted: #5b6b71;
+        --line: #e3e9ea;
+        --bg: #f6f9f9;
+        --card: #ffffff;
+        --p0: #b42318;
+        --p1: #b54708;
+        --p2: #175cd3;
+        --p3: #475467;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font: 15px/1.55 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      }
+      header {
+        background: var(--teal);
+        color: #fff;
+        padding: 40px 24px 32px;
+      }
+      .wrap { max-width: 1180px; margin: 0 auto; }
+      header h1 { margin: 0 0 6px; font-size: 28px; letter-spacing: -0.02em; }
+      header p { margin: 0; opacity: 0.9; font-size: 14px; }
+      main { padding: 28px 24px 64px; }
+      h2 { font-size: 19px; margin: 40px 0 12px; letter-spacing: -0.01em; }
+      h2:first-child { margin-top: 0; }
+      .stats { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+      .stat {
+        background: rgba(255,255,255,0.14);
+        border: 1px solid rgba(255,255,255,0.25);
+        border-radius: 10px;
+        padding: 8px 14px;
+        font-size: 13px;
+      }
+      .stat b { font-size: 16px; }
+      .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        overflow: hidden;
+      }
+      .card h3 { margin: 0; padding: 12px 14px 4px; font-size: 14px; }
+      .card p { margin: 0; padding: 0 14px 12px; color: var(--muted); font-size: 12.5px; }
+      video, .card img { display: block; width: 100%; background: #000; }
+      .card img { background: #eef3f4; }
+      .shots { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+      .shot img { border-bottom: 1px solid var(--line); }
+      .shot figcaption { padding: 8px 12px 10px; font-size: 12px; color: var(--muted); }
+      figure { margin: 0; }
+      table { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+      th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; font-size: 13.5px; }
+      th { background: #eff5f5; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+      tr:last-child td { border-bottom: 0; }
+      .sev { display: inline-block; min-width: 30px; text-align: center; padding: 1px 6px; border-radius: 5px; color: #fff; font-size: 11px; font-weight: 700; }
+      .p0 { background: var(--p0); }
+      .p1 { background: var(--p1); }
+      .p2 { background: var(--p2); }
+      .p3 { background: var(--p3); }
+      code { background: #eef3f4; padding: 1px 5px; border-radius: 4px; font-size: 12.5px; }
+      .note { color: var(--muted); font-size: 13px; margin: 10px 0 0; }
+      .pill { display: inline-block; background: #e7f4f2; color: #12655a; border-radius: 999px; padding: 2px 9px; font-size: 11.5px; font-weight: 600; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="wrap">
+        <h1>Messages module audit</h1>
+        <p>Host Guest Inbox and guest Messages, explored end to end at 320 to 2560 px. 2026-11-24.</p>
+        <div class="stats">
+          <div class="stat"><b>2</b> P0 blockers</div>
+          <div class="stat"><b>11</b> P1 issues</div>
+          <div class="stat"><b>13</b> P2</div>
+          <div class="stat"><b>5</b> P3</div>
+          <div class="stat"><b>6</b> slow-motion clips</div>
+          <div class="stat"><b>7</b> passing E2E contracts</div>
+        </div>
+      </div>
+    </header>
+    <main class="wrap">
+      <h2>Full walkthrough (75s)</h2>
+      <div class="card" style="max-width: 860px">
+        <video src="./video/00-full-walkthrough.mp4" controls playsinline poster="./shots/01-messages-1440.png"></video>
+        <p style="padding-top: 10px">Six scenarios back to back: host list, host conversation, host manage panels, guest hub, host phone, guest phone. <a href="./video/00-full-walkthrough.webm">webm</a></p>
+      </div>
+
+      <h2>Slow-motion walkthrough</h2>
+      <p class="note">Recorded with <code>bun run test:e2e:messages:tour:video</code>. Mocked fixtures, so the clips are stable.</p>
+      <div class="grid">
+        <div class="card">
+          <h3>01 Host inbox</h3>
+          <p>Channels, thread list, status filters, search.</p>
+          <video src="./video/01-host-inbox-list-filters-search.webm" controls muted playsinline></video>
+        </div>
+        <div class="card">
+          <h3>02 Host conversation</h3>
+          <p>Message actions, quick replies, insert menu, drafting.</p>
+          <video src="./video/02-host-conversation-composer.webm" controls muted playsinline></video>
+        </div>
+        <div class="card">
+          <h3>03 Host manage</h3>
+          <p>Channels, quick replies, automation, unsaved-changes guard.</p>
+          <video src="./video/03-host-manage-panels.webm" controls muted playsinline></video>
+        </div>
+        <div class="card">
+          <h3>04 Guest messages</h3>
+          <p>Thread list, conversation, chat options, composer.</p>
+          <video src="./video/04-guest-messages-hub.webm" controls muted playsinline></video>
+        </div>
+        <div class="card">
+          <h3>05 Host on a phone</h3>
+          <p>390 px: hero sheet, tabs, thread, composer sheets.</p>
+          <video src="./video/05-host-inbox-phone.webm" controls muted playsinline></video>
+        </div>
+        <div class="card">
+          <h3>06 Guest on a phone</h3>
+          <p>390 px: hub, conversation, scroll to composer.</p>
+          <video src="./video/06-guest-messages-phone.webm" controls muted playsinline></video>
+        </div>
+      </div>
+
+      <h2>Blockers and major issues</h2>
+      <table>
+        <thead>
+          <tr><th>ID</th><th>Sev</th><th>Finding</th><th>Fix</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>M-01</td><td><span class="sev p0">P0</span></td>
+            <td>Guest starting a chat from a listing fails with 400 "Failed to upsert conversation" when a web conversation already exists for that guest and property.</td>
+            <td>Resolve by <code>(property_id, guest_user_id)</code> on 23505 instead of retrying the same insert.</td>
+          </tr>
+          <tr>
+            <td>M-10</td><td><span class="sev p0">P0</span></td>
+            <td>On phones the platform tabs are crushed by the sync pill. Instagram is off-screen and unreachable.</td>
+            <td>Give tabs the full row on phone; move or collapse the sync pill.</td>
+          </tr>
+          <tr>
+            <td>M-11</td><td><span class="sev p1">P1</span></td>
+            <td>Quick Access FAB covers the composer Send button and the last thread row.</td>
+            <td>Offset the composer or hide the FAB on composer routes.</td>
+          </tr>
+          <tr>
+            <td>M-12</td><td><span class="sev p1">P1</span></td>
+            <td>Guest Messages hub is taller than the phone viewport, so the composer is below the fold and the header scrolls away.</td>
+            <td>Size from the real chrome height; sticky thread header.</td>
+          </tr>
+          <tr>
+            <td>M-03</td><td><span class="sev p1">P1</span></td>
+            <td>A zero-result search says "No messages yet." on the Chat tab.</td>
+            <td>Check <code>search</code> before the platform empty branch.</td>
+          </tr>
+          <tr>
+            <td>M-04</td><td><span class="sev p1">P1</span></td>
+            <td>Quick reply Delete is instant, org-wide, no confirm.</td>
+            <td>Confirm with the reply title; offer undo.</td>
+          </tr>
+          <tr>
+            <td>M-05</td><td><span class="sev p1">P1</span></td>
+            <td>Realtime deltas ignore the active platform or status filter.</td>
+            <td>Apply filter predicates inside <code>patchThreadRows</code>.</td>
+          </tr>
+          <tr>
+            <td>M-06</td><td><span class="sev p1">P1</span></td>
+            <td>"Importing chats" never clears when <code>last_sync_at</code> is null.</td>
+            <td>Age the state out, or treat an imported list as complete.</td>
+          </tr>
+          <tr>
+            <td>M-02</td><td><span class="sev p1">P1</span></td>
+            <td>Raw server error text shown to guests.</td>
+            <td>Friendly copy plus support link; keep detail in logs.</td>
+          </tr>
+          <tr>
+            <td>M-21..23</td><td><span class="sev p1">P1</span></td>
+            <td>Host composer has no accessible name; several phone controls are 32 to 36 px.</td>
+            <td>Label the textarea; finish the 44 px pass.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Evidence</h2>
+      <div class="grid shots">
+        <figure class="card shot">
+          <img src="./shots/30-mobile-list.png" alt="Host messages list on a 390px phone, platform tabs clipped" />
+          <figcaption>390 px: tabs clipped, FAB over the list.</figcaption>
+        </figure>
+        <figure class="card shot">
+          <img src="./shots/32-mobile-thread.png" alt="Host thread on a phone with the FAB over the Send button" />
+          <figcaption>390 px: FAB sits on Send.</figcaption>
+        </figure>
+        <figure class="card shot">
+          <img src="./shots/34-mobile-insert.png" alt="Insert menu as a floating panel clipped above the composer" />
+          <figcaption>Insert opens as a clipped popover on phone.</figcaption>
+        </figure>
+        <figure class="card shot">
+          <img src="./shots/52-guest-thread-390.png" alt="Guest thread on a phone with no composer visible" />
+          <figcaption>Guest composer below the fold.</figcaption>
+        </figure>
+        <figure class="card shot">
+          <img src="./shots/60-public-chat-1440.png" alt="Guest property chat failing with a raw server error" />
+          <figcaption>Start chat dead end and raw error.</figcaption>
+        </figure>
+        <figure class="card shot">
+          <img src="./shots/19-desktop-search-empty.png" alt="Search with no results showing No messages yet" />
+          <figcaption>Wrong empty-state copy on search.</figcaption>
+        </figure>
+        <figure class="card shot">
+          <img src="./shots/49-guest-messages-softnav.png" alt="Guest messages hub on desktop with a thread open" />
+          <figcaption>Guest hub, desktop. Resource hub clipped right.</figcaption>
+        </figure>
+        <figure class="card shot">
+          <img src="./shots/21-desktop-manage-quickreplies.png" alt="Quick replies manager" />
+          <figcaption>Quick replies: delete with no confirm.</figcaption>
+        </figure>
+      </div>
+
+      <h2>Files</h2>
+      <p class="note">
+        Full findings, per-width coverage, and the fix order: <code>docs/workflow/for-testing/messages-module-audit/README.md</code>.
+        Tests: <code>ui/e2e/features/inbox/messagesUx.spec.ts</code>, <code>ui/e2e/features/inbox/messagesTour.slowmo.spec.ts</code>.
+      </p>
+    </main>
+  </body>
+</html>

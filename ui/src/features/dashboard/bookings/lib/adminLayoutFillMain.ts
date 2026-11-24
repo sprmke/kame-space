@@ -20,3 +20,23 @@ export function useAdminLayoutFillMain(enabled: boolean) {
 export function useAdminLayoutIsFillMain(): boolean {
   return useContext(AdminLayoutFillMainActiveContext);
 }
+
+export const AdminLayoutFabSuppressedContext = createContext<
+  ((suppressed: boolean) => void) | null
+>(null);
+export const AdminLayoutFabSuppressedActiveContext = createContext(false);
+
+/**
+ * Hide the floating Quick Access button while a focused surface owns the bottom-right
+ * corner (an open chat composer on phone). Single owner, same contract as fill-main.
+ */
+export function useAdminLayoutSuppressFab(active: boolean) {
+  const setSuppressed = useContext(AdminLayoutFabSuppressedContext);
+
+  useLayoutEffect(() => {
+    if (!setSuppressed) return;
+    if (!active) return;
+    setSuppressed(true);
+    return () => setSuppressed(false);
+  }, [active, setSuppressed]);
+}

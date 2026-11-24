@@ -28,7 +28,7 @@ Master-detail inbox hub for all of a guest's **web chat** threads with hosts acr
 
 Bookings themselves are listed under **Trips** ([trips.md](./trips.md)), which opens each booking's [trip page](../trip.md).
 
-Desktop: thread list (left) + selected conversation (right), first thread auto-selected on wide screens. Mobile: thread list, then conversation with a back button — no side-by-side split.
+Desktop: thread list (left) + selected conversation (right), first thread auto-selected on wide screens. Mobile: thread list, then conversation with a back button — no side-by-side split. On phone/tablet the hub measures its own top edge, the floating tab bar and any first-visit consent bar, so the composer and the thread header stay on screen instead of falling under the dock. The browser tab reads **Messages**, the page exposes a hidden `h1`, and unread threads are announced to screen readers (not just shown as a dot).
 
 ---
 
