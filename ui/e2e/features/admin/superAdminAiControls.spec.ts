@@ -38,12 +38,15 @@ test.describe('@ci super admin ai controls', () => {
     await installAiControlsMocks(page, patches);
 
     const nav = page.getByRole('navigation', { name: 'AI sections' });
-    const row = nav.locator('div').first();
-    const widths = await row.evaluate((element) => ({
-      scrollWidth: element.scrollWidth,
-      clientWidth: element.clientWidth,
-    }));
-    expect(widths.scrollWidth).toBeGreaterThan(widths.clientWidth);
+    const row = nav.getByTestId('super-admin-tabs');
+    // Font metrics differ in CI, so the row may fit. The contract is one row, not overflow.
+    expect(await row.evaluate((element) => getComputedStyle(element).flexWrap)).toBe('nowrap');
+    const tops = await row
+      .locator('a')
+      .evaluateAll((elements) =>
+        elements.map((element) => Math.round(element.getBoundingClientRect().top))
+      );
+    expect(new Set(tops).size).toBe(1);
 
     const controls = page.getByRole('link', { name: 'Controls' });
     const navBox = await nav.boundingBox();

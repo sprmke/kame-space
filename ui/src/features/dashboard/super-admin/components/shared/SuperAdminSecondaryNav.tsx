@@ -74,6 +74,7 @@ export function SuperAdminSecondaryNav({
       ) : null}
       <div
         ref={scrollerRef}
+        data-testid="super-admin-tabs"
         className="-mx-1 flex min-w-0 snap-x items-center gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0 [&::-webkit-scrollbar]:hidden"
       >
         {items.map((item) => {
