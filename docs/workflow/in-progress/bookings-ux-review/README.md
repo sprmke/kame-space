@@ -233,6 +233,11 @@ out of the click target, and put `aria-sort` on the `<th>` instead of the button
   the Cancel booking / document rows (`screenshots/51-phone-detail-workflow.png`,
   `32-tablet-detail.png`). Floating by design, but it covers a "View" link on the exact screen where
   the rail is the content.
+- **P2-11. The a11y sweep audits an empty bookings table.** `axeSweep.spec.ts` covers
+  `teamRbacPaths.bookings`, but that harness's `list-bookings` returns rows only when a template
+  fixture is seeded, so the route renders the empty state and none of the rules P1-6 fails on ever
+  run. The gate reads green while the populated page has a critical violation.
+
 - **P2-12. The detail payload ships more than the page shows.** `get-booking?format=row` returns
   `select('*')`, so every `bookings:view` caller receives the guest's bank account
   (`sd_refund_account_number`, `sd_refund_account_name`), the door code
@@ -242,10 +247,6 @@ out of the click target, and put `aria-sort` on the `<th>` instead of the button
   read. A read-only teammate, a narrowed role, a logging sink or a browser extension all see them.
   Fix direction: return a field allow-list per leaf, and strip tokens and account data when the
   caller lacks `bookings.detail.pricing:edit` / `stay:edit`.
-- **P2-11. The a11y sweep audits an empty bookings table.** `axeSweep.spec.ts` covers
-  `teamRbacPaths.bookings`, but that harness's `list-bookings` returns rows only when a template
-  fixture is seeded, so the route renders the empty state and none of the rules P1-6 fails on ever
-  run. The gate reads green while the populated page has a critical violation.
 
 ### P3 — polish and consistency
 
