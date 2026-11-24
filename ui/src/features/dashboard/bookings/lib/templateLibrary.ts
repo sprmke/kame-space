@@ -86,7 +86,7 @@ export type TemplateLibraryGroup = {
 export const BUILTIN_GROUP_LABELS = {
   standard: 'Stay guide',
   message: 'Guest messages',
-  email: 'Emails',
+  email: 'Guest emails',
 } as const;
 
 /** Where ungrouped custom-category templates live. */
@@ -407,7 +407,7 @@ export function templatePlacementTargets(
     { placement: { category: 'standard', folderId: null }, label: BUILTIN_GROUP_LABELS.standard },
     { placement: { category: 'message', folderId: null }, label: BUILTIN_GROUP_LABELS.message },
   ];
-  if (options.includeUngrouped && sorted.length === 0) {
+  if (options.includeUngrouped) {
     targets.push({
       placement: { category: 'custom', folderId: null },
       label: UNGROUPED_LABEL,

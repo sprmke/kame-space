@@ -489,7 +489,7 @@ function orgPlanPayload(multiProperty = false, freePlan = false) {
   };
 }
 
-function entitlementsPayload(
+export function entitlementsPayload(
   freePlan = false,
   assistantEnabled = false,
   videoPlanAllowed = !freePlan,

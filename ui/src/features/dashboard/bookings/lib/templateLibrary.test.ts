@@ -6,6 +6,7 @@ import type {
 } from '@/features/dashboard/bookings/hooks/usePropertyTemplates';
 import {
   applyTemplateCategoryFilter,
+  BUILTIN_GROUP_LABELS,
   buildTemplateLibrary,
   filterTemplateLibrary,
   findTemplateLibraryEntry,
@@ -16,6 +17,7 @@ import {
   templateMoveTargets,
   templatePlacementTargets,
   templateRowStatusParts,
+  TEMPLATE_GROUP_ORDER,
 } from '@/features/dashboard/bookings/lib/templateLibrary';
 
 function template(overrides: Partial<PropertyTemplateDto> = {}): PropertyTemplateDto {
@@ -76,6 +78,25 @@ function folder(
 const standardKeys = ['check-in-instructions', 'house-rules', 'check-out-instructions'];
 
 describe('buildTemplateLibrary', () => {
+  it('uses one label for a destination in the rail and in Move', () => {
+    const emailGroup = TEMPLATE_GROUP_ORDER.find((group) => group.id === 'guest-emails');
+    expect(emailGroup?.label).toBe(BUILTIN_GROUP_LABELS.email);
+  });
+
+  it('orders Stay guide entries by reading order, not payload order', () => {
+    const groups = buildTemplateLibrary([
+      template({ templateKey: 'house-rules', name: 'House rules' }),
+      template({ templateKey: 'check-in-instructions', name: 'Check-in instructions' }),
+      template({ templateKey: 'welcome-note', name: 'Welcome note' }),
+    ]);
+
+    expect(groups[0]!.entries.map((entry) => entry.templateKey)).toEqual([
+      'welcome-note',
+      'check-in-instructions',
+      'house-rules',
+    ]);
+  });
+
   it('returns built-in sections when nothing loaded', () => {
     expect(buildTemplateLibrary(undefined)).toEqual([
       expect.objectContaining({ id: 'stay-guide', kind: 'builtin', entries: [] }),
@@ -309,7 +330,7 @@ describe('templatePlacementTargets', () => {
     ).toEqual(['Stay guide', 'Guest messages', 'Arrival', 'Zebra']);
   });
 
-  it('includes ungrouped Custom for Move only when there are no host folders', () => {
+  it('includes ungrouped Custom for Move even when host folders exist', () => {
     expect(
       templatePlacementTargets([], { includeUngrouped: true }).map((target) => target.label)
     ).toEqual(['Stay guide', 'Guest messages', 'Custom']);
@@ -317,7 +338,7 @@ describe('templatePlacementTargets', () => {
       templatePlacementTargets([folder({ id: 'f1', name: 'Arrival' })], {
         includeUngrouped: true,
       }).map((target) => target.label)
-    ).toEqual(['Stay guide', 'Guest messages', 'Arrival']);
+    ).toEqual(['Stay guide', 'Guest messages', 'Custom', 'Arrival']);
   });
 });
 

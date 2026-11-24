@@ -39,7 +39,12 @@ import {
 } from '@/components/ui/select';
 import { useGuardedClose } from '@/hooks/useGuardedClose';
 
-const DEFAULT_PLACEMENT: TemplatePlacement = { category: 'standard', folderId: null };
+/**
+ * A host tapping "New template" is creating a host-owned template. Stay guide remains a
+ * destination (`openAddTemplateInGroup` preselects it), but the default has to be Custom so
+ * the new row does not land in the middle of the ten built-in guide sections.
+ */
+const DEFAULT_PLACEMENT: TemplatePlacement = { category: 'custom', folderId: null };
 
 function draftHasImageMarkup(html: string): boolean {
   const openTag = String.fromCharCode(60) + 'img';
@@ -87,7 +92,10 @@ export function AddCustomTemplateDialog({
   const [name, setName] = React.useState('');
   const [content, setContent] = React.useState('');
   const [placement, setPlacement] = React.useState<TemplatePlacement>(DEFAULT_PLACEMENT);
-  const groupTargets = React.useMemo(() => templatePlacementTargets(folders), [folders]);
+  const groupTargets = React.useMemo(
+    () => templatePlacementTargets(folders, { includeUngrouped: true }),
+    [folders]
+  );
   const groupSelectValue = groupSelectValueFromPlacement(placement);
   const folderIdsOnOpenRef = React.useRef<string[]>([]);
   const wasOpenRef = React.useRef(false);
