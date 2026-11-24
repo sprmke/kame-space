@@ -90,11 +90,7 @@ export function BottomTabBar({
     >
       <div
         ref={containerRef}
-        className={cn(
-          'mobile-bottom-bar-row relative flex items-stretch justify-around',
-          mobileBottomBarRowClassName,
-          dense ? 'gap-0' : 'gap-0.5'
-        )}
+        className={cn('mobile-bottom-bar-row relative', mobileBottomBarRowClassName)}
       >
         {bounds ? (
           <SlidingActivePill
@@ -102,108 +98,128 @@ export function BottomTabBar({
             className="bg-primary-strong shadow-native-primary rounded-[0.875rem]"
           />
         ) : null}
-        {items.map((item) => {
-          const active = item.key === activeKey;
-          const Icon = item.Icon;
-          const sharedClass = cn(
-            'relative z-[1] flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5',
-            'my-1 rounded-[0.875rem] px-1',
-            'native-press transition-colors duration-150',
-            active ? 'text-primary-foreground' : 'text-muted-foreground active:text-foreground'
-          );
+        {/*
+         * A real list, not `role="listitem"` on the button: ARIA does not allow that
+         * role on an anchor or a button, and screen readers still get list semantics.
+         */}
+        {/* `role="list"` because Tailwind's `list-style: none` drops the implicit role in Chrome. */}
+        <ul
+          role="list"
+          className={cn('flex h-full items-stretch justify-around', dense ? 'gap-0' : 'gap-0.5')}
+        >
+          {items.map((item) => {
+            const active = item.key === activeKey;
+            const Icon = item.Icon;
+            const sharedClass = cn(
+              'relative flex h-full w-full min-w-0 flex-col items-center justify-center gap-0.5',
+              'rounded-[0.875rem] px-1',
+              'native-press transition-colors duration-150',
+              active ? 'text-primary-foreground' : 'text-muted-foreground active:text-foreground'
+            );
 
-          const badgeCount = typeof item.badge === 'number' ? item.badge : 0;
-          const showCount = badgeCount > 0;
-          const showDot = item.badge === true;
-          const itemAriaLabel = showCount
-            ? `${item.label}, ${badgeCount} unread`
-            : item.badge
-              ? `${item.label}, has updates`
-              : item.label;
+            const badgeCount = typeof item.badge === 'number' ? item.badge : 0;
+            const showCount = badgeCount > 0;
+            const showDot = item.badge === true;
+            const itemAriaLabel = showCount
+              ? `${item.label}, ${badgeCount} unread`
+              : item.badge
+                ? `${item.label}, has updates`
+                : item.label;
 
-          const content = (
-            <>
-              <span className="relative inline-flex size-5 items-center justify-center">
-                <Icon
-                  strokeWidth={1.75}
-                  className={cn(
-                    'size-[18px] shrink-0 transition-opacity duration-150',
-                    active ? 'opacity-100' : 'opacity-85'
-                  )}
-                  aria-hidden
-                />
-                {showCount ? (
-                  <span
+            const content = (
+              <>
+                <span className="relative inline-flex size-5 items-center justify-center">
+                  <Icon
+                    strokeWidth={1.75}
                     className={cn(
-                      'absolute -right-2 -top-1.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full px-0.5',
-                      'bg-destructive text-destructive-foreground text-[8px] font-semibold leading-none',
-                      'ring-2',
-                      active ? 'ring-primary-strong' : 'ring-background',
-                      'animate-notification-badge-pulse motion-reduce:animate-none'
-                    )}
-                    aria-hidden
-                  >
-                    {badgeCount > 99 ? '99+' : badgeCount}
-                  </span>
-                ) : showDot ? (
-                  <span
-                    className={cn(
-                      'absolute -right-0.5 -top-0.5 size-1.5 rounded-full',
-                      'bg-destructive ring-2',
-                      active ? 'ring-primary-strong' : 'ring-background',
-                      'animate-notification-badge-pulse motion-reduce:animate-none'
+                      'size-[18px] shrink-0 transition-opacity duration-150',
+                      active ? 'opacity-100' : 'opacity-85'
                     )}
                     aria-hidden
                   />
-                ) : null}
-              </span>
-              {/* Never below 10px: 9px labels truncated ("Notificatio…") and failed to read. */}
-              <span
-                className={cn(
-                  'w-full truncate text-center text-[10px] leading-none tracking-tight',
-                  active ? 'font-semibold' : 'font-medium'
-                )}
-              >
-                {item.label}
-              </span>
-            </>
-          );
-
-          if (item.onClick || !item.href) {
-            return (
-              <button
-                key={item.key}
-                ref={setItemRef(item.key)}
-                type="button"
-                onClick={item.onClick}
-                onPointerDown={item.onIntent}
-                onFocus={item.onIntent}
-                aria-current={active ? 'page' : undefined}
-                aria-label={itemAriaLabel}
-                aria-expanded={item.onClick ? active : undefined}
-                className={sharedClass}
-              >
-                {content}
-              </button>
+                  {showCount ? (
+                    <span
+                      className={cn(
+                        'absolute -right-2 -top-1.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full px-0.5',
+                        'bg-destructive text-destructive-foreground text-[8px] font-semibold leading-none',
+                        'ring-2',
+                        active ? 'ring-primary-strong' : 'ring-background',
+                        'animate-notification-badge-pulse motion-reduce:animate-none'
+                      )}
+                      aria-hidden
+                    >
+                      {badgeCount > 99 ? '99+' : badgeCount}
+                    </span>
+                  ) : showDot ? (
+                    <span
+                      className={cn(
+                        'absolute -right-0.5 -top-0.5 size-1.5 rounded-full',
+                        'bg-destructive ring-2',
+                        active ? 'ring-primary-strong' : 'ring-background',
+                        'animate-notification-badge-pulse motion-reduce:animate-none'
+                      )}
+                      aria-hidden
+                    />
+                  ) : null}
+                </span>
+                {/* Never below 10px: 9px labels truncated ("Notificatio…") and failed to read. */}
+                <span
+                  className={cn(
+                    'w-full truncate text-center text-[10px] leading-none tracking-tight',
+                    active ? 'font-semibold' : 'font-medium'
+                  )}
+                >
+                  {item.label}
+                </span>
+              </>
             );
-          }
 
-          return (
-            <Link
-              key={item.key}
-              ref={setItemRef(item.key)}
-              to={item.href}
-              aria-current={active ? 'page' : undefined}
-              aria-label={itemAriaLabel}
-              className={sharedClass}
-              onPointerDown={item.onIntent}
-              onFocus={item.onIntent}
-              onClick={() => scrollAdminViewToTop('auto')}
-            >
-              {content}
-            </Link>
-          );
-        })}
+            if (item.onClick || !item.href) {
+              return (
+                <li
+                  key={item.key}
+                  aria-label={item.label}
+                  className="relative z-[1] my-1 flex min-w-0 flex-1"
+                >
+                  <button
+                    ref={setItemRef(item.key)}
+                    type="button"
+                    onClick={item.onClick}
+                    onPointerDown={item.onIntent}
+                    onFocus={item.onIntent}
+                    aria-current={active ? 'page' : undefined}
+                    aria-label={itemAriaLabel}
+                    aria-expanded={item.onClick ? active : undefined}
+                    className={sharedClass}
+                  >
+                    {content}
+                  </button>
+                </li>
+              );
+            }
+
+            return (
+              <li
+                key={item.key}
+                aria-label={item.label}
+                className="relative z-[1] my-1 flex min-w-0 flex-1"
+              >
+                <Link
+                  ref={setItemRef(item.key)}
+                  to={item.href}
+                  aria-current={active ? 'page' : undefined}
+                  aria-label={itemAriaLabel}
+                  className={sharedClass}
+                  onPointerDown={item.onIntent}
+                  onFocus={item.onIntent}
+                  onClick={() => scrollAdminViewToTop('auto')}
+                >
+                  {content}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
       </div>
     </nav>
   );
