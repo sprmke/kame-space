@@ -16,6 +16,7 @@ Disallow: /for-hosts/register
 Disallow: /for-hosts/preview
 Disallow: /for-hosts/v2
 Disallow: /for-hosts/v3
+Disallow: /for-hosts/v5
 Disallow: /explore-preview
 Disallow: /v2
 Disallow: /guest-review
@@ -63,6 +64,7 @@ Disallow: /for-hosts/register
 Disallow: /for-hosts/preview
 Disallow: /for-hosts/v2
 Disallow: /for-hosts/v3
+Disallow: /for-hosts/v5
 Disallow: /explore-preview
 Disallow: /v2
 Disallow: /guest-review
@@ -110,6 +112,7 @@ Disallow: /for-hosts/register
 Disallow: /for-hosts/preview
 Disallow: /for-hosts/v2
 Disallow: /for-hosts/v3
+Disallow: /for-hosts/v5
 Disallow: /explore-preview
 Disallow: /v2
 Disallow: /guest-review
@@ -157,6 +160,7 @@ Disallow: /for-hosts/register
 Disallow: /for-hosts/preview
 Disallow: /for-hosts/v2
 Disallow: /for-hosts/v3
+Disallow: /for-hosts/v5
 Disallow: /explore-preview
 Disallow: /v2
 Disallow: /guest-review
@@ -204,6 +208,7 @@ Disallow: /for-hosts/register
 Disallow: /for-hosts/preview
 Disallow: /for-hosts/v2
 Disallow: /for-hosts/v3
+Disallow: /for-hosts/v5
 Disallow: /explore-preview
 Disallow: /v2
 Disallow: /guest-review
@@ -251,6 +256,7 @@ Disallow: /for-hosts/register
 Disallow: /for-hosts/preview
 Disallow: /for-hosts/v2
 Disallow: /for-hosts/v3
+Disallow: /for-hosts/v5
 Disallow: /explore-preview
 Disallow: /v2
 Disallow: /guest-review
@@ -298,6 +304,7 @@ Disallow: /for-hosts/register
 Disallow: /for-hosts/preview
 Disallow: /for-hosts/v2
 Disallow: /for-hosts/v3
+Disallow: /for-hosts/v5
 Disallow: /explore-preview
 Disallow: /v2
 Disallow: /guest-review
@@ -345,6 +352,7 @@ Disallow: /for-hosts/register
 Disallow: /for-hosts/preview
 Disallow: /for-hosts/v2
 Disallow: /for-hosts/v3
+Disallow: /for-hosts/v5
 Disallow: /explore-preview
 Disallow: /v2
 Disallow: /guest-review
@@ -392,6 +400,7 @@ Disallow: /for-hosts/register
 Disallow: /for-hosts/preview
 Disallow: /for-hosts/v2
 Disallow: /for-hosts/v3
+Disallow: /for-hosts/v5
 Disallow: /explore-preview
 Disallow: /v2
 Disallow: /guest-review
@@ -439,6 +448,7 @@ Disallow: /for-hosts/register
 Disallow: /for-hosts/preview
 Disallow: /for-hosts/v2
 Disallow: /for-hosts/v3
+Disallow: /for-hosts/v5
 Disallow: /explore-preview
 Disallow: /v2
 Disallow: /guest-review
@@ -486,6 +496,7 @@ Disallow: /for-hosts/register
 Disallow: /for-hosts/preview
 Disallow: /for-hosts/v2
 Disallow: /for-hosts/v3
+Disallow: /for-hosts/v5
 Disallow: /explore-preview
 Disallow: /v2
 Disallow: /guest-review
@@ -533,6 +544,7 @@ Disallow: /for-hosts/register
 Disallow: /for-hosts/preview
 Disallow: /for-hosts/v2
 Disallow: /for-hosts/v3
+Disallow: /for-hosts/v5
 Disallow: /explore-preview
 Disallow: /v2
 Disallow: /guest-review
@@ -580,6 +592,7 @@ Disallow: /for-hosts/register
 Disallow: /for-hosts/preview
 Disallow: /for-hosts/v2
 Disallow: /for-hosts/v3
+Disallow: /for-hosts/v5
 Disallow: /explore-preview
 Disallow: /v2
 Disallow: /guest-review

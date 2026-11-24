@@ -36,10 +36,10 @@ export const STATIC_PAGE_COPY = {
     intro: 'Short answers for the booking workflow you see in the product.',
   },
   forHosts: {
-    heading: 'Run every stay',
-    headingAccent: 'from one dashboard',
+    heading: 'Hosting made easy',
+    headingAccent: 'and affordable.',
     intro:
-      'Bookings, guest messages, finance, marketing, and operations stay connected, so work keeps moving when you step away.',
+      'Let Kame AI handle the manual tasks while you focus on growing your business. Get all the core features for a very affordable fixed monthly price.',
   },
   forHostsPricing: {
     heading: 'Plans that grow with you',
