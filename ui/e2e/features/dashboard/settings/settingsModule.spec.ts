@@ -224,6 +224,16 @@ test.describe('property settings @ci', () => {
     await expect(page.locator('#section-danger').getByText('LIVE')).toBeVisible();
   });
 
+  test('activity dialog shows the empty state', async ({ page }) => {
+    await page.goto(settingsPaths.property);
+    await expect(page.locator('#section-basic')).toBeVisible({ timeout: 30_000 });
+
+    await page.locator('#section-activity').getByRole('button', { name: 'Manage' }).click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog.getByText('No activity yet.')).toBeVisible();
+    await dialog.getByRole('button', { name: 'Close' }).click();
+  });
+
   test('phone layout keeps every card inside the viewport', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(settingsPaths.property);
@@ -257,8 +267,11 @@ test.describe('org settings @ci', () => {
 
     const nav = page.locator('[data-section-nav-scroll]').first();
     await expect(nav.getByText('Profile', { exact: true })).toBeVisible();
+    await expect(nav.getByText('Assistants', { exact: true })).toBeVisible();
     await expect(nav.getByRole('button', { name: 'Danger zone' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Delete organization' })).toBeVisible();
+    await expect(page.getByText(/Waiting for the .* review\./)).toBeVisible();
+    await expect(page.getByText('Est. cost today (USD)')).toBeVisible();
   });
 
   test('survives a setup-guide response without state', async ({ page }) => {
