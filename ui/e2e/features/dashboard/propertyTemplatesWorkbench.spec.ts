@@ -65,17 +65,25 @@ test.describe('property templates workbench', () => {
 
     const rail = page.getByRole('complementary', { name: 'Templates' });
     await expect(rail).toBeVisible({ timeout: 20_000 });
-    for (const label of ['Emails', 'Stay guide', 'Arrival pack', 'Upsells', 'Archive', 'Custom']) {
+    for (const label of [
+      'Guest emails',
+      'Stay guide',
+      'Arrival pack',
+      'Upsells',
+      'Archive',
+      'Custom',
+    ]) {
       await expect(rail.getByText(label, { exact: true })).toBeVisible();
     }
     // An empty folder still shows, so a template can be moved into it.
     await expect(rail.getByRole('status', { name: 'Archive has no templates' })).toBeVisible();
     await expect(rail.getByRole('button', { name: 'Add template' })).toBeVisible();
 
-    // Desktop lands on a template instead of an empty pane.
+    // Desktop lands on a template instead of an empty pane. Guide sections resolve in
+    // reading order, so check-in instructions precedes house rules.
     await expect(
       page.getByRole('region', { name: 'Template editor' }).getByRole('heading', {
-        name: 'House Rules',
+        name: 'Check-in Instructions',
       })
     ).toBeVisible();
   });
@@ -91,16 +99,18 @@ test.describe('property templates workbench', () => {
     await page.getByLabel('Group name').fill('Checkout');
     await page.getByRole('button', { name: 'Create group' }).click();
 
-    await rail.getByRole('button', { name: 'Actions for Welcome Note' }).click();
+    await rail.getByRole('button', { name: /^Welcome Note/ }).hover();
+    await rail.getByRole('button', { name: 'Template actions for Welcome Note' }).click();
     await page.getByRole('menuitem', { name: 'Rename' }).click();
     await page.getByLabel('Template name').fill('Welcome note v2');
     await page.getByRole('button', { name: 'Save name' }).click();
 
-    await rail.getByRole('button', { name: 'Actions for Welcome Note' }).click();
+    await rail.getByRole('button', { name: /^Welcome Note/ }).hover();
+    await rail.getByRole('button', { name: 'Template actions for Welcome Note' }).click();
     await page.getByRole('menuitem', { name: 'Move' }).click();
     await page.getByRole('button', { name: 'Upsells' }).click();
 
-    await rail.getByRole('button', { name: 'Actions for Archive' }).click();
+    await rail.getByRole('button', { name: 'Group actions for Archive' }).click();
     await page.getByRole('menuitem', { name: 'Rename folder' }).click();
     await page.getByLabel('Folder name').fill('Old stuff');
     await page.getByRole('button', { name: 'Save name' }).click();
