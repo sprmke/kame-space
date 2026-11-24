@@ -25,6 +25,7 @@ import { buildExportCalendar, loadExportRanges } from '../_shared/calendarSyncRu
 import { CALENDAR_CHANNELS } from '../_shared/calendarChannels.ts';
 import type { CalendarFeedProvider } from '../_shared/calendarSyncService.ts';
 import { corsHeaders } from '../_shared/cors.ts';
+import { constantTimeEqual } from '../_shared/cryptoCompare.ts';
 import { hashFeedBody } from '../_shared/calendarSyncService.ts';
 import { createServiceClient } from '../_shared/orgAuth.ts';
 import { automationAllowed, loadPropertyLifecycleStates } from '../_shared/propertyLifecycle.ts';
@@ -81,12 +82,9 @@ function gone(req: Request): Response {
   });
 }
 
-/** Constant-time string comparison. */
-function safeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return diff === 0;
+/** Constant-time string comparison (SHA-256 digests, so length is not leaked either). */
+async function safeEqual(a: string, b: string): Promise<boolean> {
+  return constantTimeEqual(a, b);
 }
 
 async function weakEtag(body: string): Promise<string> {
@@ -140,7 +138,7 @@ serveHandler('ical-export', async (req) => {
     if (!exportRow || exportRow.is_enabled !== true || typeof exportRow.token !== 'string') {
       return notFound(req);
     }
-    if (!safeEqual(token, exportRow.token)) return notFound(req);
+    if (!(await safeEqual(token, exportRow.token))) return notFound(req);
 
     const { data: propertyRow } = await supabase
       .from('properties')

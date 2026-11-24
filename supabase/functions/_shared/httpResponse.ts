@@ -1,6 +1,7 @@
 import { corsHeaders } from './cors.ts';
 import { logEvent, resolveRequestId } from './requestLog.ts';
 import { captureSentryException } from './sentry.ts';
+import { scrubText } from './telemetryScrub.ts';
 
 /**
  * Response cache classification (production-readiness doc 11, Phase 11.1).
@@ -382,7 +383,9 @@ export async function handleEdgeError(
     console.warn(`${logPrefix} ${status} ${message}`);
     logEvent('warn', { fn: logPrefix, requestId, event: 'request_failed', status, meta: { code } });
   } else {
-    console.error(logPrefix, error);
+    // The thrown value can embed a provider URL (Telegram bot tokens live in the path), so the
+    // console line is scrubbed as well as the Sentry event.
+    console.error(logPrefix, scrubText(error instanceof Error ? (error.stack ?? error.message) : String(error)));
     logEvent('error', {
       fn: logPrefix,
       requestId,
@@ -502,8 +505,68 @@ export async function captureFaultIfServerError(
   }
 }
 
-export async function readJsonBody(req: Request): Promise<Record<string, unknown>> {
-  return (await req.json().catch(() => ({}))) as Record<string, unknown>;
+/** Default JSON request-body ceiling. Large designer saves pass an explicit higher cap. */
+export const DEFAULT_JSON_BODY_MAX_BYTES = 2 * 1024 * 1024;
+
+export type ReadJsonBodyOptions = {
+  /** Override the ceiling for an endpoint that legitimately accepts a larger document. */
+  maxBytes?: number;
+};
+
+/**
+ * Read a JSON request body with a byte ceiling (OWASP A05 / resource exhaustion).
+ *
+ * `await req.json()` buffers whatever the caller sends before any validation runs, so a single
+ * request could pin an isolate's memory. The body is streamed here and rejected with a 413 as
+ * soon as it crosses the cap, before parsing.
+ */
+export async function readJsonBody(
+  req: Request,
+  options: ReadJsonBodyOptions = {}
+): Promise<Record<string, unknown>> {
+  const maxBytes = options.maxBytes ?? DEFAULT_JSON_BODY_MAX_BYTES;
+
+  const declared = Number(req.headers.get('content-length') ?? '');
+  if (Number.isFinite(declared) && declared > maxBytes) {
+    throw new EdgeError(413, 'Request body too large', 'payload_too_large');
+  }
+
+  if (!req.body) return {};
+
+  const reader = req.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (!value) continue;
+      total += value.byteLength;
+      if (total > maxBytes) {
+        throw new EdgeError(413, 'Request body too large', 'payload_too_large');
+      }
+      chunks.push(value);
+    }
+  } finally {
+    try {
+      await reader.cancel();
+    } catch {
+      /* already closed */
+    }
+  }
+
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+
+  try {
+    return JSON.parse(new TextDecoder().decode(bytes)) as Record<string, unknown>;
+  } catch {
+    return {};
+  }
 }
 
 export function requireHttpMethod(req: Request, method: string): void {

@@ -1,4 +1,4 @@
-import { scrubRecord, scrubUrl } from './telemetryScrub.ts';
+import { scrubRecord, scrubText, scrubUrl } from './telemetryScrub.ts';
 
 /**
  * Server-side Sentry for edge functions — alerting on unexpected faults.
@@ -273,13 +273,15 @@ function buildEvent(
             values: [
               {
                 type: payload.error.name || 'Error',
-                value: payload.error.message,
+                // The message can embed a provider URL (a Telegram failure carries
+                // `https://api.telegram.org/bot<token>/...`), so scrub before it leaves.
+                value: scrubText(payload.error.message),
                 stacktrace: { frames: stackFrames(payload.error) },
               },
             ],
           },
         }
-      : { message: payload.message }),
+      : { message: payload.message ? scrubText(payload.message) : payload.message }),
     ...(options.url || options.method || options.userAgent
       ? {
           request: {

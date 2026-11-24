@@ -1,6 +1,7 @@
 /**
  * SSRF guard for user-supplied (or untrusted) outbound HTTP(S) URLs.
- * Shared by marketing remote-audio import and generated-video download.
+ * Shared by marketing remote-audio import, generated-video download, email QR/inline image
+ * fetches and pet/GAF signature downloads.
  * Calendar iCal fetch keeps its own hop/allowlist logic in calendarSyncService.ts
  * (provider host allowlists + webcal://) but uses the same private-IP rules.
  *
@@ -17,39 +18,63 @@ export class UnsafeOutboundUrlError extends Error {
   }
 }
 
-const PRIVATE_IPV4 = [
-  /^0\./,
-  /^10\./,
-  /^127\./,
-  /^169\.254\./,
-  /^172\.(1[6-9]|2\d|3[01])\./,
-  /^192\.168\./,
-  /^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./, // 100.64.0.0/10 CGNAT
-];
+/** Parse a dotted-quad IPv4 literal; null when the value is not a valid literal. */
+function parseIpv4(host: string): [number, number, number, number] | null {
+  const parts = host.split('.');
+  if (parts.length !== 4) return null;
+  const nums = parts.map((part) => (/^\d{1,3}$/.test(part) ? Number(part) : NaN));
+  if (nums.some((n) => !Number.isInteger(n) || n < 0 || n > 255)) return null;
+  return nums as [number, number, number, number];
+}
+
+function isPrivateIpv4(host: string): boolean {
+  const parsed = parseIpv4(host);
+  if (!parsed) return false;
+  const [a, b] = parsed;
+  if (a === 0 || a === 10 || a === 127) return true; // this-network / RFC1918 / loopback
+  if (a === 100 && b >= 64 && b <= 127) return true; // 100.64.0.0/10 CGNAT
+  if (a === 169 && b === 254) return true; // link-local (cloud metadata)
+  if (a === 172 && b >= 16 && b <= 31) return true; // 172.16.0.0/12
+  if (a === 192 && b === 168) return true; // 192.168.0.0/16
+  if (a >= 224) return true; // 224.0.0.0/4 multicast + 240.0.0.0/4 reserved + broadcast
+  return false;
+}
 
 export function isPrivateIpLiteral(host: string): boolean {
   const h = host.replace(/^\[|\]$/g, '');
-  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(h)) {
-    return PRIVATE_IPV4.some((re) => re.test(h));
-  }
+  if (parseIpv4(h)) return isPrivateIpv4(h);
   if (h.includes(':')) {
     const lower = h.toLowerCase();
     if (lower === '::1' || lower === '::') return true;
-    if (/^fe[89ab]/.test(lower) || /^f[cd]/.test(lower)) return true;
+    if (/^fe[89ab]/.test(lower)) return true; // fe80::/10 link-local
+    if (/^f[cd]/.test(lower)) return true; // fc00::/7 unique-local
+    if (/^ff/.test(lower)) return true; // ff00::/8 multicast
     const mapped = /::ffff:(\d{1,3}(\.\d{1,3}){3})$/.exec(lower);
-    if (mapped) return PRIVATE_IPV4.some((re) => re.test(mapped[1]));
+    if (mapped) return isPrivateIpv4(mapped[1]);
   }
   return false;
 }
 
+/**
+ * How to treat a hostname whose DNS records cannot be resolved.
+ *
+ * - `best-effort` (default): keep the literal/hostname checks and let `fetch` fail naturally.
+ *   Used by marketing audio import where a blurry DNS answer must not block a legitimate host.
+ * - `fail-closed`: refuse the URL when the host cannot be resolved. Used by QR/inline-image
+ *   fetches where a DNS-rebinding attempt must not be able to reach a private address.
+ */
+export type DnsPolicy = 'best-effort' | 'fail-closed';
+
 export type AssertPublicHttpUrlOptions = {
   /** Default false — marketing audio historically allowed http://. */
   httpsOnly?: boolean;
+  /** Default `best-effort`. */
+  dnsPolicy?: DnsPolicy;
 };
 
 /**
- * Shape + private-host checks. Does not fetch. DNS is best-effort (may be
- * unavailable in some runtimes); literal + hostname checks always run.
+ * Shape + private-host checks. Does not fetch. DNS is best-effort unless `dnsPolicy` is
+ * `fail-closed`; literal + hostname checks always run.
  */
 export async function assertPublicHttpUrl(
   raw: string,
@@ -79,11 +104,14 @@ export async function assertPublicHttpUrl(
     throw new UnsafeOutboundUrlError('URL must not contain credentials', 'has_credentials');
   }
 
-  await assertHostNotPrivate(u.hostname);
+  await assertHostNotPrivate(u.hostname, options.dnsPolicy ?? 'best-effort');
   return u;
 }
 
-async function assertHostNotPrivate(host: string): Promise<void> {
+async function assertHostNotPrivate(
+  host: string,
+  dnsPolicy: DnsPolicy = 'best-effort'
+): Promise<void> {
   if (isPrivateIpLiteral(host)) {
     throw new UnsafeOutboundUrlError(`That host is not allowed`, 'private_host');
   }
@@ -97,22 +125,24 @@ async function assertHostNotPrivate(host: string): Promise<void> {
     throw new UnsafeOutboundUrlError('That host is not allowed', 'private_host');
   }
 
-  try {
-    const [a, aaaa] = await Promise.allSettled([
-      Deno.resolveDns(host, 'A'),
-      Deno.resolveDns(host, 'AAAA'),
-    ]);
-    const addrs = [
-      ...(a.status === 'fulfilled' ? a.value : []),
-      ...(aaaa.status === 'fulfilled' ? aaaa.value : []),
-    ];
-    for (const addr of addrs) {
-      if (isPrivateIpLiteral(addr)) {
-        throw new UnsafeOutboundUrlError('That host is not allowed', 'private_host');
-      }
+  const [a, aaaa] = await Promise.allSettled([
+    Deno.resolveDns(host, 'A'),
+    Deno.resolveDns(host, 'AAAA'),
+  ]);
+  const addrs = [
+    ...(a.status === 'fulfilled' ? a.value : []),
+    ...(aaaa.status === 'fulfilled' ? aaaa.value : []),
+  ];
+
+  if (dnsPolicy === 'fail-closed' && addrs.length === 0) {
+    // Both lookups failed or returned nothing: we cannot prove the host is public.
+    throw new UnsafeOutboundUrlError('That host is not allowed', 'dns_unverified');
+  }
+
+  for (const addr of addrs) {
+    if (isPrivateIpLiteral(addr)) {
+      throw new UnsafeOutboundUrlError('That host is not allowed', 'private_host');
     }
-  } catch (err) {
-    if (err instanceof UnsafeOutboundUrlError) throw err;
   }
 }
 
@@ -179,6 +209,52 @@ export async function fetchFirstPartyOrPublic(
     return await fetch(raw.trim(), { ...init, redirect: 'manual' });
   }
   return await fetchPublicHttp(raw, init, options);
+}
+
+/**
+ * Read a response body with a hard byte ceiling. Screenshots, QR codes, inline email images
+ * and downloaded audio all come from hosts we do not control, so an unbounded
+ * `arrayBuffer()` is a memory-exhaustion vector (OWASP A10 / resource exhaustion).
+ */
+export async function readResponseBytesBounded(
+  res: Response,
+  maxBytes: number
+): Promise<Uint8Array> {
+  const declared = Number(res.headers.get('content-length') ?? '');
+  if (Number.isFinite(declared) && declared > maxBytes) {
+    throw new UnsafeOutboundUrlError('Response too large', 'too_large');
+  }
+  if (!res.body) return new Uint8Array(0);
+
+  const reader = res.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (!value) continue;
+      total += value.byteLength;
+      if (total > maxBytes) {
+        throw new UnsafeOutboundUrlError('Response too large', 'too_large');
+      }
+      chunks.push(value);
+    }
+  } finally {
+    try {
+      await reader.cancel();
+    } catch {
+      /* already closed */
+    }
+  }
+
+  const out = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    out.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return out;
 }
 
 /** Origins that belong to this Supabase project (public asset storage). */

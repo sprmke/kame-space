@@ -15,6 +15,8 @@ import {
   requireHttpMethod,
 } from '../_shared/httpResponse.ts';
 import { createServiceClient } from '../_shared/orgAuth.ts';
+import { constantTimeEqual } from '../_shared/cryptoCompare.ts';
+import { identityFromRequest, rateLimitGate } from '../_shared/rateLimit.ts';
 import { servePublic } from '../_shared/serveEdge.ts';
 import {
   loadNotificationPreferencesForUsers,
@@ -39,7 +41,14 @@ servePublic('push-fanout', async (req) => {
 
   const expected = Deno.env.get('PUSH_FANOUT_SECRET') ?? '';
   const provided = req.headers.get('x-push-fanout-secret') ?? '';
-  if (!expected || provided !== expected) {
+  if (!expected || !(await constantTimeEqual(provided, expected))) {
+    const limited = await rateLimitGate(req, {
+      scope: 'push-fanout-bad-secret',
+      identity: identityFromRequest(req),
+      limit: 30,
+      windowSec: 60,
+    });
+    if (limited) return limited;
     return jsonError(req, 'Unauthorized', 401);
   }
 

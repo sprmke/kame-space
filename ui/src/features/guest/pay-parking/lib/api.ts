@@ -14,28 +14,34 @@ function fnHeaders(): HeadersInit {
   };
 }
 
+/**
+ * Bootstrap for the Pay Parking redirect. Redirect fields are always present; guest detail
+ * fields are only returned to the owning guest (valid `?access=` token or signed-in owner), so
+ * they stay optional here.
+ */
 export type PayParkingBootstrap = {
   bookingId: string;
   property_slug?: string;
-  primary_guest_name: string;
-  guest_facebook_name: string;
-  check_in_date: string;
-  check_out_date: string;
-  check_in_time: string;
-  check_out_time: string;
-  number_of_nights: number;
-  number_of_adults: number;
-  number_of_children: number;
-  pax: number;
-  parking_rate_guest: number;
-  parking_check_in_date: string;
-  parking_check_out_date: string;
-  number_of_parking_nights: number;
-  car_plate_number: string;
-  car_brand_model: string;
-  car_color: string;
-  already_submitted: boolean;
-  status: string;
+  viewerOwnsBooking?: boolean;
+  primary_guest_name?: string;
+  guest_facebook_name?: string;
+  check_in_date?: string;
+  check_out_date?: string;
+  check_in_time?: string;
+  check_out_time?: string;
+  number_of_nights?: number;
+  number_of_adults?: number;
+  number_of_children?: number;
+  pax?: number;
+  parking_rate_guest?: number;
+  parking_check_in_date?: string;
+  parking_check_out_date?: string;
+  number_of_parking_nights?: number;
+  car_plate_number?: string;
+  car_brand_model?: string;
+  car_color?: string;
+  already_submitted?: boolean;
+  status?: string;
   email_logo_url?: string;
   brand_color?: string;
   /** Marketplace parking booking linked to this property stay (Phase pay-parking connect). */

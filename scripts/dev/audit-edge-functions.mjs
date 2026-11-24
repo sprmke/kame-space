@@ -20,6 +20,7 @@
  */
 
 import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -182,11 +183,22 @@ function auditFunction(fnDir) {
   };
 }
 
+/** Mass-assignment sink: raw request body passed straight into a write (BOPLA, PR-018). */
+const RAW_BODY_WRITE_PATTERN =
+  /\.(insert|update|upsert)\(\s*(body|reqBody|requestBody|rawBody|payload)\s*[,)]/;
+
 function runCheck(valid) {
   const raw = valid.filter((r) => r.rawServe);
   const unexpected = raw.filter((r) => !RAW_SERVE_ALLOWLIST.has(r.fn));
   const stale = [...RAW_SERVE_ALLOWLIST].filter((name) => !valid.some((r) => r.fn === name));
-  if (unexpected.length || stale.length) {
+  const rawBodyWrites = valid.filter((r) => {
+    try {
+      return RAW_BODY_WRITE_PATTERN.test(readFileSync(r.relPath, 'utf8'));
+    } catch {
+      return false;
+    }
+  });
+  if (unexpected.length || stale.length || rawBodyWrites.length) {
     if (unexpected.length) {
       console.error('New hand-rolled serve() outside the reviewed allowlist (doc 18):');
       for (const r of unexpected) console.error(`  ${r.fn}`);
@@ -195,11 +207,28 @@ function runCheck(valid) {
       console.error('Allowlisted functions missing from supabase/functions (stale allowlist):');
       for (const name of stale) console.error(`  ${name}`);
     }
+    if (rawBodyWrites.length) {
+      console.error(
+        'Raw request body written straight into a table (BOPLA / mass assignment). Pick fields explicitly or validate a strict schema first:'
+      );
+      for (const r of rawBodyWrites) console.error(`  ${r.fn}`);
+    }
     process.exit(1);
   }
   console.error(
-    `ok: ${valid.length} functions; ${raw.length} reviewed hand-rolled serve() on allowlist`
+    `ok: ${valid.length} functions; ${raw.length} reviewed hand-rolled serve() on allowlist; 0 raw-body writes`
   );
+
+  // The SSRF guard lives in a shell script (it greps every handler); run it here so CI enforces
+  // it without needing a second workflow step.
+  try {
+    execFileSync('bash', [join(REPO_ROOT, 'scripts', 'dev', 'check-outbound-fetch-ssrf.sh')], {
+      stdio: 'inherit',
+    });
+  } catch {
+    console.error('outbound fetch SSRF guard failed (see messages above)');
+    process.exit(1);
+  }
 }
 
 function main() {

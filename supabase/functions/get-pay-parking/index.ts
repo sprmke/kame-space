@@ -1,20 +1,29 @@
 /**
- * get-pay-parking — Public read-only payload for the Pay Parking form.
+ * get-pay-parking — Public read-only payload for the Pay Parking redirect.
  *
- * GET ?bookingId=<uuid>
- * Returns booking summary + existing parking vehicle fields when the booking exists
- * and is not CANCELLED.
+ * GET ?bookingId=<uuid>[&access=<hmac_token>]
+ *
+ * Returns the redirect target for a stay (property slug, linked marketplace booking, owner
+ * default parking, city slug) so `/properties/:slug/parking/:bookingId` can send the guest to
+ * the right place.
+ *
+ * Guest detail fields (name, stay dates, pax, parking rate, vehicle plate/model/color, status)
+ * are only returned to the owning guest: a valid `?access=` token minted for this booking, or a
+ * signed-in guest whose account / email matches the booking. A bare booking id is never enough
+ * to read guest PII (OWASP A01 / API1 BOLA, API3 BOPLA), even while
+ * `GUEST_BOOKING_ACCESS_ENFORCE` is off.
  */
 
 import { DatabaseService } from '../_shared/databaseService.ts';
 import { countStayNights } from '../_shared/utils.ts';
 import { resolveAppSettings } from '../_shared/appSettings.ts';
-import { createServiceClient } from '../_shared/orgAuth.ts';
+import { createServiceClient, tryGetAuthenticatedUser } from '../_shared/orgAuth.ts';
 import {
   resolveOwnerDefaultParking,
   readPreferredOwnerParkingId,
 } from '../_shared/ownerDefaultParking.ts';
 import { resolvePropertySlugById } from '../_shared/propertyScope.ts';
+import { verifyGuestBookingAccessToken } from '../_shared/guestBookingAccessToken.ts';
 import { jsonResponse, jsonSuccess } from '../_shared/httpResponse.ts';
 import { servePublic } from '../_shared/serveEdge.ts';
 import { publicGetRateLimitGate } from '../_shared/publicEndpointRateLimit.ts';
@@ -52,7 +61,6 @@ servePublic('get-pay-parking', async (req) => {
     throw new Error(`Method ${req.method} not allowed`);
   }
 
-
   const limited = await publicGetRateLimitGate(req, 'get-pay-parking', { maxPerMin: 30 });
   if (limited) return limited;
 
@@ -65,6 +73,34 @@ servePublic('get-pay-parking', async (req) => {
   const row = await DatabaseService.getBookingById(bookingId);
   if (!row || row.status === 'CANCELLED') {
     return jsonResponse(req, NOT_FOUND, 404);
+  }
+
+  // Owning guest check: a booking-scoped access token, or the signed-in guest who owns the row.
+  // Read-only on purpose — this endpoint never links or writes.
+  const accessToken = url.searchParams.get('access')?.trim() ?? '';
+  const user = await tryGetAuthenticatedUser(req);
+  let viewerOwnsBooking = false;
+  if (accessToken) {
+    try {
+      const verified = await verifyGuestBookingAccessToken(accessToken);
+      viewerOwnsBooking = verified.ok && verified.bookingId === String(row.id);
+    } catch (err) {
+      // `GUEST_BOOKING_ACCESS_SECRET` unset on this environment: fail closed for PII only.
+      // The redirect payload still answers, so the parking flow keeps working.
+      console.warn(
+        '[get-pay-parking] access token check unavailable:',
+        err instanceof Error ? err.message : err
+      );
+      viewerOwnsBooking = false;
+    }
+  }
+  if (!viewerOwnsBooking && user) {
+    const ownerId = typeof row.guest_user_id === 'string' ? row.guest_user_id.trim() : '';
+    const bookingEmail =
+      typeof row.guest_email === 'string' ? row.guest_email.trim().toLowerCase() : '';
+    viewerOwnsBooking = ownerId
+      ? ownerId === user.id
+      : Boolean(bookingEmail) && bookingEmail === user.email.trim().toLowerCase();
   }
 
   const pax = (Number(row.number_of_adults) || 1) + (Number(row.number_of_children) || 0);
@@ -144,9 +180,26 @@ servePublic('get-pay-parking', async (req) => {
     }
   }
 
-  return jsonSuccess(req, {
+  // Redirect payload: no guest PII. Always safe to return to any caller holding the lead.
+  const redirectFields = {
     bookingId: row.id,
     property_slug,
+    email_logo_url: settings.emailLogoUrl,
+    brand_color: settings.brandColor,
+    linked_parking_booking_id: linkedParking?.id ? String(linkedParking.id) : null,
+    city_location_slug,
+    owner_default_parking_slug,
+    owner_default_check_in,
+    owner_default_check_out,
+  };
+
+  if (!viewerOwnsBooking) {
+    return jsonSuccess(req, { ...redirectFields, viewerOwnsBooking: false });
+  }
+
+  return jsonSuccess(req, {
+    ...redirectFields,
+    viewerOwnsBooking: true,
     primary_guest_name: row.primary_guest_name ?? row.guest_facebook_name ?? '',
     guest_facebook_name: row.guest_facebook_name ?? '',
     check_in_date: row.check_in_date,
@@ -169,12 +222,5 @@ servePublic('get-pay-parking', async (req) => {
     car_color: row.car_color ?? '',
     already_submitted: hasSubmittedParking(row as Record<string, unknown>),
     status: row.status,
-    email_logo_url: settings.emailLogoUrl,
-    brand_color: settings.brandColor,
-    linked_parking_booking_id: linkedParking?.id ? String(linkedParking.id) : null,
-    city_location_slug,
-    owner_default_parking_slug,
-    owner_default_check_in,
-    owner_default_check_out,
   });
 });

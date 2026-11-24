@@ -149,7 +149,9 @@ serveAuthenticated('marketing-templates', async (req, user) => {
   const url = new URL(req.url);
   const body =
     req.method === 'POST' || req.method === 'PATCH' || req.method === 'DELETE'
-      ? await readJsonBody(req)
+      ? // Design saves can carry a legacy base64 thumbnail in `design_json`, so this endpoint
+        // keeps a higher ceiling than the 2 MB default.
+        await readJsonBody(req, { maxBytes: 12 * 1024 * 1024 })
       : {};
   const action = typeof body.action === 'string' ? body.action : '';
 

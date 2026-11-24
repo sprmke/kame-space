@@ -107,7 +107,7 @@ export function scrubRecord(
 
 function scrubValue(value: unknown, depth: number): unknown {
   if (value === undefined || value === null) return undefined;
-  if (typeof value === 'string') return value;
+  if (typeof value === 'string') return scrubText(value);
   if (typeof value === 'number' || typeof value === 'boolean') return value;
   if (depth >= MAX_DEPTH) return undefined;
 
@@ -143,4 +143,27 @@ export function scrubUrl(raw: string): string {
     const cut = raw.indexOf('?');
     return cut === -1 ? raw : raw.slice(0, cut);
   }
+}
+
+/**
+ * Credential-shaped substrings inside free text: error messages, fetch errors and log lines
+ * often embed a full URL, and a URL can carry the secret in its path. A Telegram failure for
+ * example surfaces `https://api.telegram.org/bot<token>/sendMessage`, where the token is a path
+ * segment that {@link scrubUrl} cannot remove because it is not a query param.
+ */
+const TEXT_SECRET_PATTERNS: Array<[RegExp, string]> = [
+  // Telegram bot token in a request path.
+  [/\/bot\d+:[A-Za-z0-9_-]+/g, '/bot[redacted]'],
+  // Bearer credentials quoted in an error body.
+  [/\bBearer\s+[A-Za-z0-9._~+/=-]{8,}/gi, 'Bearer [redacted]'],
+  // Token-ish query params that survived into a message string.
+  [/([?&](?:access|token|code|signature|apikey|api_key|key|secret|password|otp)=)[^&\s"'<>]+/gi, '$1[redacted]'],
+];
+
+export function scrubText(value: string): string {
+  let out = value;
+  for (const [pattern, replacement] of TEXT_SECRET_PATTERNS) {
+    out = out.replace(pattern, replacement);
+  }
+  return out;
 }

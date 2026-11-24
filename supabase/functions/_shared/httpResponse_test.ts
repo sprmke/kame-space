@@ -6,6 +6,7 @@ import {
   errorMessageFromThrown,
   handleEdgeError,
   internalError,
+  readJsonBody,
   requireHttpMethod,
   statusConflict,
 } from './httpResponse.ts';
@@ -137,6 +138,58 @@ Deno.test('requireHttpMethod reports 405, not 400', async () => {
 Deno.test('requireHttpMethod accepts HEAD for a GET endpoint', () => {
   // Uptime monitors probe read endpoints with HEAD; a 405 there reads as downtime.
   requireHttpMethod(new Request('https://x.test/fn', { method: 'HEAD' }), 'GET');
+});
+
+Deno.test('readJsonBody parses a normal JSON body', async () => {
+  const body = await readJsonBody(
+    new Request('https://x.test/fn', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ bookingId: 'abc', confirm: true }),
+    })
+  );
+  assertEquals(body.bookingId, 'abc');
+  assertEquals(body.confirm, true);
+});
+
+Deno.test('readJsonBody returns {} for an empty or malformed body', async () => {
+  const empty = await readJsonBody(new Request('https://x.test/fn', { method: 'POST' }));
+  assertEquals(empty, {});
+  const malformed = await readJsonBody(
+    new Request('https://x.test/fn', { method: 'POST', body: '{not json' })
+  );
+  assertEquals(malformed, {});
+});
+
+Deno.test('readJsonBody rejects an oversized Content-Length before reading', async () => {
+  const request = new Request('https://x.test/fn', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'content-length': '999999999' },
+    body: '{}',
+  });
+  let status = 0;
+  try {
+    await readJsonBody(request, { maxBytes: 1024 });
+  } catch (error) {
+    if (error instanceof EdgeError) status = error.status;
+  }
+  assertEquals(status, 413);
+});
+
+Deno.test('readJsonBody rejects a streamed body that crosses the ceiling', async () => {
+  const big = 'x'.repeat(4096);
+  const request = new Request('https://x.test/fn', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ value: big }),
+  });
+  let code = '';
+  try {
+    await readJsonBody(request, { maxBytes: 512 });
+  } catch (error) {
+    if (error instanceof EdgeError) code = error.code;
+  }
+  assertEquals(code, 'payload_too_large');
 });
 
 /** Points the Sentry client at a stubbed transport and returns the captured calls. */

@@ -9,6 +9,7 @@
 
 import { corsHeaders } from '../_shared/cors.ts';
 import { runAfterResponse } from '../_shared/backgroundTask.ts';
+import { constantTimeEqual } from '../_shared/cryptoCompare.ts';
 import { metaWebhookVerifyToken } from '../_shared/metaInboxConfig.ts';
 import { verifyMetaWebhookSignatureAsync } from '../_shared/metaInboxGraph.ts';
 import { jsonError } from '../_shared/httpResponse.ts';
@@ -27,14 +28,30 @@ servePublic('meta-inbox-webhook', async (req) => {
 
   if (req.method === 'GET') {
     const mode = url.searchParams.get('hub.mode');
-    const token = url.searchParams.get('hub.verify_token');
+    const token = url.searchParams.get('hub.verify_token') ?? '';
     const challenge = url.searchParams.get('hub.challenge');
-    if (mode === 'subscribe' && token === metaWebhookVerifyToken() && challenge) {
+    let verified = false;
+    if (mode === 'subscribe' && challenge) {
+      try {
+        verified = await constantTimeEqual(token, metaWebhookVerifyToken());
+      } catch {
+        // Missing META_WEBHOOK_VERIFY_TOKEN must never verify a caller.
+        verified = false;
+      }
+    }
+    if (verified && challenge) {
       return new Response(challenge, {
         status: 200,
         headers: { 'Content-Type': 'text/plain' },
       });
     }
+    const limited = await rateLimitGate(req, {
+      scope: 'meta-inbox-webhook-bad-verify-token',
+      identity: identityFromRequest(req),
+      limit: 30,
+      windowSec: 60,
+    });
+    if (limited) return limited;
     return new Response('Forbidden', { status: 403 });
   }
 
