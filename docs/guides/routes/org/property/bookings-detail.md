@@ -298,17 +298,22 @@ Results are terse, plain-language notes with no hedging. Long model text is clam
 
 Property-scoped admin session + allow list (`RequireAdmin` / org context). Route needs **`bookings:view`**.
 
-| Action                                         | Permission                      |
-| ---------------------------------------------- | ------------------------------- |
-| Edit Stay tab                                  | `bookings.detail.stay:edit`     |
-| Edit Guests tab (+ Valid ID uploads)           | `bookings.detail.guests:edit`   |
-| Edit / Add parking                             | `bookings.detail.parking:edit`  |
-| Edit / Add pets                                | `bookings.detail.pets:edit`     |
-| Receipt AI validation / Progress pricing forms | `bookings.detail.pricing:edit`  |
-| Progress transitions / automation / Kanban     | `bookings.detail.workflow:edit` |
-| Reject approved GAF / pet file                 | `bookings.detail.workflow:edit` |
-| AI Summary run                                 | `bookings.detail.stay:edit`     |
-| Reschedule (`⋯` → Reschedule)                  | `bookings.detail.stay:edit`     |
+| Action                                         | Permission                                                         |
+| ---------------------------------------------- | ------------------------------------------------------------------ |
+| Edit Stay tab                                  | `bookings.detail.stay:edit`                                        |
+| Edit Guests tab (+ Valid ID uploads)           | `bookings.detail.guests:edit`                                      |
+| Edit / Add parking                             | `bookings.detail.parking:edit`                                     |
+| Edit / Add pets                                | `bookings.detail.pets:edit`                                        |
+| Receipt AI validation / Progress pricing forms | `bookings.detail.pricing:edit`                                     |
+| Progress transitions / automation / Kanban     | `bookings.detail.workflow:edit`                                    |
+| Reject approved GAF / pet file                 | `bookings.detail.workflow:edit`                                    |
+| AI Summary run                                 | `bookings.detail.stay:edit`                                        |
+| Reschedule (`⋯` → Reschedule)                  | `bookings.detail.stay:edit`                                        |
+| Door code override (Stay tab)                  | `bookings.detail.stay:edit` (client gate missing, server enforces) |
+
+**Known gap:** the door-code field renders an editable input + Save for any viewer and only fails at
+the server with 403 — tracked as P1-4 in `docs/workflow/in-progress/bookings-ux-review/README.md`.
+The same review records the read-only review gate (P1-5) and the clipped CTA (P1-1).
 
 **Edit booking** only appears when at least one Stay/Guests/Parking/Pets leaf is granted; the edit form only shows those tabs. Progress rail **status** mutations require `bookings.detail.workflow:edit`. Progress **pricing / settlement fields** are read-only without `bookings.detail.pricing:edit` (even when workflow edit is granted). Legacy stored ids `bookings:edit` / `bookings:workflow` still expand to the equivalent leaf set.
 
