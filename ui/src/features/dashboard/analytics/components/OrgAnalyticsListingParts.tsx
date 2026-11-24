@@ -164,7 +164,7 @@ export function OrgAnalyticsRevenueChange({ pct }: { pct?: number | null }) {
   return (
     <span
       className={cn(
-        'text-[11px] font-medium tabular-nums sm:text-xs',
+        'shrink-0 text-[11px] font-medium tabular-nums sm:text-xs',
         up ? 'text-emerald-700 dark:text-emerald-300' : 'text-rose-700 dark:text-rose-300'
       )}
     >

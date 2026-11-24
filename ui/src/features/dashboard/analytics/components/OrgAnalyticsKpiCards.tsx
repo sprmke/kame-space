@@ -4,7 +4,7 @@ import { MetricInfoDot } from '@/features/dashboard/analytics/components/MetricI
 import type { OrgAnalyticsSummary } from '@/features/dashboard/analytics/lib/types';
 
 import { StatCard, StatCardGrid } from '@/components/shared/StatCard';
-import { formatMoney } from '@/utils/format/currency';
+import { formatMoneyCompact } from '@/utils/format/currency';
 
 type Props = {
   portfolio: OrgAnalyticsSummary['portfolio'];
@@ -21,7 +21,8 @@ export function OrgAnalyticsKpiCards({ portfolio }: Props) {
       <StatCardGrid>
         <StatCard
           title="Revenue"
-          value={formatMoney(portfolio.totalRevenue)}
+          value={formatMoneyCompact(portfolio.totalRevenue)}
+          titleClassName="lg:min-h-10 xl:min-h-0"
           change={portfolio.totalRevenueChangePct ?? undefined}
           icon={DollarSign}
         />
