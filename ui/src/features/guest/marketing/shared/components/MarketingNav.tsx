@@ -28,16 +28,16 @@ import { useAdminSession } from '@/features/dashboard/bookings/hooks/useAdminSes
 
 import { ThemeToggle } from '@/components/theme/MarketingThemeToggle';
 import { Button } from '@/components/ui/button';
-import { useMobileBack } from '@/hooks/useMobileBack';
 import { usePrefersReducedMotion } from '@/hooks/useMediaQuery';
+import { useMobileBack } from '@/hooks/useMobileBack';
 import { cn } from '@/lib/utils';
 
 const guestNavLinks = marketingGuestNavLinks;
 
 const hostNavLinks = [
-  { kind: 'section' as const, id: 'features', label: 'Features' },
-  { kind: 'section' as const, id: 'how-it-works', label: 'How It Works' },
-  { kind: 'section' as const, id: 'reviews', label: 'Reviews' },
+  { kind: 'section' as const, id: 'ai', label: 'AI tools' },
+  { kind: 'section' as const, id: 'channels', label: 'Channels' },
+  { kind: 'section' as const, id: 'how-it-works', label: 'How it works' },
   { kind: 'route' as const, href: '/for-hosts/pricing', label: 'Pricing' },
 ];
 
