@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react';
+
 import { useNavigate } from 'react-router-dom';
 
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
@@ -157,8 +158,9 @@ export function AdminQuickAccessHub({
     FAB_SIZE + actions.length * (ACTION_SIZE + ACTION_GAP) + (actions.length > 0 ? 8 : 0);
 
   return (
-    <div
+    <aside
       ref={rootRef}
+      aria-label="Quick actions"
       className={cn(
         /* `.admin-quick-access-hub` owns z-index + bottom offset above fixed notices. */
         'admin-quick-access-hub pointer-events-none fixed right-4 sm:right-5',
@@ -219,17 +221,9 @@ export function AdminQuickAccessHub({
                       onClick={onSelect}
                       aria-label={label}
                       title={label}
-                      initial={
-                        reduceMotion
-                          ? { opacity: 0 }
-                          : { opacity: 0, y: 14, scale: 0.88 }
-                      }
+                      initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 14, scale: 0.88 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={
-                        reduceMotion
-                          ? { opacity: 0 }
-                          : { opacity: 0, y: 10, scale: 0.92 }
-                      }
+                      exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 10, scale: 0.92 }}
                       transition={
                         reduceMotion
                           ? { duration: 0.1 }
@@ -278,6 +272,6 @@ export function AdminQuickAccessHub({
           </span>
         ) : null}
       </div>
-    </div>
+    </aside>
   );
 }

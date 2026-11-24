@@ -13,6 +13,7 @@ import {
   propertyNotificationsPath,
   propertySectionPath,
 } from '@/features/dashboard/org/lib/tenantPaths';
+import type { PropertySection } from '@/features/dashboard/team/lib/propertyPermissions';
 
 type NotificationLike = {
   type?: string | null;
@@ -29,6 +30,24 @@ export const CHANNEL_SYNC_OPEN_PARAM = 'channelSync';
 export function propertyChannelSyncPath(orgSlug: string, propertySlug: string): string {
   return `${propertySectionPath(orgSlug, propertySlug, 'pricing')}?${CHANNEL_SYNC_OPEN_PARAM}=1`;
 }
+
+/**
+ * Fallback page for notification types that are not tied to a booking or a
+ * conversation. Without these the row had no destination at all, so tapping it
+ * marked it read and left the host on the same screen.
+ */
+const PROPERTY_SECTION_BY_TYPE: Partial<Record<string, PropertySection>> = {
+  review_received: 'reviews',
+  review_due: 'reviews',
+  review_response_received: 'reviews',
+  smart_pricing_updated: 'pricing',
+  maintenance_guest_reported: 'maintenance',
+  guest_request_submitted: 'maintenance',
+  analytics_review_updated: 'analytics',
+  billing_notice: 'plans',
+  property_settings_copied: 'settings',
+  booking_receipt_uploaded: 'finance',
+};
 
 export type NotificationPathScope = {
   orgSlug: string | null;
@@ -119,6 +138,13 @@ export function resolveNotificationPath(
   ) {
     const slug = propertySlugById.get(notification.property_id);
     if (slug) return propertyChannelSyncPath(orgSlug, slug);
+  }
+
+  // Everything else lands on the property page that owns the event.
+  const section = notification.type ? PROPERTY_SECTION_BY_TYPE[notification.type] : undefined;
+  if (section && notification.property_id) {
+    const slug = propertySlugById.get(notification.property_id);
+    if (slug) return propertySectionPath(orgSlug, slug, section);
   }
 
   return null;

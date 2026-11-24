@@ -104,7 +104,7 @@ export function TelegramGlobalBotTokenCard() {
               id="global-bot-token"
               label="Bot token"
               value={botToken}
-              disabled={busy}
+              disabled={busy || !settingsEditable}
               helpTab="bot-token"
               defaultVisible
               maskedLabel={label}

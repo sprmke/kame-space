@@ -7,14 +7,17 @@ import { NOTIFICATIONS_HELP_COPY } from '@/features/dashboard/notifications/lib/
 import { InfoHint } from '@/components/help/InfoHint';
 import { StatCard, StatCardGrid, StatCardSkeleton } from '@/components/shared/StatCard';
 
+/** "0 of 6" reads as a count; "0/6" reads as a date or a fraction. */
 function ratioValue(numerator: number, denominator: number): string {
-  return `${numerator}/${denominator}`;
+  return `${numerator} of ${denominator}`;
 }
 
 type Props = {
   unreadCount: number;
   summary: NotificationsUnreadSummary | undefined;
   activityLoading?: boolean;
+  /** The list request failed, so a `0` would be a lie. */
+  activityError?: boolean;
   telegram: TelegramHubStats;
   onFocusActivity?: () => void;
   onFocusTelegram?: () => void;
@@ -22,7 +25,7 @@ type Props = {
 
 const NOTIFICATIONS_METRICS = [
   { title: 'Unread', icon: Bell, hasHint: false },
-  { title: 'Messages', icon: MessageCircle, hasHint: false },
+  { title: 'Messages', icon: MessageCircle, hasHint: true },
   { title: 'Telegram on', icon: Send, hasHint: true },
   { title: 'Connected', icon: Link2, hasHint: true },
 ];
@@ -48,6 +51,7 @@ export function NotificationsHubSummaryCards({
   unreadCount,
   summary,
   activityLoading,
+  activityError = false,
   telegram,
   onFocusActivity,
   onFocusTelegram,
@@ -61,20 +65,29 @@ export function NotificationsHubSummaryCards({
 
   const inbox = summary?.inbox ?? 0;
   const { moduleCount, enabledCount, connectedCount } = telegram;
+  /* A failed list is not "zero unread": say so instead of showing a clean 0. */
+  const activityValue = (value: number) => (activityError ? 'n/a' : String(value));
 
   return (
     <StatCardGrid className="lg:grid-cols-2 xl:grid-cols-4">
       <StatCard
         title="Unread"
-        value={String(unreadCount)}
+        value={activityValue(unreadCount)}
         icon={Bell}
         onClick={onFocusActivity}
       />
       <StatCard
         title="Messages"
-        value={String(inbox)}
+        value={activityValue(inbox)}
         icon={MessageCircle}
         onClick={onFocusActivity}
+        titleAdornment={
+          <InfoHint
+            label="Messages"
+            text={NOTIFICATIONS_HELP_COPY.messages.hint}
+            variant="metric"
+          />
+        }
       />
       <StatCard
         title="Telegram on"

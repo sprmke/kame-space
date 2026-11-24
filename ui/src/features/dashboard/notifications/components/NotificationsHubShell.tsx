@@ -34,7 +34,11 @@ type Props = {
  */
 export function NotificationsHubShell({ hub, telegramStats, children }: Props) {
   /* Same query the bell holds, so the tab count is already cached. */
-  const { data, isLoading: activityLoading } = useNotificationsList('preview');
+  const {
+    data,
+    isLoading: activityLoading,
+    isError: activityError,
+  } = useNotificationsList('preview');
   const firstPage = data?.pages[0];
   const unreadCount = firstPage?.unreadCount ?? 0;
   const telegramAvailability = useFeatureAvailability('notifications.telegram');
@@ -53,6 +57,7 @@ export function NotificationsHubShell({ hub, telegramStats, children }: Props) {
         unreadCount={unreadCount}
         summary={firstPage?.unreadSummary}
         activityLoading={activityLoading}
+        activityError={activityError}
         telegram={telegramStats}
         onFocusActivity={() => requestSwitch('activity')}
         onFocusTelegram={() => requestSwitch('telegram')}

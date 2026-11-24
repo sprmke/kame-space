@@ -35,9 +35,7 @@ describe('resolveNotificationPath', () => {
         },
         scope
       )
-    ).toBe(
-      '/org/acme/property/solea/messages?conversationId=c-1&platform=facebook&messageId=m-9'
-    );
+    ).toBe('/org/acme/property/solea/messages?conversationId=c-1&platform=facebook&messageId=m-9');
   });
 
   it('prefers Messages over booking detail when both conversation_id and booking_id are set', () => {
@@ -118,6 +116,90 @@ describe('resolveNotificationPath', () => {
         scope
       )
     ).toBe('/org/acme/property/solea/pricing?channelSync=1');
+  });
+
+  it('routes review notifications to the property reviews page', () => {
+    expect(
+      resolveNotificationPath(
+        {
+          type: 'review_received',
+          booking_id: null,
+          conversation_id: null,
+          property_id: 'prop-1',
+          parking_id: null,
+        },
+        scope
+      )
+    ).toBe('/org/acme/property/solea/reviews');
+  });
+
+  it('routes maintenance and guest request rows to maintenance', () => {
+    for (const type of ['maintenance_guest_reported', 'guest_request_submitted']) {
+      expect(
+        resolveNotificationPath(
+          {
+            type,
+            booking_id: null,
+            conversation_id: null,
+            property_id: 'prop-1',
+            parking_id: null,
+          },
+          scope
+        )
+      ).toBe('/org/acme/property/solea/maintenance');
+    }
+  });
+
+  it('routes pricing, analytics, billing and settings rows to their page', () => {
+    const destinations: Array<[string, string]> = [
+      ['smart_pricing_updated', '/org/acme/property/solea/pricing'],
+      ['analytics_review_updated', '/org/acme/property/solea/analytics'],
+      ['billing_notice', '/org/acme/property/solea/plans'],
+      ['property_settings_copied', '/org/acme/property/solea/settings'],
+      ['booking_receipt_uploaded', '/org/acme/property/solea/finance'],
+    ];
+
+    for (const [type, expected] of destinations) {
+      expect(
+        resolveNotificationPath(
+          {
+            type,
+            booking_id: null,
+            conversation_id: null,
+            property_id: 'prop-1',
+            parking_id: null,
+          },
+          scope
+        )
+      ).toBe(expected);
+    }
+  });
+
+  it('returns null only when the row has no resolvable destination', () => {
+    expect(
+      resolveNotificationPath(
+        {
+          type: 'billing_notice',
+          booking_id: null,
+          conversation_id: null,
+          property_id: null,
+          parking_id: null,
+        },
+        scope
+      )
+    ).toBeNull();
+    expect(
+      resolveNotificationPath(
+        {
+          type: 'review_received',
+          booking_id: null,
+          conversation_id: null,
+          property_id: 'unknown-prop',
+          parking_id: null,
+        },
+        scope
+      )
+    ).toBeNull();
   });
 
   it('routes calendar sync failing notifications to pricing channel sync', () => {

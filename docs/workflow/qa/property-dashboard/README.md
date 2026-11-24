@@ -47,7 +47,7 @@ Deep review of **property-level** dashboard modules (`/org/:orgSlug/property/:pr
 | 07  | Team                 | [07-team.md](./07-team.md)                                                 | RBAC templates clear; Free seat=1                                    |
 | 08  | Marketing            | [08-marketing.md](./08-marketing.md)                                       | Studio heavy; Free watermark + 429 under load                        |
 | 09  | Inbox                | [09-inbox.md](./09-inbox.md)                                               | Core loop free; Meta Business+                                       |
-| 10  | Notifications        | [10-notifications.md](./10-notifications.md)                               | Telegram enable Starter+                                             |
+| 10  | Notifications        | [10-notifications.md](./10-notifications.md)                               | Read-only Telegram controls, page-fill pagination, a11y clean        |
 | 11  | Templates            | [11-templates.md](./11-templates.md)                                       | Custom templates unused for sends                                    |
 | 12  | Public pages         | [12-public-pages.md](./12-public-pages.md)                                 | Explore-open Free; save Pro+                                         |
 | 13  | Plans                | [13-plans.md](./13-plans.md)                                               | Property mirror of org billing                                       |

@@ -58,10 +58,7 @@ const PROPERTY_PATHS = [
  * issue that owns the fix and is printed on every run, so this list cannot quietly become
  * a graveyard. Remove an entry in the same change that fixes the defect.
  */
-const KNOWN_A11Y_EXCEPTIONS: Record<string, string> = {
-  '/notifications':
-    'colour contrast on .text-card-description, owned by the notifications restructure (issue #334)',
-};
+const KNOWN_A11Y_EXCEPTIONS: Record<string, string> = {};
 
 const ORG_PATHS = [
   orgHubPaths.dashboard,

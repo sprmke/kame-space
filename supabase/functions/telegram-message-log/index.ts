@@ -7,6 +7,10 @@
  */
 
 import { jsonError, jsonSuccess } from '../_shared/httpResponse.ts';
+import {
+  decodeNotificationCursor,
+  encodeNotificationCursor,
+} from '../_shared/notificationsPaging.ts';
 import { createServiceClient } from '../_shared/orgAuth.ts';
 import { serveAuthenticated } from '../_shared/serveEdge.ts';
 import { resolveTelegramAssetAccess } from '../_shared/telegramAssetScope.ts';
@@ -54,7 +58,15 @@ serveAuthenticated('telegram-message-log', async (req) => {
       ? query.eq('property_id', asset.id)
       : query.eq('parking_id', asset.id);
 
-  if (cursor) query = query.lt('created_at', cursor);
+  const decoded = decodeNotificationCursor(cursor);
+  if (decoded?.legacy) {
+    query = query.lt('created_at', decoded.createdAt);
+  } else if (decoded) {
+    /* Two sends can share a timestamp; the id keeps the page boundary exact. */
+    query = query.or(
+      `created_at.lt.${decoded.createdAt},and(created_at.eq.${decoded.createdAt},id.lt.${decoded.id})`
+    );
+  }
 
   const { data, error } = await query;
   if (error) return jsonError(req, error.message, 500);
@@ -76,7 +88,8 @@ serveAuthenticated('telegram-message-log', async (req) => {
       error: row.error_message,
       createdAt: row.created_at,
     })),
-    nextCursor: hasMore ? (page[page.length - 1]?.created_at ?? null) : null,
+    nextCursor:
+      hasMore && page.length > 0 ? encodeNotificationCursor(page[page.length - 1]!) : null,
     deliveryEnabled,
     retentionDays: TELEGRAM_HISTORY_RETENTION_DAYS,
   });

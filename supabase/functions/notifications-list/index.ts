@@ -1,7 +1,16 @@
 /**
- * List notifications for the caller's org (keyset pagination on created_at).
+ * List notifications for the caller's org.
+ *
+ * Paging is a `<created_at>|<id>` keyset (see `_shared/notificationsPaging.ts`):
+ * a timestamp-only cursor skipped rows that share a timestamp, which happens on
+ * every bulk insert.
  */
 
+import {
+  decodeNotificationCursor,
+  fillNotificationPage,
+  type NotificationPage,
+} from '../_shared/notificationsPaging.ts';
 import { summarizeNotificationsUnread } from '../_shared/notificationsUnreadSummary.ts';
 import { resolveNotificationsAccess } from '../_shared/notificationsAccess.ts';
 import {
@@ -36,20 +45,6 @@ function isUnread(row: NotificationRow): boolean {
   return !Array.isArray(row.notification_reads) || row.notification_reads.length === 0;
 }
 
-/** Legacy rows used per-message dedupe keys — show one inbox row per conversation (newest first). */
-function collapseInboxNotificationRows(rows: NotificationRow[]): NotificationRow[] {
-  const seen = new Set<string>();
-  const result: NotificationRow[] = [];
-  for (const row of rows) {
-    if (row.type === 'inbox_new_message' && row.conversation_id) {
-      if (seen.has(row.conversation_id)) continue;
-      seen.add(row.conversation_id);
-    }
-    result.push(row);
-  }
-  return result;
-}
-
 function inboxUnreadConversationIds(rows: NotificationRow[]): Set<string> {
   const unread = new Set<string>();
   for (const row of rows) {
@@ -81,30 +76,51 @@ serveAuthenticated('notifications-list', async (req, user) => {
 
   const sb = createServiceClient();
 
-  let listQuery = sb
-    .from('notifications')
-    .select(
-      'id, type, title, body, booking_id, conversation_id, property_id, parking_id, metadata, created_at, notification_reads!left(id)'
-    )
-    .eq('organization_id', ctx.orgId)
-    .eq('notification_reads.user_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(limit + 1);
+  /** One batch after `after` (a `<created_at>|<id>` cursor). Throws so the page fill stops. */
+  const fetchBatch = async (
+    after: string | null,
+    batchLimit: number
+  ): Promise<NotificationRow[]> => {
+    let query = sb
+      .from('notifications')
+      .select(
+        'id, type, title, body, booking_id, conversation_id, property_id, parking_id, metadata, created_at, notification_reads!left(id)'
+      )
+      .eq('organization_id', ctx.orgId)
+      .eq('notification_reads.user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(batchLimit);
 
-  if (cursor) {
-    listQuery = listQuery.lt('created_at', cursor);
+    const decoded = decodeNotificationCursor(after);
+    if (decoded?.legacy) {
+      query = query.lt('created_at', decoded.createdAt);
+    } else if (decoded) {
+      /* `id` breaks the tie: bulk-inserted rows share a timestamp. */
+      query = query.or(
+        `created_at.lt.${decoded.createdAt},and(created_at.eq.${decoded.createdAt},id.lt.${decoded.id})`
+      );
+    }
+
+    const { data, error } = await query;
+    if (error) throw new Error(error.message);
+    return (data ?? []) as NotificationRow[];
+  };
+
+  let filled: NotificationPage<NotificationRow>;
+  try {
+    filled = await fillNotificationPage({
+      limit,
+      initialCursor: cursor,
+      fetch: fetchBatch,
+    });
+  } catch (e) {
+    return jsonError(req, e instanceof Error ? e.message : 'Failed to load notifications', 500);
   }
 
-  const { data: rows, error } = await listQuery;
-  if (error) return jsonError(req, error.message, 500);
+  const collapsedPage = filled.rows;
+  const nextCursor = filled.nextCursor;
 
-  const fetched = (rows ?? []) as NotificationRow[];
-  const hasMore = fetched.length > limit;
-  const page = hasMore ? fetched.slice(0, limit) : fetched;
-  const nextCursor = hasMore ? (page[page.length - 1]?.created_at ?? null) : null;
-
-  const inboxUnreadConversations = inboxUnreadConversationIds(page);
-  const collapsedPage = collapseInboxNotificationRows(page);
+  const inboxUnreadConversations = inboxUnreadConversationIds(collapsedPage);
 
   const inboxConversationIds = [
     ...new Set(

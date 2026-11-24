@@ -36,13 +36,15 @@ Hub for **in-app activity** (same org-wide feed as the bell) and **Telegram** al
 
 Page subtitle: "Manage in-app notifications and Telegram alerts for this parking slot."
 
-**Hub layout.** Four KPI cards above the tabs: **Unread**, **Messages**, **Telegram on** (modules enabled / total) and **Connected** (modules with a bot token and chat ID / total). Each card jumps to the tab it describes. **Activity** and **Telegram** follow, and the activity list is the first thing on the tab. The Activity feed is **org-wide**, not limited to this slot.
+**Hub layout.** Four KPI cards above the tabs: **Unread**, **Messages** (also counted in Unread), **Telegram on** and **Connected** (both read "N of 3"). Each card jumps to the tab it describes. A failed feed request shows **n/a** on the two activity cards instead of a clean zero. **Activity** and **Telegram** follow, and the activity list is the first thing on the tab. The Activity feed is **org-wide**, not limited to this slot.
 
-**Manage sheet.** Header **Manage** (gear icon in the phone hero) has two tabs with standard modal chrome. **Activity** uses one card for **Push notifications**, **Push preferences** and **Quiet hours**. **Telegram** uses the same one-card pattern: **Telegram delivery** on top, then Setup Guide, shared bot token, and module cards underneath when delivery is on.
+**Manage sheet.** Header **Manage** (gear icon in the phone hero, **Manage** button on desktop) has two tabs with standard modal chrome. **Activity** uses one card for **Push notifications**, **Push preferences** and **Quiet hours**; the preferences and quiet hours stay editable even when this device cannot receive push, because they apply to the account. **Telegram** puts **Telegram delivery** on the sheet surface with a divider, then Setup Guide, shared bot token, and the module cards when delivery is on.
+
+**View-only members.** Parking gates all three modules on the single `notifications:edit` leaf. Without it the sheet shows "Some modules are view only. Ask the parking owner or manager for edit access." and every field, toggle, **Connect**, **Manage** and the delivery switch is disabled.
 
 **Off states.** Each tab leads with a master switch. While it loads the row skeletons instead of claiming the channel is unavailable. With a channel off, its controls are hidden and replaced by a short panel describing what turning it back on restores.
 
-**Telegram tab.** One card with a pinned **Telegram** header (delivery switch lives in **Manage** only). Then either the paused empty (off), the centered empty (on, nothing sent), or the read-only history (module, time, text, **Failed** badge). 20 per page with scroll load-more, 15-day window, scoped to this parking slot, and no Telegram API calls. Activity empty matches the same centered pattern as property.
+**Telegram tab.** One card with a pinned **Telegram** header and the "Last 15 days" window beside it (delivery switch lives in **Manage** only). Then either the paused empty (off), the centered empty (on, nothing sent), or the read-only history (module, time, text, **Failed** badge). 20 per page with scroll load-more, scoped to this parking slot, and no Telegram API calls. Activity empty matches the same centered pattern as property.
 
 **How it works** is the **?** beside the **Notifications** page title (phone hero and desktop header), with the same copy as the property page: in-app, phone push and Telegram, plus the per-channel mute rule and Manila quiet hours.
 
@@ -57,9 +59,9 @@ In the header **Manage** sheet: **Push notifications** (OS push opt-in — per d
 ### In-app activity
 
 - **Activity** tab lists in-app notifications for the org (booking + inbox events). The **Activity** heading carries a hint saying so.
-- Desktop: the bell floats above the AI assistant button. Phone: tap **Notifications** in the bottom menu. Both open the same sheet; **View all** opens this page at **Activity** when more than five items exist.
+- Phone and desktop: the **Quick access** pill opens the notification sheet; **View all** opens this page at **Activity** when more than five items exist.
 - **Activity** card scrolls inside a max height; additional pages load as you scroll (20 per request). Switching tabs with a dirty Telegram card prompts Save / Discard / Keep editing.
-- Rows show guest name with an inline inbox **channel pill** (**Chat** / **Facebook** / **Instagram**) when applicable, and stay dates (inquiry or booked) when available; realtime toasts match the same layout (channel logo + inline pill for inbox). Inbox rows open Messages with the conversation selected (and scroll to the message when `message_id` is in metadata). If both `conversation_id` and `booking_id` are set, Messages wins over booking detail.
+- Rows show guest name with an inline inbox **channel pill** (**Chat** / **Facebook** / **Instagram**) when applicable, and stay dates (inquiry or booked) when available; realtime toasts match the same layout (channel logo + inline pill for inbox). Inbox rows open Messages with the conversation selected (and scroll to the message when `message_id` is in metadata). If both `conversation_id` and `booking_id` are set, Messages wins over booking detail. Parking booking rows open the parking booking detail. Rows with no destination render as plain text and are not marked read by a dead tap.
 
 ### Telegram sections
 
@@ -87,6 +89,8 @@ Parking **Notifications** configures Telegram alerts for this slot. The **Chat**
 
 **Common host questions**
 
+- Q: Why can I see the Telegram settings but not change them?
+  A: Your role lacks notifications edit access for this parking slot. Ask the parking owner or manager. You can still read the current setup.
 - Q: Where is the notification bell on my phone?
   A: Tap **Notifications** in the bottom menu. On a computer it floats above the AI assistant button.
 - Q: Do I need a separate Telegram bot for chat, parking, and finance alerts?
@@ -176,11 +180,11 @@ Cron: global `telegram-finance-cron` (hourly) processes unpaid `finance_line_ite
 
 ## Testing
 
-| Layer | Path / spec                                                                  | Manual        |
-| ----- | ---------------------------------------------------------------------------- | ------------- |
-| Unit  | `parkingStatusMachine_test.ts`                                               | —             |
-| E2E   | [`parking-playwright.md`](../testing/parking-playwright.md) guest/host specs | PayMongo live |
-| N/A   | Parking host dashboard shell load                                            | —             |
+| Layer | Path / spec                                                                                                                                                                    | Manual        |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------- |
+| Unit  | `parkingStatusMachine_test.ts`                                                                                                                                                 | —             |
+| E2E   | [`parking-playwright.md`](../testing/parking-playwright.md) guest/host specs; `ui/e2e/features/dashboard/notificationsAudit.spec.ts` (`@demo`) covers this hub at 375 and 1440 | PayMongo live |
+| N/A   | Parking host dashboard shell load                                                                                                                                              | —             |
 
 ---
 

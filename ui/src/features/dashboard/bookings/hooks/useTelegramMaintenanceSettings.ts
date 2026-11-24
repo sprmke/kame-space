@@ -35,6 +35,8 @@ export function useTelegramMaintenanceSettings() {
   const scope = useAdminAssetScope();
   const scopeKey = assetScopeKey(scope);
   return useQuery({
+    /* Six modules load together on the Notifications hub; cache so tab hops do not refetch all of them. Mutations invalidate their own key. */
+    staleTime: 60_000,
     queryKey: ['telegram-maintenance-settings', scopeKey],
     queryFn: () =>
       fetchTelegramSettings<TelegramMaintenanceSettingsDto>(
