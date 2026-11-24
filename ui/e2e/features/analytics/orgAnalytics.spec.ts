@@ -100,3 +100,20 @@ test.describe('@ci org analytics at 1024', () => {
     await expect(page.getByText('Monaco 2604', { exact: true })).toBeVisible();
   });
 });
+
+test.describe('@ci org analytics at 1280', () => {
+  test.use({ viewport: { width: 1280, height: 800 } });
+
+  test('a large revenue change stays readable in the row', async ({ page }) => {
+    await installOrgAnalyticsMocks(page);
+    await openOrgAnalytics(page);
+
+    await expect(page.getByText('₱4,200', { exact: true })).toBeVisible();
+    await expect(page.getByText('+500.0%', { exact: true })).toBeVisible();
+
+    const cell = page.getByText('+500.0%', { exact: true });
+    const box = await cell.boundingBox();
+    expect(box).not.toBeNull();
+    if (box) expect(box.width).toBeGreaterThan(20);
+  });
+});
