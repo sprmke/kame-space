@@ -47,8 +47,9 @@ test.describe('@live parking live local flow', () => {
       await captureParkingScreen(page, 'guest-waiting-final', { role: 'guest' });
 
       await hostPage.goto(buildLiveParkingHostBookingsPath(seed));
-      const bookingRow = hostPage.getByRole('button', {
-        name: `Open booking for ${seed.guestName}`,
+      const bookingRow = hostPage.getByRole('link', {
+        name: seed.guestName,
+        exact: true,
       });
       await expect(bookingRow.first()).toBeVisible();
       await captureParkingScreen(hostPage, 'host-bookings-list', { role: 'host' });

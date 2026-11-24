@@ -26,9 +26,9 @@ async function openHostListFresh(page: import('@playwright/test').Page) {
   );
   await page.goto(parkingFlowPaths.hostBookings);
   await listResponse;
-  const bookingRow = page.getByRole('button', { name: 'Open booking for Jamie Park' });
+  const bookingRow = page.getByRole('row').filter({ hasText: 'Jamie Park' }).first();
   await expect(bookingRow).toBeVisible({ timeout: 15_000 });
-  return bookingRow;
+  return bookingRow.getByRole('link', { name: 'Jamie Park', exact: true });
 }
 
 async function openHostBooking(page: import('@playwright/test').Page) {
@@ -223,9 +223,7 @@ test.describe('@ci parking guest and host extra scenarios', () => {
       try {
         await installParkingFlowMocks(freshHostPage, state);
         await freshHostPage.goto(parkingFlowPaths.hostBookings);
-        const cancelledRow = freshHostPage.getByRole('button', {
-          name: /Open booking for Jamie Park/,
-        });
+        const cancelledRow = freshHostPage.getByRole('row').filter({ hasText: 'Jamie Park' });
         await expect(cancelledRow).toContainText('Cancelled', { timeout: 15_000 });
         await captureParkingScreen(freshHostPage, 'host-sees-cancelled', { role: 'host' });
       } finally {

@@ -51,7 +51,10 @@ test.describe('@demo parking guest and host side by side', () => {
       }
 
       await hostPage.goto(parkingFlowPaths.hostBookings);
-      const bookingRow = hostPage.getByRole('button', { name: 'Open booking for Jamie Park' });
+      const bookingRow = hostPage
+        .getByRole('row')
+        .filter({ hasText: 'Jamie Park' })
+        .first();
       await expect(bookingRow).toBeVisible();
       await expect(bookingRow).toContainText(parkingHostStatusLabels.findingHost);
       await captureParkingScreen(hostPage, 'host-bookings-list', { role: 'host' });
@@ -137,7 +140,7 @@ test.describe('@demo parking guest and host side by side', () => {
       ).toBeVisible();
 
       await hostPage.goto(parkingFlowPaths.hostBookings);
-      await hostPage.getByRole('button', { name: 'Open booking for Jamie Park' }).click();
+      await hostPage.getByRole('link', { name: 'Jamie Park', exact: true }).click();
       await hostPage.getByRole('button', { name: parkingFlowLabels.decline }).click();
       await expect(hostPage.getByText('Request declined')).toBeVisible();
       await captureParkingScreen(hostPage, 'host-declined', { role: 'host' });
@@ -172,7 +175,7 @@ test.describe('@demo parking guest and host side by side', () => {
 
       await submitGuestParkingRequest(guestPage, { skipScreens: true });
       await hostPage.goto(parkingFlowPaths.hostBookings);
-      await hostPage.getByRole('button', { name: 'Open booking for Jamie Park' }).click();
+      await hostPage.getByRole('link', { name: 'Jamie Park', exact: true }).click();
       await hostAcceptPendingBooking(hostPage);
 
       await guestPage.reload();
