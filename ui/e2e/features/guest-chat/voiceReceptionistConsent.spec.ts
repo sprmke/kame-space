@@ -1,270 +1,12 @@
 import { expect as baseExpect, test } from '@playwright/test';
 
-import { seedSupabaseAuthSession } from '../../shared/authSeam';
-import { E2E_GUEST_USER_ID } from '../../shared/ids';
-
-import type { Page, Route } from '@playwright/test';
+import {
+  installLiveBrowserMocks,
+  installVoiceReceptionistMocks,
+} from './shared/voiceReceptionistHarness';
 
 // The mock voice stream and the lazy panel chunk both lose time on a loaded CI runner.
 const expect = baseExpect.configure({ timeout: 20_000 });
-
-async function fulfillJson(route: Route, data: Record<string, unknown>) {
-  await route.fulfill({
-    status: 200,
-    contentType: 'application/json',
-    body: JSON.stringify({ success: true, data }),
-  });
-}
-
-async function installVoiceReceptionistMocks(
-  page: Page,
-  options: {
-    liveSession?: boolean;
-    providerUnavailable?: boolean;
-    maxSessionSeconds?: number;
-  } = {}
-) {
-  await seedSupabaseAuthSession(page, 'guest');
-  await page.addInitScript(() => {
-    window.localStorage.removeItem('guest-voice-receptionist-consent-v1');
-  });
-
-  await page.route('**/auth/v1/user**', async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        id: E2E_GUEST_USER_ID,
-        aud: 'authenticated',
-        role: 'authenticated',
-        email: 'guest@example.com',
-        app_metadata: { provider: 'google', providers: ['google'] },
-        user_metadata: { full_name: 'E2E Guest' },
-      }),
-    });
-  });
-
-  await page.route('**/functions/v1/**', async (route) => {
-    const endpoint = new URL(route.request().url()).pathname.split('/').pop();
-    if (endpoint === 'guest-web-chat-start') {
-      await fulfillJson(route, {
-        conversationId: '00000000-0000-4000-8000-000000000121',
-        property: { id: '00000000-0000-4000-8000-000000000122', slug: 'solea', name: 'Solea' },
-        host: {
-          organizationName: 'Sample Stays',
-          ownerName: 'Host',
-          ownerAvatarUrl: null,
-        },
-        voiceReceptionistEnabled: true,
-        stayGuideUrl: null,
-      });
-      return;
-    }
-    if (endpoint === 'guest-web-chat-messages') {
-      await fulfillJson(route, { messages: [], hasMore: false, replyStatus: 'idle' });
-      return;
-    }
-    if (options.providerUnavailable && endpoint === 'voice-receptionist-start') {
-      await route.fulfill({
-        status: 503,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          success: false,
-          error: 'Voice receptionist is temporarily unavailable.',
-        }),
-      });
-      return;
-    }
-    if (options.liveSession && endpoint === 'voice-receptionist-start') {
-      await fulfillJson(route, {
-        sessionId: '00000000-0000-4000-8000-000000000123',
-        ephemeralToken: 'mock-token',
-        model: 'gemini-3.8-live',
-        voiceId: 'Kore',
-        maxSessionSeconds: options.maxSessionSeconds ?? 540,
-        protocolVersion: 'gemini-live-v1beta-2026-09',
-        webSocketBaseUrl:
-          'wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContentConstrained',
-        clientSetup: { model: 'models/gemini-3.8-live' },
-        lockedSessionConfig: true,
-      });
-      return;
-    }
-    if (options.liveSession && endpoint === 'voice-receptionist-session') {
-      await fulfillJson(route, { updated: true });
-      return;
-    }
-    if (options.liveSession && endpoint === 'voice-receptionist-tool') {
-      await fulfillJson(route, {
-        toolName: 'get_property_facts',
-        spokenText: 'The pool closes at 9 PM.',
-        actions: [
-          { type: 'open_property', label: 'Open property', url: '/properties/solea' },
-          { type: 'open_property', label: 'Unsafe', url: 'https://example.com' },
-        ],
-      });
-      return;
-    }
-    if (options.liveSession && endpoint === 'voice-receptionist-end') {
-      await fulfillJson(route, {
-        endedAt: '2026-09-23T00:00:00.000Z',
-        durationSeconds: 1,
-        transitioned: true,
-      });
-      return;
-    }
-    await route.continue();
-  });
-}
-
-async function installLiveBrowserMocks(page: Page) {
-  await page.addInitScript(() => {
-    const track = {
-      addEventListener: () => undefined,
-      stop: () => undefined,
-    };
-    Object.defineProperty(navigator, 'mediaDevices', {
-      configurable: true,
-      value: { getUserMedia: () => Promise.resolve({ getTracks: () => [track] }) },
-    });
-
-    const mockNode = () => ({
-      connect: (target: unknown) => target,
-      disconnect: () => undefined,
-    });
-    class MockAudioContext {
-      state = 'running';
-      sampleRate = 48_000;
-      currentTime = 0;
-      destination = {};
-      audioWorklet = { addModule: () => Promise.resolve() };
-      createMediaStreamSource() {
-        return mockNode();
-      }
-      createBiquadFilter() {
-        return { ...mockNode(), type: 'lowpass', frequency: { value: 0 } };
-      }
-      createAnalyser() {
-        return { ...mockNode(), fftSize: 0, getByteTimeDomainData: () => undefined };
-      }
-      resume() {
-        return Promise.resolve();
-      }
-      close() {
-        this.state = 'closed';
-        return Promise.resolve();
-      }
-    }
-    class MockAudioWorkletNode {
-      port = { onmessage: null, close: () => undefined };
-      connect() {}
-      disconnect() {}
-    }
-
-    class MockWebSocket {
-      static CONNECTING = 0;
-      static OPEN = 1;
-      static CLOSING = 2;
-      static CLOSED = 3;
-      static voiceInstanceCount = 0;
-      readyState = MockWebSocket.CONNECTING;
-      instanceNumber: number;
-      onopen: ((event: Event) => void) | null = null;
-      onmessage: ((event: MessageEvent) => void) | null = null;
-      onclose: ((event: CloseEvent) => void) | null = null;
-      onerror: ((event: Event) => void) | null = null;
-      listeners = new Map<string, Array<(event: Event) => void>>();
-
-      constructor(url: string) {
-        const isVoice = url.includes('generativelanguage.googleapis.com');
-        if (isVoice) MockWebSocket.voiceInstanceCount += 1;
-        this.instanceNumber = isVoice ? MockWebSocket.voiceInstanceCount : 0;
-        if (isVoice) {
-          document.documentElement.dataset.mockVoiceConnections = String(
-            MockWebSocket.voiceInstanceCount
-          );
-        }
-        window.setTimeout(() => {
-          this.readyState = MockWebSocket.OPEN;
-          const event = new Event('open');
-          this.onopen?.(event);
-          for (const listener of this.listeners.get('open') ?? []) listener(event);
-        }, 0);
-      }
-
-      addEventListener(type: string, listener: (event: Event) => void) {
-        this.listeners.set(type, [...(this.listeners.get(type) ?? []), listener]);
-      }
-
-      send(raw: string) {
-        const message = JSON.parse(raw) as Record<string, unknown>;
-        if (message.setup) {
-          window.setTimeout(() => {
-            this.onmessage?.(
-              new MessageEvent('message', { data: JSON.stringify({ setupComplete: {} }) })
-            );
-          }, 0);
-        }
-        const realtimeInput = message.realtimeInput as { text?: string } | undefined;
-        if (realtimeInput?.text) {
-          window.setTimeout(() => {
-            this.onmessage?.(
-              new MessageEvent('message', {
-                data: JSON.stringify({
-                  serverContent: {
-                    outputTranscription: { text: 'How can I help with your stay?' },
-                    turnComplete: true,
-                  },
-                }),
-              })
-            );
-            this.onmessage?.(
-              new MessageEvent('message', {
-                data: JSON.stringify({
-                  toolCall: {
-                    functionCalls: [
-                      { id: 'tool-1', name: 'get_property_facts', args: { topic: 'pool' } },
-                    ],
-                  },
-                }),
-              })
-            );
-            if (this.instanceNumber === 1) {
-              this.onmessage?.(
-                new MessageEvent('message', {
-                  data: JSON.stringify({ serverContent: { interrupted: true } }),
-                })
-              );
-              this.onmessage?.(
-                new MessageEvent('message', {
-                  data: JSON.stringify({
-                    sessionResumptionUpdate: { newHandle: 'resume-1', resumable: true },
-                  }),
-                })
-              );
-              this.onmessage?.(
-                new MessageEvent('message', {
-                  data: JSON.stringify({ goAway: { timeLeft: '5s' } }),
-                })
-              );
-            }
-          }, 10);
-        }
-      }
-
-      close() {
-        this.readyState = MockWebSocket.CLOSED;
-      }
-    }
-
-    Object.defineProperty(window, 'AudioContext', { configurable: true, value: MockAudioContext });
-    Object.defineProperty(window, 'AudioWorkletNode', {
-      configurable: true,
-      value: MockAudioWorkletNode,
-    });
-    Object.defineProperty(window, 'WebSocket', { configurable: true, value: MockWebSocket });
-  });
-}
 
 test.describe.configure({ timeout: 90_000 });
 
@@ -284,7 +26,7 @@ test.describe('@smoke voice receptionist consent', () => {
       page
         .getByRole('heading', { name: 'AI voice receptionist' })
         .locator('..')
-        .getByRole('link', { name: 'Privacy' }),
+        .getByRole('link', { name: 'Privacy' })
     ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Start call' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'End call' })).toHaveCount(0);
@@ -334,7 +76,9 @@ test.describe('@smoke voice receptionist consent', () => {
     await page.getByText('Talk to receptionist', { exact: true }).click();
     await page.getByRole('button', { name: 'Start call' }).click();
 
-    await expect(page.getByText('How can I help with your stay?')).toBeVisible();
+    await expect(
+      page.getByTestId('voice-caption').filter({ hasText: 'How can I help with your stay?' })
+    ).toBeVisible();
     await expect(page.getByRole('link', { name: 'Open property' })).toHaveAttribute(
       'href',
       '/properties/solea'
@@ -346,7 +90,9 @@ test.describe('@smoke voice receptionist consent', () => {
         timeout: 30_000,
       })
       .toBe('2');
-    await expect(page.getByText('How can I help with your stay?')).toBeVisible();
+    await expect(
+      page.getByTestId('voice-caption').filter({ hasText: 'How can I help with your stay?' })
+    ).toBeVisible();
     await page.getByRole('button', { name: 'Message host' }).click();
     await expect(page.getByRole('heading', { name: 'AI voice receptionist' })).toHaveCount(0);
   });
@@ -386,7 +132,9 @@ test.describe('@smoke voice receptionist consent', () => {
     await page.getByRole('button', { name: 'Chat options' }).click();
     await page.getByText('Talk to receptionist', { exact: true }).click();
     await page.getByRole('button', { name: 'Start call' }).click();
-    await expect(page.getByText('How can I help with your stay?')).toBeVisible();
+    await expect(
+      page.getByTestId('voice-caption').filter({ hasText: 'How can I help with your stay?' })
+    ).toBeVisible();
     await expect
       .poll(() => page.locator('html').getAttribute('data-mock-voice-connections'), {
         timeout: 30_000,
@@ -399,7 +147,9 @@ test.describe('@smoke voice receptionist consent', () => {
     await page.clock.fastForward(15_000);
 
     await expect(page.getByText('Ended the call due to inactivity.')).toBeVisible();
-    await expect(page.getByText('How can I help with your stay?')).toBeVisible();
+    await expect(
+      page.getByTestId('voice-caption').filter({ hasText: 'How can I help with your stay?' })
+    ).toBeVisible();
   });
 
   test('ends with a text fallback when the connection stays offline', async ({ page, context }) => {
@@ -410,7 +160,9 @@ test.describe('@smoke voice receptionist consent', () => {
     await page.getByRole('button', { name: 'Chat options' }).click();
     await page.getByText('Talk to receptionist', { exact: true }).click();
     await page.getByRole('button', { name: 'Start call' }).click();
-    await expect(page.getByText('How can I help with your stay?')).toBeVisible();
+    await expect(
+      page.getByTestId('voice-caption').filter({ hasText: 'How can I help with your stay?' })
+    ).toBeVisible();
 
     await page.clock.install();
     await context.setOffline(true);
