@@ -1,14 +1,16 @@
 ---
-title: 'Analytics module UX/UI review'
+title: 'Analytics modules UX/UI review'
 status: active
 tags: [ux, ui, analytics, review, qa, e2e]
 updated: 2026-11-23
 ---
 
-# Analytics module UX/UI review — property scope
+# Analytics modules UX/UI review — property and org
 
-Deep review of `/org/:orgSlug/property/:propertySlug/analytics`: every visible element, every
-state, every flow, at phone (375), tablet (768), laptop (1024 / 1280), desktop (1440) and dark mode.
+Deep review of both analytics surfaces:
+`/org/:orgSlug/property/:propertySlug/analytics` (single listing) and `/org/:orgSlug/analytics`
+(portfolio). Every visible element, every state, every flow, at phone (375), tablet (768), laptop
+(1024 / 1280), desktop (1440) and dark mode.
 Reviewed against `develop` (`d5a0054bc`) with the `impeccable` (critique + audit),
 `mobile-responsive`, `frontend-design`, `design-md`, `accessibility` and `human-copy` skills.
 
@@ -33,9 +35,9 @@ actions. That is the right call for this module, and it works.
 
 Two remediation batches shipped in this branch. The screenshots below are the **pre-fix**
 evidence that documents the findings; the recordings were re-captured after the fixes, and
-[`after/`](./after) holds the post-fix captures. [`before-after.jpg`](./before-after.jpg) is the
-seven-pair comparison sheet (KPI and deltas, booking sources, pace chart, AI review, 1024 KPI, phone
-tabs, PDF).
+[`after/`](./after) holds the post-fix captures. [`before-after.jpg`](./before-after.jpg) is the ten-pair comparison sheet (property: KPI and
+deltas, booking sources, pace chart, AI review, 1024 KPI, phone tabs, PDF; org: KPI money, 1024
+rows, phone KPIs).
 
 | Item                              | Status  | Change                                                                                                                                                                 |
 | --------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -54,6 +56,24 @@ tabs, PDF).
 | P2-10 support button overlap      | Open    | Shell-level; fix once for every page                                                                                                                                   |
 | P2-11 touch targets               | Open    | The repo sets 36px tab tracks and forbids `min-h` on triggers; a hit pad is clipped by the strip's overflow. Needs a shared-strip decision                             |
 | P3 group                          | Open    | Cosmetic pass                                                                                                                                                          |
+
+## Org portfolio page
+
+Reviewed against the same seed (one property + one parking). Three fixes shipped, two notes left
+as product calls.
+
+| Item                    | Status   | Detail                                                                                                                                                                                                                                                                                         |
+| ----------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| O1 1024 list layout     | Shipped  | The list row is a seven-column flex row from `xl` only. At 1024 it stacked and the header labels overlapped ("OccupancyRevenueBookings"), the revenue cell read `₱4...`, and the KPI read `₱46,200....`. Now the row stacks below `xl`, the table option is `xl+`, and the KPI is whole pesos  |
+| O2 row revenue cell     | Shipped  | `₱4,200` + `+500.0%` ellipsized at 1280; the amount is now `whitespace-nowrap` and the change badge `shrink-0`                                                                                                                                                                                 |
+| O3 KPI money            | Shipped  | `₱46,200.00` → `₱46,200` (same rule as the property KPI)                                                                                                                                                                                                                                       |
+| O4 balance risk         | Decision | The portfolio says **On track** / **Needs attention 0** for a property the organisation API reports as `at_risk` with ₱16,500 unpaid. This is deliberate: attention is booking/demand only (`orgAttentionReasons`, and the guide says so). Flagging balances here is a product call, not a bug |
+| O5 large revenue change | Decision | `+500.0%` on a tiny prior base is accurate but noisy. Leave, cap, or label as "new" — product call                                                                                                                                                                                             |
+| O6 phone Promote chip   | Open     | The floating support button overlaps the Promote chip at 375. Shell-level, same as the property page                                                                                                                                                                                           |
+
+E2E: `ui/e2e/features/analytics/orgAnalytics.spec.ts` (7 tests at `@ci`) covers KPIs, rows,
+search + empty result, CSV download, the free-plan upgrade dialog, read-only export, the empty org
+and the 1024 stacking.
 
 ## Evidence
 

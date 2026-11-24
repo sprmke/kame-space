@@ -2,7 +2,7 @@
 title: 'Org Portfolio Analytics — operator guide'
 status: active
 tags: [guides, routes, org, analytics]
-updated: 2026-11-16
+updated: 2026-11-24
 ---
 
 # Org Portfolio Analytics — operator guide
@@ -46,7 +46,8 @@ Layout (top → bottom):
    ACTIVE properties and parkings share one toolbar with Properties / Parkings:
    search by name, **Attention** filter (All / Needs attention / On track), **Type** filter
    (All / Properties / Parkings, only when both exist), per-page, and Table / Grid / List
-   views (table is desktop only; phones get grid or list).
+   views. **Table** needs `xl` (1280+): its seven columns do not fit at 1024, so the list view
+   stacks there instead and the table option is hidden below `xl`. Phones get grid or list.
 
 ## Listings table
 
@@ -65,7 +66,9 @@ Bookings / Finance tables).
   nights that opens that listing's Marketing plan. Other rows show a dash. Parkings never appear
   here. Grid and list views show the same chip beside Outlook only when the listing ranks; no
   separate strip above the toolbar.
-- **Revenue** shows the change vs the prior period under the amount.
+- **Revenue** shows whole pesos (`₱42,000`) and the change vs the prior period beside it. A tiny
+  prior base can produce a very large percentage (e.g. `+500.0%`); the number is real, not a bug.
+- The **Revenue KPI** is whole pesos too, so it stays readable at 1024.
 - **Order** — needs-attention listings are always first, most urgent on top. Sorting by a column
   header (Listing, Occupancy, Revenue, Bookings, Outlook) orders inside each group. Default is
   Revenue, high to low.
@@ -118,6 +121,7 @@ granted by default.
 | Layer  | Coverage                                                                                                                                                                                |
 | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Unit   | `orgPortfolioRollup.test.ts` (night-weighted occupancy), `orgAnalyticsListings.test.ts` (attention order, filters), `marketingPortfolio.test.ts` (promote ranking), `exportCsv.test.ts` |
+| E2E    | `ui/e2e/features/analytics/orgAnalytics.spec.ts` (`@ci`, 7 tests — KPIs, rows, search + empty result, CSV download, free-plan gate, read-only, empty org, 1024 stacking)                |
 | Edge   | N/A for rollup helpers (Vitest covers math; avoid Deno-importing `analyticsService`)                                                                                                    |
 | Manual | Org with properties only / parkings only / both; Export plan gate; 375px date float + hero export                                                                                       |
 
@@ -139,6 +143,9 @@ first, with a short reason.
   bookings or soft fill. Outlook is how full the next 30 nights are.
 - Q: Where do unpaid guest balances show?
   A: On Finance and booking detail, not on Analytics.
+- Q: Why does a listing with unpaid balances still say On track?
+  A: Attention here covers bookings and demand only. Balances stay on Finance and booking detail
+  so a soft month and a collections risk do not compete for the same badge.
 - Q: Where do parking rows go when I tap them?
   A: Parking Dashboard for now. A full parking Analytics page is not on this screen yet.
 - Q: What does the Promote chip mean?
