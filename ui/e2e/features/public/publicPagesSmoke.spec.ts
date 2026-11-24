@@ -41,20 +41,50 @@ test.describe('@smoke @critical public marketing pages', () => {
     await expectPublicPageReady(page);
   });
 
-  test('for-hosts landing loads hero', async ({ page }) => {
+  test('for-hosts landing loads the mascot hero and its sections', async ({ page }) => {
+    // The fee calculator reads plan prices from the live catalog.
+    await mockEdgeFunctions(page, [
+      { name: 'list-public-pricing-plans', body: mockPublicPricingPlansBody },
+    ]);
     await page.goto('/for-hosts');
-    await expect(page.getByRole('heading', { name: /Run every stay/i })).toBeVisible({
-      timeout: 20_000,
-    });
-    await expectPublicPageReady(page);
-  });
+    await expect(
+      page.getByRole('heading', { name: 'Hosting made easy and affordable.' })
+    ).toBeVisible({ timeout: 20_000 });
+    await page.getByRole('button', { name: 'Watch the tour' }).click();
+    const tourDialog = page.getByRole('dialog', { name: 'Product tour' });
+    await expect(tourDialog).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(tourDialog).toBeHidden();
+    await expect(
+      page.getByRole('heading', { name: 'AI-first property management.' })
+    ).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Keep every channel. Run them from one place.' })
+    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Keep more of every booking.' })).toBeVisible();
+    await expect(page.getByRole('slider', { name: 'Set your nightly rate' })).toBeVisible();
+    // One card per night booked: the add card adds one, tapping a card removes it.
+    await expect(page.getByText('2 nights of Airbnb fees pay for Kame Pro.')).toBeVisible();
+    const kept = page.locator('#savings').getByText('You keep', { exact: true });
+    await expect(kept).toHaveCount(8);
+    await page.getByRole('button', { name: 'Add night' }).click();
+    await expect(kept).toHaveCount(9);
+    // The nights that pay for Pro are not buttons; a kept night is.
+    await expect(page.getByRole('button', { name: /^Remove night 1:/ })).toHaveCount(0);
+    await page.getByRole('button', { name: /^Remove night 3:/ }).click();
+    await expect(kept).toHaveCount(8);
 
-  test('for-hosts v4 preview loads its outcome-led hero', async ({ page }) => {
-    await page.goto('/for-hosts/v4');
-    await expect(page.getByRole('heading', { name: 'More direct. Less work.' })).toBeVisible({
-      timeout: 20_000,
-    });
-    await expect(page.getByRole('heading', { name: 'Better hosting compounds.' })).toBeVisible();
+    // The hero selector is the keyboard path for the four floating panels.
+    const messages = page
+      .getByLabel('What you get')
+      .getByRole('button', { name: 'Messages', exact: true });
+    await messages.click();
+    await expect(messages).toHaveAttribute('aria-pressed', 'true');
+
+    // Picking an AI job stops the auto-play and leaves the approve step to a real tap.
+    await page.getByRole('button', { name: 'Pricing', exact: true }).click();
+    await page.getByRole('button', { name: 'Apply', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Rate applied' })).toBeVisible();
     await expectPublicPageReady(page);
   });
 

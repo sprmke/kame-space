@@ -210,10 +210,10 @@ export const PUBLIC_ROUTES: readonly PublicRouteEntry[] = [
     inSitemap: true,
     canonical: 'self',
     snapshot: 'static',
-    lastReviewed: '2026-11-13',
-    title: 'Run your rentals from one dashboard | Kame Space',
+    lastReviewed: '2026-11-24',
+    title: 'Hosting made easy and affordable | Kame Space',
     description:
-      'Bookings, guest messages, documents, finance and marketing in one host dashboard built for Philippine rentals.',
+      'Let Kame AI handle manual hosting tasks. Direct bookings, messages, rates, and money in one dashboard for a fixed monthly price.',
   },
   {
     id: 'for-hosts-pricing',
@@ -325,7 +325,7 @@ export const PUBLIC_ROUTES: readonly PublicRouteEntry[] = [
     inSitemap: false,
     canonical: 'none',
     snapshot: 'none',
-    note: 'Redirects to /for-hosts/v2.',
+    note: 'Redirects to /for-hosts.',
   },
   {
     id: 'for-hosts-v2',
@@ -334,7 +334,7 @@ export const PUBLIC_ROUTES: readonly PublicRouteEntry[] = [
     inSitemap: false,
     canonical: 'none',
     snapshot: 'none',
-    note: 'Redesign preview, not linked from nav.',
+    note: 'Redirects to /for-hosts.',
   },
   {
     id: 'for-hosts-v3',
@@ -355,7 +355,19 @@ export const PUBLIC_ROUTES: readonly PublicRouteEntry[] = [
     inSitemap: false,
     canonical: 'none',
     snapshot: 'none',
-    note: 'Outcome-led redesign preview, not linked from nav.',
+    note: 'Redirects to /for-hosts.',
+  },
+  {
+    id: 'for-hosts-v5',
+    pattern: '/for-hosts/v5',
+    title: 'For Hosts | Kame Space',
+    description:
+      'Preview Kame Space for hosts: your own direct booking page and one workspace for bookings, guest messages, rates, and money.',
+    indexable: false,
+    inSitemap: false,
+    canonical: 'none',
+    snapshot: 'none',
+    note: 'Redirects to /for-hosts.',
   },
   {
     id: 'explore-preview',

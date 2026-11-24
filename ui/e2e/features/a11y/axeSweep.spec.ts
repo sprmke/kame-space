@@ -23,7 +23,6 @@ const PUBLIC_PATHS = [
   '/developments',
   '/search',
   '/for-hosts',
-  '/for-hosts/v4',
   '/for-hosts/pricing',
   '/for-guests/login',
   '/for-hosts/login',

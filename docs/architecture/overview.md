@@ -11,7 +11,7 @@ updated: 2026-11-15
 
 Kame Space is a **multi-tenant short-term rental platform**: public listings and guest booking, a host dashboard (property **and** parking as peer verticals), org billing, and a super-admin console. The original product was a Guest Advice Form (GAF) for one unit. That loop still sits at the center. The app around it is much larger.
 
-Product positioning and qualified guest/host advantages are maintained in [`docs/product-positioning.md`](../product-positioning.md). The outcome-led host landing candidate is available for review at `/for-hosts/v4`; the live `/for-hosts` route remains unchanged.
+Product positioning and qualified guest/host advantages are maintained in [`docs/product-positioning.md`](../product-positioning.md). The live host landing is `/for-hosts`.
 
 ---
 
