@@ -838,14 +838,24 @@ function WorkflowPanelInner({
 
       {/* ── Stage-specific sub-form ───────────────────────────────────────── */}
       {needsReviewAck ? (
-        <div className="min-h-0 min-w-0 overflow-y-auto overflow-x-hidden">
-          <WorkflowPendingReviewAck
-            bookingId={booking.id}
-            isModal={isModal}
-            onConfirm={confirmReview}
-            onOpenAiSummary={onOpenAiSummary ? () => onOpenAiSummary(true) : undefined}
-          />
-        </div>
+        canMutate ? (
+          <div className="min-h-0 min-w-0 overflow-y-auto overflow-x-hidden">
+            <WorkflowPendingReviewAck
+              bookingId={booking.id}
+              isModal={isModal}
+              onConfirm={confirmReview}
+              onOpenAiSummary={onOpenAiSummary ? () => onOpenAiSummary(true) : undefined}
+            />
+          </div>
+        ) : (
+          /* View-only: the review gate is an action surface, so a member without workflow
+           * edit gets the reason instead of a checkbox that cannot do anything. */
+          <div className={cn(isModal ? 'px-4 py-4 sm:px-5' : 'px-4 py-4')}>
+            <p className="border-border/50 bg-muted/50 text-muted-foreground flex items-start rounded-xl border px-3.5 py-3 text-sm leading-snug">
+              View only. Moving this booking forward needs workflow edit access.
+            </p>
+          </div>
+        )
       ) : isModal && !kanbanConfirmOnly ? (
         <WorkflowSubFormHost
           isModal

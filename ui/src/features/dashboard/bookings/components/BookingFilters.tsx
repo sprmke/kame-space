@@ -341,7 +341,7 @@ function BookingStatusToolbarMenu({
             </button>
           </div>
         ) : null}
-        <div className="max-h-[min(55vh,20rem)] overflow-y-auto overflow-x-hidden overscroll-contain py-1">
+        <div className="max-h-[min(55vh,20rem)] overflow-y-auto overflow-x-hidden overscroll-contain py-1 [box-shadow:inset_0_-10px_8px_-10px_rgba(15,23,42,0.35)]">
           {statusList}
         </div>
       </PopoverContent>

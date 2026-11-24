@@ -47,6 +47,9 @@ export function AdminSortMenu<T extends string>({
     <button
       type="button"
       onClick={() => setOpen((v) => !v)}
+      /* Visible label stays the current sort; the accessible name says what the control is
+       * (review P2-5). Label-in-name still holds because the value is part of it. */
+      aria-label={`${ariaLabel}: ${label}`}
       aria-expanded={open}
       aria-haspopup={isMobileLayout ? 'dialog' : 'listbox'}
       className={cn(

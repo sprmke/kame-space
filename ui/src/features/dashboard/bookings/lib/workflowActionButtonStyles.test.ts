@@ -9,6 +9,8 @@ import {
   workflowActionLabelGroupClass,
   workflowActionLabelTextClass,
   workflowActionLabelTextPairedClass,
+  workflowActionPairItemClass,
+  workflowActionPairLayoutClass,
   workflowInlineLink,
 } from '@/features/dashboard/bookings/lib/workflowActionButtonStyles';
 
@@ -55,8 +57,26 @@ describe('workflowActionLabelTextClass', () => {
 });
 
 describe('workflowActionLabelTextPairedClass', () => {
-  it('is defined', () => {
-    expect(workflowActionLabelTextPairedClass).toBeDefined();
+  it('allows the label to wrap so a narrow rail never clips it', () => {
+    expect(workflowActionLabelTextPairedClass).not.toContain('whitespace-nowrap');
+    expect(workflowActionLabelTextPairedClass).toContain('text-pretty');
+  });
+});
+
+describe('workflowActionPairLayoutClass', () => {
+  it('uses a wrapping flex row when both actions show', () => {
+    const paired = workflowActionPairLayoutClass(true);
+    expect(paired).toContain('flex-wrap');
+    expect(paired).not.toContain('grid-cols-2');
+  });
+
+  it('stacks when a single action shows', () => {
+    expect(workflowActionPairLayoutClass(false)).toContain('flex-col');
+  });
+
+  it('gives each cell a basis that forces a wrap below ~22rem', () => {
+    expect(workflowActionPairItemClass).toContain('basis-[11rem]');
+    expect(workflowActionPairItemClass).toContain('min-w-0');
   });
 });
 

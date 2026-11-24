@@ -178,7 +178,9 @@ function BookingCard({
             <GuestAvatar name={name} validIdUrl={row.valid_id_url} size="lg" className="shrink-0" />
             <div className="min-w-0">
               <p className="text-foreground truncate text-sm font-bold leading-tight">{name}</p>
-              <p className="text-data-secondary mt-0.5 truncate">{row.guest_email}</p>
+              <p title={row.guest_email} className="text-data-secondary mt-0.5 truncate">
+                {row.guest_email}
+              </p>
               {showProperty ? (
                 <BookingResourceLabel row={row} className="mt-0.5 font-medium" />
               ) : null}
@@ -209,9 +211,7 @@ function BookingCard({
                 guest_requests_surprise_decor={row.guest_requests_surprise_decor}
                 has_invalid_receipt_ai={hasInvalidReceiptAi}
               />
-            ) : (
-              <span className="text-caption text-muted-foreground/50">No flags</span>
-            )}
+            ) : null}
           </div>
           <div className="flex shrink-0 items-center gap-1">
             <BookingListQuickActions row={row} />

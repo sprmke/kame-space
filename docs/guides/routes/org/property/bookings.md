@@ -33,7 +33,7 @@ Layout (top → bottom):
 
 1. **Mobile (`max-lg`):** brand hero with tenant switcher + **Import** icon + **New booking** icon (property scope); overlapping floating toolbar with **date range** only (same as Finance / Maintenance); layout frosted header hidden on this route.
 2. **Desktop (`lg+`):** page header — **date range** (top right) + **Import** (outline) + **New booking** → opens `AdminNewBookingModal` (in-dashboard modal; see below). On the first list load, before a range is in the URL, the date button keeps its icon and chevron and shows a skeleton in place of the **Date** label. The route skeleton mounts this same header (title, subtitle, and action placeholders) before the page chunk loads, so the summary cards do not drop when the header appears.
-3. **Summary cards** — Action Required, Pending Docs, Confirmed Stays, History (Finance-style `surface-card`; count + inline status hints; click toggles `?stage=` filter)
+3. **Summary cards** — Action Required, Pending Docs, Confirmed Stays, History (Finance-style `surface-card`; count + inline status hints; click toggles `?stage=` filter). Labels are identical in every view; the route skeleton renders the same titles and hints, so nothing rewrites itself on hydrate.
 4. **Toolbar** (`BookingFilters` in page body — always visible, matches Finance / Maintenance):
    - **Mobile (`max-lg`):** search + refine icon (opens sheet for status / more filters / sort / per-page) + view toggle (**Kanban** hidden below `md` / phone width)
    - **Desktop (`lg+`):** **Status** · **Filters** (more only) · **search (flex)** · sort · per-page · **View**. Filters left of search; presentation controls on the right. Toolbar controls match Team height (`h-10` + `min-h-[44px]` → 44px). Status/Filters popovers omit redundant titles and use comfortable row spacing.
@@ -232,15 +232,18 @@ Kanban card open still works without workflow permission (Progress rail read-onl
 
 ## Testing
 
-| Layer | Path / spec                                                                                                                                                                                         | Manual |
-| ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| Unit  | `workflow.test.ts`                                                                                                                                                                                  | —      |
-| Unit  | `components/calendar/calendarPillLabel.test.ts`                                                                                                                                                     | —      |
-| Unit  | `lib/bookingChatLink.test.ts`, `supabase/functions/_shared/inboxBookingChats_test.ts`                                                                                                               | —      |
-| DOM   | `components/BookingListQuickActions.test.tsx` — visibility, one/several/none (create web chat when reply allowed), errors, busy, cache, row click isolation                                         | —      |
-| Live  | `supabase/functions/tests/inboxBookingChatsLocal.integration_test.ts` — real handler + Postgres (`bun run test:booking-chats:live`, needs `./dev.sh`)                                               | —      |
-| E2E   | `ui/e2e/features/bookings/bookingChatShortcut.spec.ts` (`@ci`) — one / several / none, property + org lists, no `inbox:view`, 403, row click, Escape, 375px sheet, icon in view at 1024/1280px, axe | —      |
-| E2E   | `dashboardModulesSmoke.spec.ts` bookings shell (`@ci`)                                                                                                                                              | —      |
+| Layer  | Path / spec                                                                                                                                                                                                                                                     | Manual |
+| ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| Unit   | `workflow.test.ts`                                                                                                                                                                                                                                              | —      |
+| Unit   | `components/calendar/calendarPillLabel.test.ts`                                                                                                                                                                                                                 | —      |
+| Unit   | `lib/bookingChatLink.test.ts`, `supabase/functions/_shared/inboxBookingChats_test.ts`                                                                                                                                                                           | —      |
+| DOM    | `components/BookingListQuickActions.test.tsx` — visibility, one/several/none (create web chat when reply allowed), errors, busy, cache, row click isolation                                                                                                     | —      |
+| Live   | `supabase/functions/tests/inboxBookingChatsLocal.integration_test.ts` — real handler + Postgres (`bun run test:booking-chats:live`, needs `./dev.sh`)                                                                                                           | —      |
+| E2E    | `ui/e2e/features/bookings/bookingChatShortcut.spec.ts` (`@ci`) — one / several / none, property + org lists, no `inbox:view`, 403, row click, Escape, 375px sheet, icon in view at 1024/1280px, axe                                                             | —      |
+| E2E    | `dashboardModulesSmoke.spec.ts` bookings shell (`@ci`)                                                                                                                                                                                                          | —      |
+| E2E    | `ui/e2e/features/bookings/bookingsWorkspace.spec.ts` (`@ci`, `bun run test:e2e:bookings`) — stage counts + filtering, search, status filter, completed/cancelled visibility, row → detail, kanban + calendar, error state, phone card view + touch targets, axe | —      |
+| Demo   | `ui/e2e/features/bookings/bookingsWorkspaceAudit.spec.ts` (25 stills) + `bookingsTour.slowmo.spec.ts` (5 recordings), `bun run test:e2e:bookings:screens` / `:tour:video`                                                                                       | —      |
+| Review | `docs/workflow/in-progress/bookings-ux-review/README.md` — open P1/P2 list before changing this page                                                                                                                                                            | —      |
 
 ---
 

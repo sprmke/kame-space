@@ -51,7 +51,6 @@ export function BookingStaySortControl({ sort, onChange, variant = 'header', cla
       type="button"
       onClick={() => onChange(nextStaySort(sort))}
       aria-label={label}
-      aria-sort={active ? (direction === 'asc' ? 'ascending' : 'descending') : 'none'}
       className={cn(
         '-my-2 inline-flex min-h-[44px] items-center gap-1 py-2',
         'text-[10px] font-bold uppercase tracking-[0.1em]',

@@ -1,4 +1,4 @@
-import { AdminMetricCard } from '@/features/dashboard/bookings/components/AdminMetricCard';
+import { StatCard } from '@/components/shared/StatCard';
 import {
   KANBAN_STATUS_CONFIG,
   STAGE_META,
@@ -86,7 +86,7 @@ export function BookingsSummaryCards({
         const statuses = hideStatusFooter ? [] : statusesForSummaryCard(stage);
 
         return (
-          <AdminMetricCard
+          <StatCard
             key={stage}
             title={stageLabels?.[stage] ?? meta.label}
             titleAdornment={

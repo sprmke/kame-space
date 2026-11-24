@@ -30,13 +30,14 @@ test.describe('@ci parking host flow', () => {
       await hostPage.goto(parkingFlowPaths.hostBookings);
 
       const bookingRow = hostPage
-        .getByRole('button', { name: 'Open booking for Jamie Park' })
+        .getByRole('row')
+        .filter({ hasText: 'Jamie Park' })
         .first();
       await expect(bookingRow).toBeVisible({ timeout: 15_000 });
       await expect(bookingRow).toContainText(parkingHostStatusLabels.findingHost);
       await captureParkingScreen(hostPage, 'host-bookings-list', { role: 'host' });
 
-      await hostPage.getByRole('button', { name: 'Open booking for Jamie Park' }).click();
+      await hostPage.getByRole('link', { name: 'Jamie Park', exact: true }).click();
 
       await expect(
         hostPage.getByRole('button', { name: parkingFlowLabels.accept })

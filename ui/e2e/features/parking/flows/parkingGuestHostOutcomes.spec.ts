@@ -64,7 +64,7 @@ test.describe('@ci parking guest and host outcomes', () => {
       await installParkingFlowMocks(hostPage, state);
       await hostPage.goto(parkingFlowPaths.hostBookings);
       await captureParkingScreen(hostPage, 'host-bookings-list', { role: 'host' });
-      await hostPage.getByRole('button', { name: 'Open booking for Jamie Park' }).click();
+      await hostPage.getByRole('link', { name: 'Jamie Park', exact: true }).click();
       await captureParkingScreen(hostPage, 'host-booking-detail-pending', { role: 'host' });
       await hostPage.getByRole('button', { name: parkingFlowLabels.decline }).click();
       await expect(hostPage.getByText('Decline this request?')).toBeVisible();

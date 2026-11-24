@@ -190,9 +190,7 @@ function KanbanCardBody({
               guest_requests_surprise_decor={row.guest_requests_surprise_decor}
               has_invalid_receipt_ai={hasInvalidReceiptAi}
             />
-          ) : (
-            <span className="text-caption text-muted-foreground/50">No flags</span>
-          )}
+          ) : null}
         </div>
         <div className="flex shrink-0 items-center gap-1">
           {!isOverlay ? <BookingListQuickActions row={row} /> : null}

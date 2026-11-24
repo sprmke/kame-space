@@ -36,6 +36,8 @@ import {
 import {
   workflowActionLabelGroupClass,
   workflowActionLabelTextClass,
+  workflowActionPairItemClass,
+  workflowActionPairLayoutClass,
   workflowActionLabelTextPairedClass,
   workflowBackActionClass,
   workflowPrimaryActionClass,
@@ -112,7 +114,12 @@ function PrimaryCta({
   onSelect: () => void;
 }) {
   return (
-    <div className={cn('w-full min-w-0', paired && 'h-full')}>
+    <div
+      className={cn(
+        'w-full min-w-0',
+        paired && cn(workflowActionPairItemClass, 'h-full')
+      )}
+    >
       <button
         type="button"
         disabled={busy}
@@ -267,22 +274,18 @@ export function WorkflowActionsBar({
       ) : null}
 
       {showTransitionRow ? (
-        <div
-          className={cn(
-            'grid items-stretch gap-2',
-            pairedTransitionActions ? 'grid-cols-2' : 'grid-cols-1'
-          )}
-        >
+        <div className={workflowActionPairLayoutClass(pairedTransitionActions)}>
           {backTo ? (
             <button
               type="button"
               disabled={actionsBusy}
               onClick={() => onOpenBackConfirm(backTo)}
-              aria-label={returnToStatusLabel(backTo, false)}
+              /* No aria-label: when paired the visible text is the compact label, and an
+               * aria-label that disagrees with it fails label-in-name (WCAG 2.5.3). */
               className={cn(
                 workflowBackActionClass,
                 'w-full min-w-0',
-                pairedTransitionActions && 'h-full'
+                pairedTransitionActions && cn(workflowActionPairItemClass, 'h-full')
               )}
             >
               <span className={workflowActionLabelGroupClass}>
@@ -324,7 +327,7 @@ export function WorkflowActionsBar({
             aria-busy={cancelPending || undefined}
             className={cn(
               quietRowClass,
-              'bg-rose-500/10 text-rose-600 hover:bg-rose-500/[0.18] dark:text-rose-400 dark:hover:bg-rose-500/20'
+              'bg-rose-500/10 text-rose-700 hover:bg-rose-500/[0.18] hover:text-rose-800 dark:text-rose-300 dark:hover:bg-rose-500/20'
             )}
           >
             {cancelPending ? (

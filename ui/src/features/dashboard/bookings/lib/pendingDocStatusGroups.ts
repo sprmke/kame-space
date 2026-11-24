@@ -132,7 +132,7 @@ function countReady(rows: PendingDocStatusRow[]): { ready: number; total: number
 
 function paidOutboundSummary(rows: PendingDocStatusRow[]): string {
   const onFile = rows.filter((row) => hasUrl(row.url)).length;
-  return `${onFile} of ${rows.length}`;
+  return `${onFile} of ${rows.length} sent`;
 }
 
 function freeOutboundSummary(rows: PendingDocStatusRow[], packageSent: boolean): string {
@@ -231,7 +231,7 @@ export function buildPendingDocStatusGroups(input: {
             ? 'Approved Docs'
             : 'Pending Docs'
           : 'To Receive',
-        summary: `${inboundRows.filter((r) => hasUrl(r.url)).length} of ${inboundRows.length}`,
+        summary: `${inboundRows.filter((r) => hasUrl(r.url)).length} of ${inboundRows.length} received`,
         rows: inboundRows,
       },
     ];
@@ -293,7 +293,7 @@ export function buildPendingDocStatusGroups(input: {
             ? 'Approved Docs'
             : 'Pending Docs'
           : 'To Receive',
-        summary: `${inboundRows.filter((r) => hasUrl(r.url)).length} of ${inboundRows.length}`,
+        summary: `${inboundRows.filter((r) => hasUrl(r.url)).length} of ${inboundRows.length} received`,
         rows: inboundRows,
       },
     ];

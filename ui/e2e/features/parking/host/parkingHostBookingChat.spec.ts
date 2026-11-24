@@ -39,7 +39,7 @@ test.describe('@ci parking host booking chat shortcut', () => {
 
     await page.goto(parkingFlowPaths.hostBookings);
     await expect(
-      page.getByRole('button', { name: 'Open booking for Jamie Park' }).first()
+      page.getByRole('link', { name: 'Jamie Park', exact: true }).first()
     ).toBeVisible({
       timeout: 20_000,
     });

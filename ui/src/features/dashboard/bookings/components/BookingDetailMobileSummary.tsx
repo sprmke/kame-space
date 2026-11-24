@@ -15,6 +15,11 @@ import { formatBookingDate } from '@/utils/format/bookingDisplay';
 type Props = {
   booking: BookingRow;
   detailsExpanded: boolean;
+  /**
+   * `collapsible` (below `lg`) keeps the Details toggle. `static` is the stacked layout at
+   * `lg+`, where the details are always visible: no toggle, actions always shown.
+   */
+  variant?: 'collapsible' | 'static';
   onToggleDetails: () => void;
   editMode?: boolean;
   onEdit?: () => void;
@@ -31,6 +36,7 @@ type Props = {
 export function BookingDetailMobileSummary({
   booking,
   detailsExpanded,
+  variant = 'collapsible',
   onToggleDetails,
   editMode = false,
   onEdit,
@@ -47,11 +53,14 @@ export function BookingDetailMobileSummary({
   const fb = booking.guest_facebook_name?.trim() ?? '';
   const primary = booking.primary_guest_name?.trim() ?? '';
   const heading = fb || primary || 'Booking';
-  const source = booking.booking_source?.trim() || 'Direct';
-  const isOta = isOtaPrepaidSource(source);
+  /* Same rule as the desktop header: only a real source earns a chip (review P2-2). */
+  const source = booking.booking_source?.trim() ?? '';
+  const isOta = source ? isOtaPrepaidSource(source) : false;
 
   return (
     <section
+      /* Layout hook: index.css orders this above the rail when the page stacks at lg+. */
+      data-booking-summary
       className={cn(
         'surface-card border-border/80 rounded-2xl border p-3 sm:p-4',
         editMode &&
@@ -72,7 +81,7 @@ export function BookingDetailMobileSummary({
           {heading}
         </h2>
         {!editMode ? <StatusBadge status={booking.status} /> : null}
-        {!editMode ? (
+        {!editMode && source ? (
           <span
             className={cn(
               'inline-flex items-center rounded-md border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide',
@@ -105,7 +114,7 @@ export function BookingDetailMobileSummary({
       </p>
 
       <div className="mt-3 space-y-2">
-        {!editMode ? (
+        {!editMode && variant === 'collapsible' ? (
           <button
             type="button"
             onClick={onToggleDetails}
@@ -140,7 +149,7 @@ export function BookingDetailMobileSummary({
             Cancel
           </button>
         ) : (
-          detailsExpanded && (
+          (detailsExpanded || variant === 'static') && (
             <div className="flex items-stretch gap-2">
               {onEdit ? (
                 <Button

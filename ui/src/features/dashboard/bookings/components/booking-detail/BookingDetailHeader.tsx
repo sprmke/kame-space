@@ -40,8 +40,10 @@ export function BookingDetailHeader({
   const primary = booking.primary_guest_name?.trim() ?? '';
   const heading = fb || primary || 'Booking';
   const showPrimarySubtitle = Boolean(fb && primary && fb.toLowerCase() !== primary.toLowerCase());
-  const source = booking.booking_source?.trim() || 'Direct';
-  const isOta = isOtaPrepaidSource(source);
+  /* Only a real source earns a chip. "Direct" as a fallback made it a constant on every
+   * booking, competing with the status badge that carries the actual information. */
+  const source = booking.booking_source?.trim() ?? '';
+  const isOta = source ? isOtaPrepaidSource(source) : false;
 
   return (
     <BookingDetailShellHeader as="header" className={className}>
@@ -55,14 +57,18 @@ export function BookingDetailHeader({
               {heading}
             </h1>
             <StatusBadge status={booking.status} />
-            <span
-              className={cn(
-                'inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
-                isOta ? toneBadgeClasses('orange') : 'border-primary/25 bg-primary/10 text-primary'
-              )}
-            >
-              {source}
-            </span>
+            {source ? (
+              <span
+                className={cn(
+                  'inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
+                  isOta
+                    ? toneBadgeClasses('orange')
+                    : 'border-primary/25 bg-primary/10 text-primary'
+                )}
+              >
+                {source}
+              </span>
+            ) : null}
           </div>
 
           {showPrimarySubtitle ? (
