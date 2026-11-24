@@ -9,6 +9,7 @@
  */
 
 import { DatabaseService } from '../_shared/databaseService.ts';
+import { computeBookingFinancials } from '../_shared/bookingFinance.ts';
 import { loadAppSettingsRow, resolveAppSettings } from '../_shared/appSettings.ts';
 import { getGuestReviewDraft } from '../_shared/guestReviewService.ts';
 import { guestCanReview } from '../_shared/reviewEligibility.ts';
@@ -80,11 +81,29 @@ servePublic('get-sd-form', async (req) => {
   ]);
   const guestReviewSubmitted = Boolean(reviewDraft);
 
+  /*
+   * Guests choose where the money goes without ever being told how much it is. Show the
+   * deposit, any host-recorded deduction or addition, and the resulting total. The host can
+   * still change these until the refund is settled, so the UI says the amount is confirmed
+   * at settlement.
+   */
+  const financials = computeBookingFinancials(row);
+  const roundMoney = (value: number) => Math.round(value * 100) / 100;
+  const refundDeductions = roundMoney(financials.sdExpenseTotal);
+  const refundAdditions = roundMoney(financials.sdProfitTotal);
+  const refundTotal = Math.max(0, roundMoney(sd + refundAdditions - refundDeductions));
+
   return jsonSuccess(req, {
     bookingId: row.id,
     primary_guest_name: row.primary_guest_name ?? row.guest_facebook_name ?? '',
     guest_phone_number: row.guest_phone_number ?? '',
     security_deposit: sd,
+    refund_preview: {
+      security_deposit: sd,
+      deductions: refundDeductions,
+      additions: refundAdditions,
+      total: refundTotal,
+    },
     check_in_date: row.check_in_date,
     check_out_date: row.check_out_date,
     guest_review_submitted: guestReviewSubmitted,

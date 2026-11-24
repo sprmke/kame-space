@@ -31,7 +31,7 @@ test.describe('@ci guest write review', () => {
     ]);
 
     await page.goto(`/properties/solea-mactan/sd-form?bookingId=${BOOKING_ID}`);
-    await expect(page.getByRole('heading', { name: 'SD Refund Form' })).toBeVisible({
+    await expect(page.getByRole('heading', { name: 'Security deposit refund' })).toBeVisible({
       timeout: 20_000,
     });
 
@@ -88,7 +88,7 @@ test.describe('@ci guest write review', () => {
     ]);
 
     await page.goto(`/properties/solea-mactan/sd-form?bookingId=${BOOKING_ID}`);
-    await expect(page.getByRole('heading', { name: 'SD Refund Form' })).toBeVisible({
+    await expect(page.getByRole('heading', { name: 'Security deposit refund' })).toBeVisible({
       timeout: 20_000,
     });
 
@@ -111,7 +111,7 @@ test.describe('@ci guest write review', () => {
     ]);
 
     await page.goto(`/properties/solea-mactan/sd-form?bookingId=${BOOKING_ID}`);
-    await expect(page.getByRole('heading', { name: 'SD Refund Form' })).toBeVisible({
+    await expect(page.getByRole('heading', { name: 'Security deposit refund' })).toBeVisible({
       timeout: 20_000,
     });
     await page.getByRole('button', { name: 'Not now' }).click();
@@ -244,7 +244,7 @@ test.describe('@ci guest write review', () => {
     ]);
 
     await page.goto(`/properties/solea-mactan/sd-form?bookingId=${BOOKING_ID}`);
-    await expect(page.getByRole('heading', { name: 'SD Refund Form' })).toBeVisible({
+    await expect(page.getByRole('heading', { name: 'Security deposit refund' })).toBeVisible({
       timeout: 20_000,
     });
     // Returning-guest skip is for submitted reviews that already have a voucher;

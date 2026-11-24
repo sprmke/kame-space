@@ -66,13 +66,20 @@ export function GuestBookingFormModal({
         open={open}
         onOpenChange={guardedOpenChange}
         title={
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 items-center gap-3">
             <div className="bg-primary/10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full">
               <User className="text-primary h-3.5 w-3.5" />
             </div>
-            <ResponsiveModalTitle className="text-foreground text-base font-semibold">
-              Guest Form
-            </ResponsiveModalTitle>
+            <div className="min-w-0">
+              <ResponsiveModalTitle className="text-foreground text-base font-semibold">
+                Guest Form
+              </ResponsiveModalTitle>
+              {embedNav?.show ? (
+                <p className="text-muted-foreground truncate text-xs tabular-nums">
+                  {embedNav.currentTitle} · {embedNav.currentIndex} of {embedNav.stepCount}
+                </p>
+              ) : null}
+            </div>
           </div>
         }
         // Comfortable form width — wider than calendar, not full desktop.

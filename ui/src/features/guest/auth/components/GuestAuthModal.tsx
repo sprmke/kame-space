@@ -146,6 +146,11 @@ export function GuestAuthModal({
             <ResponsiveModalTitle className="text-center text-lg font-bold sm:text-xl">
               {step === 'email' ? 'Log in or sign up' : 'Confirm your email'}
             </ResponsiveModalTitle>
+            {step === 'email' ? (
+              <p className="text-muted-foreground max-w-[26ch] text-center text-sm leading-relaxed">
+                Sign in to book and keep your trip, messages and documents in one place.
+              </p>
+            ) : null}
           </div>
         </ResponsiveModalHeader>
 

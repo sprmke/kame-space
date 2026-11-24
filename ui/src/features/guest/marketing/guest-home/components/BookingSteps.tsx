@@ -21,7 +21,7 @@ import { cn } from '@/lib/utils';
 const STEPS = [
   {
     title: 'Send a request',
-    body: 'Pick your dates, add your guests and a valid ID. No account needed.',
+    body: 'Pick your dates, add your guests and a valid ID. Sign in once so your trip and messages stay in one place.',
     pill: 'Request sent',
   },
   {

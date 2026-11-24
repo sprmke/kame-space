@@ -6,6 +6,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { Check, Loader2, Wallet } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { GuestLinkUnavailable } from '@/features/guest/components/GuestLinkUnavailable';
 import { GuestFormStepper } from '@/features/guest/form/components/GuestFormStepper';
 import {
   DEFAULT_GUEST_PAYMENT_INFO,
@@ -63,6 +64,7 @@ import { FORM_PLACEHOLDERS } from '@/lib/constants/formPlaceholders';
 import { friendlyToastError } from '@/lib/feedback/toastMessages';
 import { captureAppEvent } from '@/lib/posthog/capture';
 import { cn } from '@/lib/utils';
+import { formatMoney } from '@/utils/format/currency';
 import { toCapitalCase } from '@/utils/text/formatters';
 import { handleNameInputChange } from '@/utils/text/helpers';
 
@@ -71,7 +73,7 @@ type Step = 1 | 2 | 3 | 'done';
 /** Step 2 sub-phases: balance wait after review, then voucher raffle reveal. */
 type Step2Phase = 'wait_balance' | 'voucher';
 
-const SD_FORM_BRAND_TITLE = 'SD Refund Form';
+const SD_FORM_BRAND_TITLE = 'Security deposit refund';
 
 export function SdFormPage() {
   const [searchParams] = useSearchParams();
@@ -252,19 +254,7 @@ export function SdFormPage() {
   }
 
   if (!bookingId) {
-    return (
-      <div className="relative space-y-6 p-4 text-center sm:p-6 lg:p-8">
-        <div className="space-y-3">
-          <h1 className="text-foreground text-base font-bold">Missing booking link</h1>
-          <p className="text-muted-foreground text-sm">
-            Use the link from your email, or contact your host for help.
-          </p>
-          <Button asChild variant="outline" className="min-h-[44px]">
-            <Link to="/">Back to home</Link>
-          </Button>
-        </div>
-      </div>
-    );
+    return <GuestLinkUnavailable propertySlug={propertySlug} />;
   }
 
   if (query.isLoading) {
@@ -278,18 +268,7 @@ export function SdFormPage() {
 
   if (query.isError || !query.data) {
     return (
-      <div className="relative space-y-6 p-4 text-center sm:p-6 lg:p-8">
-        <div className="space-y-3">
-          <h1 className="text-foreground text-base font-bold">Form not available</h1>
-          <p className="text-muted-foreground text-sm">
-            {(query.error as Error)?.message ??
-              "This form isn't available. Use your email link or contact your host for help."}
-          </p>
-          <Button asChild variant="outline" className="min-h-[44px]">
-            <Link to="/">Back to home</Link>
-          </Button>
-        </div>
-      </div>
+      <GuestLinkUnavailable error={query.error} propertySlug={propertySlug} bookingId={bookingId} />
     );
   }
 
@@ -305,8 +284,8 @@ export function SdFormPage() {
           <div className="space-y-3 px-3 sm:px-0">
             <h1 className="text-foreground text-base font-bold sm:text-lg">You&apos;re all set!</h1>
             <p className="text-muted-foreground leading-relaxed">
-              Thanks, <strong>{data.primary_guest_name}</strong>! We&apos;ll process your SD refund
-              in 1–2 hours using your details.
+              Thanks, <strong>{data.primary_guest_name}</strong>! We&apos;ll send your security
+              deposit refund to the details you chose, usually within 1 to 2 hours.
             </p>
             <p className="strong text-muted-foreground leading-relaxed">
               {formatGuestFarewell(guestBrand.organizationName)}
@@ -404,6 +383,7 @@ export function SdFormPage() {
             primaryGuestName={data.primary_guest_name}
             checkInDate={data.check_in_date}
             checkOutDate={data.check_out_date}
+            reviewSubmitted={data.guest_review_submitted === true}
             prizePool={
               data.voucher_prizes?.length ? prizesToVouchers(data.voucher_prizes) : undefined
             }
@@ -484,6 +464,52 @@ function MethodCard({
   );
 }
 
+/** What the guest is choosing a payout method for. Amount first, breakdown only when it differs. */
+function RefundAmountSummary({ data }: { data: SdFormBootstrap }) {
+  const preview = data.refund_preview ?? null;
+  const total = preview?.total ?? data.security_deposit;
+  const deductions = preview?.deductions ?? 0;
+  const additions = preview?.additions ?? 0;
+  const deposit = preview?.security_deposit ?? data.security_deposit;
+
+  return (
+    <section
+      aria-label="Refund amount"
+      className="border-primary/15 bg-primary/5 space-y-2 rounded-xl border px-4 py-3.5"
+    >
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="text-muted-foreground text-xs font-bold uppercase tracking-wider">
+          Refund amount
+        </p>
+        <p className="text-foreground text-xl font-bold tabular-nums">{formatMoney(total)}</p>
+      </div>
+      <dl className="text-muted-foreground space-y-1 text-xs">
+        <div className="flex justify-between gap-3">
+          <dt>Security deposit</dt>
+          <dd className="tabular-nums">{formatMoney(deposit)}</dd>
+        </div>
+        {additions > 0 ? (
+          <div className="flex justify-between gap-3">
+            <dt>Added by your host</dt>
+            <dd className="tabular-nums text-emerald-700 dark:text-emerald-300">
+              +{formatMoney(additions)}
+            </dd>
+          </div>
+        ) : null}
+        {deductions > 0 ? (
+          <div className="flex justify-between gap-3">
+            <dt>Deductions</dt>
+            <dd className="tabular-nums">−{formatMoney(deductions)}</dd>
+          </div>
+        ) : null}
+      </dl>
+      <p className="text-muted-foreground border-primary/15 border-t pt-2 text-xs leading-relaxed">
+        Sent after your host confirms the final amount, usually within 1 to 2 hours of submitting.
+      </p>
+    </section>
+  );
+}
+
 function StepTwo({
   data,
   method,
@@ -558,6 +584,8 @@ function StepTwo({
 
   return (
     <div className="space-y-5">
+      <RefundAmountSummary data={data} />
+
       <div className="border-border/80 bg-muted/15 flex items-center gap-3 rounded-xl border px-4 py-3">
         <div className="bg-primary/15 text-primary flex size-8 shrink-0 items-center justify-center rounded-lg">
           <Wallet className="size-4" aria-hidden />

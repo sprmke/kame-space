@@ -6,6 +6,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { Check } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { GuestLinkUnavailable } from '@/features/guest/components/GuestLinkUnavailable';
 import {
   DEFAULT_GUEST_PAYMENT_INFO,
   useGuestPaymentInfo,
@@ -109,12 +110,12 @@ export function GuestReviewPage() {
 
   if (query.isError || !query.data) {
     return (
-      <div className="guest-inner-enter mx-auto max-w-lg space-y-4 px-4 py-12 text-center">
-        <p className="text-foreground text-base font-semibold">Review unavailable</p>
-        <p className="text-muted-foreground text-sm leading-relaxed">
-          {query.error instanceof Error ? query.error.message : 'This link is not valid.'}
-        </p>
-      </div>
+      <GuestLinkUnavailable
+        className="guest-inner-enter mx-auto max-w-lg space-y-4 px-4 py-12 text-center"
+        error={query.error}
+        propertySlug={propertySlug}
+        bookingId={bookingId}
+      />
     );
   }
 

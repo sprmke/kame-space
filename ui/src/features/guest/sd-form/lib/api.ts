@@ -79,6 +79,16 @@ export type SdFormBootstrap = {
   primary_guest_name: string;
   guest_phone_number: string;
   security_deposit: number;
+  /**
+   * What the guest will actually get back. Computed server-side from the deposit plus any
+   * host-recorded additions and deductions; still pending until the refund is settled.
+   */
+  refund_preview?: {
+    security_deposit: number;
+    deductions: number;
+    additions: number;
+    total: number;
+  } | null;
   check_in_date: string;
   check_out_date: string;
   guest_review_submitted?: boolean;

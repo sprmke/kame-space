@@ -17,9 +17,12 @@ function headlineForStyle(style: VoucherRevealStyle): string {
 export function VoucherIntroCopy({
   prizePool,
   style = 'reel',
+  reviewSubmitted = true,
 }: {
   prizePool: ReadonlyArray<Voucher>;
   style?: VoucherRevealStyle;
+  /** False when the guest skipped the review; the copy must not thank them for it. */
+  reviewSubmitted?: boolean;
 }) {
   const hasFree = prizePool.some((v) => v.amount >= 100 || v.code === 'FREE-STAY');
   return (
@@ -32,7 +35,7 @@ export function VoucherIntroCopy({
         {headlineForStyle(style)}
       </h2>
       <p className="text-muted-foreground mx-auto max-w-md text-center text-sm leading-relaxed">
-        Thanks for your review! Tap below to win{' '}
+        {reviewSubmitted ? 'Thanks for your review! ' : ''}Tap below to win{' '}
         <strong className="text-primary">{formatVoucherDiscountMaxLabel(prizePool)}</strong>
         {hasFree ? (
           <>

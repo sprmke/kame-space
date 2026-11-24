@@ -10,7 +10,7 @@ import { SD_FORM_STEPS } from '@/features/guest/sd-form/lib/sdFormSteps';
 
 import { GuestFormBrandHeader } from '@/components/branding/GuestFormBrandHeader';
 
-const SD_FORM_BRAND_TITLE = 'SD Refund Form';
+const SD_FORM_BRAND_TITLE = 'Security deposit refund';
 
 /** Dashboard Public Pages iframe — same shell as the live SD refund form. */
 export function SdFormEmbedPreview() {

@@ -1,0 +1,600 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Guest flow fixes: before and after</title>
+    <style>
+      :root {
+        --ink: #0f1f1d;
+        --muted: #5b6b69;
+        --line: #e2e8e7;
+        --canvas: #f6f8f7;
+        --card: #ffffff;
+        --brand: #1f7a6b;
+        --before: #b42318;
+        --after: #067647;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--canvas);
+        color: var(--ink);
+        font: 15px/1.55 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      .wrap {
+        max-width: 1320px;
+        margin: 0 auto;
+        padding: 36px 24px 80px;
+      }
+      header.hero {
+        background: linear-gradient(150deg, #14544a, #1f7a6b 65%, #2a9a86);
+        color: #fff;
+        border-radius: 20px;
+        padding: 30px 32px;
+      }
+      h1 {
+        margin: 0 0 6px;
+        font-size: 27px;
+        letter-spacing: -0.02em;
+      }
+      header.hero p {
+        margin: 0;
+        color: #cdeae3;
+        max-width: 72ch;
+      }
+      .legend {
+        display: flex;
+        gap: 14px;
+        margin-top: 16px;
+        font-size: 13px;
+        flex-wrap: wrap;
+      }
+      .legend span {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 999px;
+      }
+      .dot.b {
+        background: #ffb4ab;
+      }
+      .dot.a {
+        background: #7ee2b8;
+      }
+      .item {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 18px;
+        margin-top: 16px;
+      }
+      .item h2 {
+        margin: 0 0 4px;
+        font-size: 17px;
+        letter-spacing: -0.01em;
+      }
+      .item .id {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        color: var(--muted);
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 2px 8px;
+        margin-right: 8px;
+        vertical-align: 2px;
+      }
+      .item p.change {
+        margin: 0 0 14px;
+        color: var(--muted);
+        max-width: 95ch;
+      }
+      .pair {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
+      figure {
+        margin: 0;
+        background: #eef2f1;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        overflow: hidden;
+      }
+      figure .tag {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 11.5px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        padding: 7px 12px;
+        background: var(--card);
+        border-bottom: 1px solid var(--line);
+      }
+      figure.before .tag {
+        color: var(--before);
+      }
+      figure.after .tag {
+        color: var(--after);
+      }
+      figure img {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+      .frame {
+        max-height: 620px;
+        overflow: hidden;
+      }
+      .frame img {
+        width: 100%;
+        height: auto;
+      }
+      h2.section-title {
+        margin: 40px 0 6px;
+        font-size: 20px;
+        letter-spacing: -0.01em;
+      }
+      .lead-note {
+        margin: 0 0 14px;
+        color: var(--muted);
+        max-width: 95ch;
+      }
+      .trio {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 12px;
+        align-items: start;
+      }
+      .trio figure img {
+        max-height: 520px;
+        object-fit: contain;
+        object-position: top center;
+        background: #fff;
+      }
+      @media (max-width: 900px) {
+        .trio {
+          grid-template-columns: 1fr;
+        }
+      }
+      .note {
+        background: #fff8e6;
+        border: 1px solid #f2d58a;
+        border-radius: 12px;
+        padding: 12px 16px;
+        margin-top: 14px;
+        font-size: 13.5px;
+      }
+      footer {
+        margin-top: 40px;
+        border-top: 1px solid var(--line);
+        padding-top: 14px;
+        color: var(--muted);
+        font-size: 12.5px;
+      }
+      @media (max-width: 860px) {
+        .pair {
+          grid-template-columns: 1fr;
+        }
+      }
+      @media print {
+        body {
+          background: #fff;
+        }
+        .item {
+          break-inside: avoid;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="hero">
+        <h1>Guest flow fixes: before and after</h1>
+        <p>
+          Same script, same seed data, same viewports, run against a clean copy of the code before
+          the change and against the fixed build after. Every pair below is the guest's actual
+          screen, captured by <code>guestFlowVisualCapture.spec.ts</code>.
+        </p>
+        <div class="legend">
+          <span><i class="dot b"></i> Before</span>
+          <span><i class="dot a"></i> After</span>
+          <span>15 fixes, 17 before/after pairs, plus a 375 / 768 / 1440 sweep</span>
+        </div>
+      </header>
+
+      <div class="note">
+        Reproduce either side:
+        <code>AUDIT_PHASE=before bun run audit:guest-flow-shots</code> against a HEAD copy, then
+        <code>AUDIT_PHASE=after bun run audit:guest-flow-shots</code> on the branch.
+      </div>
+
+      <!-- G1 -->
+      <section class="item">
+        <h2><span class="id">G1</span>Home page: the booking promise now matches the product</h2>
+        <p class="change">
+          The step used to say "No account needed" while the form required an account. It now says
+          what actually happens, and the sign-in screen explains why it appeared.
+        </p>
+        <div class="pair">
+          <figure class="before">
+            <div class="tag"><i class="dot b"></i> Before</div>
+            <div class="frame"><img src="before-after/before/g1-home-booking-step.png" alt="Home booking step before" /></div>
+          </figure>
+          <figure class="after">
+            <div class="tag"><i class="dot a"></i> After</div>
+            <div class="frame"><img src="before-after/after/g1-home-booking-step.png" alt="Home booking step after" /></div>
+          </figure>
+        </div>
+      </section>
+
+      <section class="item">
+        <h2><span class="id">G1</span>Sign-in wall: one line of context</h2>
+        <p class="change">
+          The guest arrives from a listing. Instead of a bare "Log in or sign up", the dialog now
+          says what the account is for.
+        </p>
+        <div class="pair">
+          <figure class="before">
+            <div class="tag"><i class="dot b"></i> Before</div>
+            <img src="before-after/before/g1-signin-modal.png" alt="Sign-in modal before" />
+          </figure>
+          <figure class="after">
+            <div class="tag"><i class="dot a"></i> After</div>
+            <img src="before-after/after/g1-signin-modal.png" alt="Sign-in modal after" />
+          </figure>
+        </div>
+      </section>
+
+      <!-- G3 -->
+      <section class="item">
+        <h2><span class="id">G3</span>Payment step: the guest finally sees the stay total</h2>
+        <p class="change">
+          Before: downpayment and total due, nothing else. After: estimated stay, refundable
+          security deposit, downpayment, total due now, plus a line saying the host confirms the
+          final figures.
+        </p>
+        <div class="pair">
+          <figure class="before">
+            <div class="tag"><i class="dot b"></i> Before</div>
+            <div class="frame"><img src="before-after/before/g3-payment-breakdown.png" alt="Payment breakdown before" /></div>
+          </figure>
+          <figure class="after">
+            <div class="tag"><i class="dot a"></i> After</div>
+            <div class="frame"><img src="before-after/after/g3-payment-breakdown.png" alt="Payment breakdown after" /></div>
+          </figure>
+        </div>
+      </section>
+
+      <!-- G6 -->
+      <section class="item">
+        <h2><span class="id">G6</span>Date picker: a disabled button looks disabled</h2>
+        <p class="change">
+          "Select dates" was disabled but still rendered as a live teal gradient. Disabled now has
+          its own neutral surface, so the state reads without hovering or clicking.
+        </p>
+        <div class="pair">
+          <figure class="before">
+            <div class="tag"><i class="dot b"></i> Before</div>
+            <div class="frame"><img src="before-after/before/g6-date-sheet-disabled.png" alt="Disabled date CTA before" /></div>
+          </figure>
+          <figure class="after">
+            <div class="tag"><i class="dot a"></i> After</div>
+            <div class="frame"><img src="before-after/after/g6-date-sheet-disabled.png" alt="Disabled date CTA after" /></div>
+          </figure>
+        </div>
+      </section>
+
+      <section class="item">
+        <h2><span class="id">G6</span>Submit stays disabled until the policy is accepted</h2>
+        <p class="change">
+          Before, Submit looked live while the agreement was unticked and the click did nothing.
+          Now the button is visibly disabled until the box is ticked, and the checkbox has a 44px
+          row.
+        </p>
+        <div class="pair">
+          <figure class="before">
+            <div class="tag"><i class="dot b"></i> Before</div>
+            <div class="frame"><img src="before-after/before/g6b-submit-gated.png" alt="Submit gate before" /></div>
+          </figure>
+          <figure class="after">
+            <div class="tag"><i class="dot a"></i> After</div>
+            <div class="frame"><img src="before-after/after/g6b-submit-gated.png" alt="Submit gate after" /></div>
+          </figure>
+        </div>
+      </section>
+
+      <!-- G4 -->
+      <section class="item">
+        <h2><span class="id">G4</span>Booking sheet: the guest knows where they are</h2>
+        <p class="change">
+          The sheet used to say only "Guest Form". It now shows the step and position
+          ("Guest · 1 of 5"), matching the full-page form.
+        </p>
+        <div class="pair">
+          <figure class="before">
+            <div class="tag"><i class="dot b"></i> Before</div>
+            <div class="frame"><img src="before-after/before/g4-booking-sheet-header.png" alt="Booking sheet header before" /></div>
+          </figure>
+          <figure class="after">
+            <div class="tag"><i class="dot a"></i> After</div>
+            <div class="frame"><img src="before-after/after/g4-booking-sheet-header.png" alt="Booking sheet header after" /></div>
+          </figure>
+        </div>
+      </section>
+
+      <!-- G8 -->
+      <section class="item">
+        <h2><span class="id">G8</span>No more "SD" shorthand on guest screens</h2>
+        <p class="change">
+          "SD Refund Form" became "Security deposit refund", in the page title, the embed preview
+          and the done screen.
+        </p>
+        <div class="pair">
+          <figure class="before">
+            <div class="tag"><i class="dot b"></i> Before</div>
+            <div class="frame"><img src="before-after/before/g8-refund-title.png" alt="Refund title before" /></div>
+          </figure>
+          <figure class="after">
+            <div class="tag"><i class="dot a"></i> After</div>
+            <div class="frame"><img src="before-after/after/g8-refund-title.png" alt="Refund title after" /></div>
+          </figure>
+        </div>
+      </section>
+
+      <!-- G2 -->
+      <section class="item">
+        <h2><span class="id">G2</span>Refund step: the guest sees the amount</h2>
+        <p class="change">
+          Before, the guest chose where to send the money with no idea how much. After, a refund
+          summary sits above the options: deposit, deductions, total, and when it is sent.
+        </p>
+        <div class="pair">
+          <figure class="before">
+            <div class="tag"><i class="dot b"></i> Before</div>
+            <div class="frame"><img src="before-after/before/g2-refund-amount.png" alt="Refund step before" /></div>
+          </figure>
+          <figure class="after">
+            <div class="tag"><i class="dot a"></i> After</div>
+            <div class="frame"><img src="before-after/after/g2-refund-amount.png" alt="Refund step after" /></div>
+          </figure>
+        </div>
+      </section>
+
+      <section class="item">
+        <h2><span class="id">G2</span>Same refund summary on phone</h2>
+        <p class="change">
+          The amount block is the first thing under the stepper, above the payout options, so it is
+          in view without scrolling.
+        </p>
+        <div class="pair">
+          <figure class="before">
+            <div class="tag"><i class="dot b"></i> Before</div>
+            <div class="frame"><img src="before-after/before/g2-refund-amount-mobile.png" alt="Refund step mobile before" /></div>
+          </figure>
+          <figure class="after">
+            <div class="tag"><i class="dot a"></i> After</div>
+            <div class="frame"><img src="before-after/after/g2-refund-amount-mobile.png" alt="Refund step mobile after" /></div>
+          </figure>
+        </div>
+      </section>
+
+      <!-- G9 -->
+      <section class="item">
+        <h2><span class="id">G9</span>Voucher no longer thanks a guest who skipped the review</h2>
+        <p class="change">
+          "Not now" used to land on "Thanks for your review!". The line is now conditional on a
+          review actually existing; the offer copy is unchanged.
+        </p>
+        <div class="pair">
+          <figure class="before">
+            <div class="tag"><i class="dot b"></i> Before</div>
+            <div class="frame"><img src="before-after/before/g9-voucher-intro.png" alt="Voucher intro before" /></div>
+          </figure>
+          <figure class="after">
+            <div class="tag"><i class="dot a"></i> After</div>
+            <div class="frame"><img src="before-after/after/g9-voucher-intro.png" alt="Voucher intro after" /></div>
+          </figure>
+        </div>
+      </section>
+
+      <!-- G10 / G11 -->
+      <section class="item">
+        <h2><span class="id">G10 · G11</span>Trip page: progress matches the label, checklist states are readable</h2>
+        <p class="change">
+          "Step 3 of 5" used to fill about 2.4 of five segments. The current step now fills its
+          segment at lower emphasis, so three of five read as done plus current. Each checklist row
+          also states "Done" or "To do" instead of relying on the circle alone.
+        </p>
+        <div class="pair">
+          <figure class="before">
+            <div class="tag"><i class="dot b"></i> Before</div>
+            <div class="frame"><img src="before-after/before/g10-trip-progress.jpg" alt="Trip progress before" /></div>
+          </figure>
+          <figure class="after">
+            <div class="tag"><i class="dot a"></i> After</div>
+            <div class="frame"><img src="before-after/after/g10-trip-progress.png" alt="Trip progress after" /></div>
+          </figure>
+        </div>
+        <div class="note">
+          The trip page needs a real booking, so both sides use the local seed (booking ending 0058).
+          The before frame is the audit-pass capture of the same page and booking.
+        </div>
+      </section>
+
+      <!-- G13 -->
+      <section class="item">
+        <h2><span class="id">G13</span>Category stars: bigger and aligned with their labels</h2>
+        <p class="change">
+          The six category rows used 18px stars pushed left of the label by a negative margin. They
+          are now 22px and sit on the same left edge as "Cleanliness", "Accuracy" and the rest.
+          (The tap target was already 44px; the audit wording overstated this one.)
+        </p>
+        <div class="pair">
+          <figure class="before">
+            <div class="tag"><i class="dot b"></i> Before</div>
+            <div class="frame"><img src="before-after/before/g13-review-stars.png" alt="Review stars before" /></div>
+          </figure>
+          <figure class="after">
+            <div class="tag"><i class="dot a"></i> After</div>
+            <div class="frame"><img src="before-after/after/g13-review-stars.png" alt="Review stars after" /></div>
+          </figure>
+        </div>
+      </section>
+
+      <!-- G14 -->
+      <section class="item">
+        <h2><span class="id">G14</span>Search chips: the last category is no longer sliced</h2>
+        <p class="change">
+          The chip row ran under the filter button and cut "Parkings" mid-word. The scroller now
+          reserves trailing room so the last chip clears the button.
+        </p>
+        <div class="pair">
+          <figure class="before">
+            <div class="tag"><i class="dot b"></i> Before</div>
+            <img src="before-after/before/g14-search-chips.png" alt="Search chips before" />
+          </figure>
+          <figure class="after">
+            <div class="tag"><i class="dot a"></i> After</div>
+            <img src="before-after/after/g14-search-chips.png" alt="Search chips after" />
+          </figure>
+        </div>
+      </section>
+
+      <!-- G15 -->
+      <section class="item">
+        <h2><span class="id">G15</span>Listing: the host name wraps instead of vanishing</h2>
+        <p class="change">
+          "Hosted by Kame ..." was truncated mid-name on a phone. The line now wraps to a second
+          line.
+        </p>
+        <div class="pair">
+          <figure class="before">
+            <div class="tag"><i class="dot b"></i> Before</div>
+            <img src="before-after/before/g15-host-row.png" alt="Host row before" />
+          </figure>
+          <figure class="after">
+            <div class="tag"><i class="dot a"></i> After</div>
+            <img src="before-after/after/g15-host-row.png" alt="Host row after" />
+          </figure>
+        </div>
+      </section>
+
+      <!-- G16 -->
+      <section class="item">
+        <h2><span class="id">G16</span>Draft restore: out of the header, and a readable time</h2>
+        <p class="change">
+          The restore prompt used to cover the property header for 15 seconds and read
+          "11/24/2026, 12:40:18 PM". It now sits at the bottom, leaving the header visible, and reads
+          as a short Manila time such as "Nov 24, 12:39 PM".
+        </p>
+        <div class="pair">
+          <figure class="before">
+            <div class="tag"><i class="dot b"></i> Before</div>
+            <img src="before-after/before/g16-draft-toast.png" alt="Draft toast before" />
+          </figure>
+          <figure class="after">
+            <div class="tag"><i class="dot a"></i> After</div>
+            <img src="before-after/after/g16-draft-toast.png" alt="Draft toast after" />
+          </figure>
+        </div>
+      </section>
+
+
+      <!-- G5 -->
+      <section class="item">
+        <h2><span class="id">G5</span>Calendar: a key for what the numbers mean</h2>
+        <p class="change">
+          Available, booked and past days were all pale numbers with no explanation. The calendar
+          now shows a two-item key (Available, Booked) whenever the visible month actually has a
+          booked night, and booked days keep their strikethrough. Renders at phone, tablet and
+          desktop.
+        </p>
+        <div class="pair">
+          <figure class="before">
+            <div class="tag"><i class="dot b"></i> Before</div>
+            <div class="frame"><img src="before-after/before/g5-calendar-legend-desktop.png" alt="Calendar before" /></div>
+          </figure>
+          <figure class="after">
+            <div class="tag"><i class="dot a"></i> After</div>
+            <div class="frame"><img src="before-after/after/g5-calendar-legend-desktop.png" alt="Calendar after" /></div>
+          </figure>
+        </div>
+      </section>
+
+      <!-- G7 -->
+      <section class="item">
+        <h2><span class="id">G7</span>Expired link: plain words and a way forward</h2>
+        <p class="change">
+          Before: "Form not available / Access token required / Back to home". After: "This link has
+          expired", one sentence telling the guest what to do, and two actions (Message the host,
+          Back to home). Same screen on the guest review page, which previously had no action at
+          all.
+        </p>
+        <div class="pair">
+          <figure class="before">
+            <div class="tag"><i class="dot b"></i> Before</div>
+            <div class="frame"><img src="before-after/before/g7-expired-link-desktop.png" alt="Expired link before" /></div>
+          </figure>
+          <figure class="after">
+            <div class="tag"><i class="dot a"></i> After</div>
+            <div class="frame"><img src="before-after/after/g7-expired-link-desktop.png" alt="Expired link after" /></div>
+          </figure>
+        </div>
+      </section>
+
+      <h2 class="section-title">Cross-resolution check</h2>
+      <p class="lead-note">
+        The same three screens the fixes touch most, captured at 375, 768 and 1440 after the change.
+        Before images for these screens are the pairs above; this sweep proves nothing overflows,
+        wraps badly or loses its action bar at the other sizes.
+      </p>
+
+      <section class="item">
+        <h2><span class="id">S1</span>Guest form payment breakdown</h2>
+        <div class="trio">
+          <figure><div class="tag">375</div><img src="before-after/after/sweep-payment-phone.png" alt="Payment 375" /></figure>
+          <figure><div class="tag">768</div><img src="before-after/after/sweep-payment-tablet.png" alt="Payment 768" /></figure>
+          <figure><div class="tag">1440</div><img src="before-after/after/sweep-payment-desktop.png" alt="Payment 1440" /></figure>
+        </div>
+      </section>
+
+      <section class="item">
+        <h2><span class="id">S2</span>Security deposit refund</h2>
+        <div class="trio">
+          <figure><div class="tag">375</div><div class="frame"><img src="before-after/after/sweep-refund-phone.png" alt="Refund 375" /></div></figure>
+          <figure><div class="tag">768</div><div class="frame"><img src="before-after/after/sweep-refund-tablet.png" alt="Refund 768" /></div></figure>
+          <figure><div class="tag">1440</div><div class="frame"><img src="before-after/after/sweep-refund-desktop.png" alt="Refund 1440" /></div></figure>
+        </div>
+      </section>
+
+      <section class="item">
+        <h2><span class="id">S3</span>Booking sheet header</h2>
+        <div class="trio">
+          <figure><div class="tag">375</div><div class="frame"><img src="before-after/after/sweep-booking-sheet-phone.png" alt="Sheet 375" /></div></figure>
+          <figure><div class="tag">768</div><div class="frame"><img src="before-after/after/sweep-booking-sheet-tablet.png" alt="Sheet 768" /></div></figure>
+          <figure><div class="tag">1440</div><div class="frame"><img src="before-after/after/sweep-booking-sheet-desktop.png" alt="Sheet 1440" /></div></figure>
+        </div>
+      </section>
+
+      <footer>
+        15 fixes implemented (G1–G11, G13–G16; G12 was withdrawn — the listing already shows the
+        stay total once dates are chosen). No application behaviour outside these screens was
+        changed. Evidence: 17 before/after pairs, 9 cross-resolution captures, 4 guest-journey E2E
+        flows, 6 unit/DOM tests. Audit and findings:
+        <code>docs/workflow/in-progress/guest-flow-ux-audit/README.md</code>.
+      </footer>
+    </div>
+  </body>
+</html>

@@ -52,6 +52,8 @@ interface VoucherRevealProps {
   prizePool?: ReadonlyArray<Voucher>;
   /** Property reveal animation style. */
   style?: VoucherRevealStyle;
+  /** False when the guest skipped the review step, so the copy does not thank them for it. */
+  reviewSubmitted?: boolean;
 }
 
 function claimingLabel(style: VoucherRevealStyle): string {
@@ -127,6 +129,7 @@ export function VoucherReveal({
   checkOutDate,
   prizePool,
   style = DEFAULT_VOUCHER_REVEAL_STYLE,
+  reviewSubmitted = true,
 }: VoucherRevealProps) {
   const revealStyle: VoucherRevealStyle = style === 'wheel' || style === 'flip' ? style : 'reel';
   const reelPool = useMemo(() => voucherReelPool(prizePool), [prizePool]);
@@ -177,7 +180,11 @@ export function VoucherReveal({
   if (phase === 'rolling' && winner) {
     return (
       <div className="space-y-5">
-        <VoucherIntroCopy prizePool={reelPool} style={revealStyle} />
+        <VoucherIntroCopy
+          prizePool={reelPool}
+          style={revealStyle}
+          reviewSubmitted={reviewSubmitted}
+        />
         <RollingAnimation
           style={revealStyle}
           winner={winner}
@@ -193,7 +200,11 @@ export function VoucherReveal({
 
   return (
     <div className="space-y-5">
-      <VoucherIntroCopy prizePool={reelPool} style={revealStyle} />
+      <VoucherIntroCopy
+        prizePool={reelPool}
+        style={revealStyle}
+        reviewSubmitted={reviewSubmitted}
+      />
       <div className={cn('space-y-5', REEL_SHELL_WIDTH_CLASS)}>
         <IntroPlaceholder style={revealStyle} prizePool={reelPool} />
         <Button

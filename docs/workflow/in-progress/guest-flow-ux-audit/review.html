@@ -1,0 +1,709 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Guest journey UX review: what to fix, what to skip</title>
+    <style>
+      :root {
+        --ink: #0f1f1d;
+        --muted: #5b6b69;
+        --line: #e2e8e7;
+        --canvas: #f6f8f7;
+        --card: #ffffff;
+        --brand: #1f7a6b;
+        --brand-soft: #e6f3f0;
+        --p0: #b42318;
+        --p0-soft: #fdecea;
+        --p1: #b54708;
+        --p1-soft: #fef3e6;
+        --p2: #475467;
+        --p2-soft: #eef1f4;
+        --ok: #067647;
+        --ok-soft: #e7f6ee;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--canvas);
+        color: var(--ink);
+        font: 15px/1.55 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      .wrap {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 40px 24px 80px;
+      }
+      header.hero {
+        background: linear-gradient(150deg, #14544a, #1f7a6b 65%, #2a9a86);
+        color: #fff;
+        border-radius: 20px;
+        padding: 34px 34px 30px;
+      }
+      header.hero p {
+        margin: 6px 0 0;
+        color: #cdeae3;
+        max-width: 70ch;
+      }
+      h1 {
+        margin: 0;
+        font-size: 28px;
+        letter-spacing: -0.02em;
+      }
+      h2 {
+        font-size: 20px;
+        letter-spacing: -0.01em;
+        margin: 44px 0 6px;
+      }
+      h2 .count {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--muted);
+        margin-left: 8px;
+      }
+      .lead {
+        color: var(--muted);
+        margin: 0 0 18px;
+        max-width: 80ch;
+      }
+      .stats {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 20px;
+      }
+      .stat {
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        border-radius: 12px;
+        padding: 10px 14px;
+        min-width: 108px;
+      }
+      .stat b {
+        display: block;
+        font-size: 22px;
+        line-height: 1.2;
+      }
+      .stat span {
+        font-size: 12px;
+        color: #cdeae3;
+      }
+      .card {
+        display: grid;
+        grid-template-columns: 340px 1fr;
+        gap: 20px;
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 16px;
+        margin-bottom: 14px;
+      }
+      .shot {
+        background: #eef2f1;
+        border-radius: 10px;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .shot img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        max-height: 250px;
+        object-fit: cover;
+        object-position: top center;
+      }
+      .shot.tall img {
+        max-height: 300px;
+      }
+      /* Desktop captures are the full page at 1425px wide; zoom into the centred card
+         so the reader can see the actual control, not a thumbnail of grey margins. */
+      .shot.zoom img {
+        transform: scale(var(--zoom, 1.55));
+        transform-origin: 50% 42%;
+        object-fit: cover;
+      }
+      .shot.zoom-lower img {
+        transform: scale(var(--zoom, 1.45));
+        transform-origin: 50% 68%;
+        object-fit: cover;
+      }
+      .body h3 {
+        margin: 2px 0 6px;
+        font-size: 16px;
+        letter-spacing: -0.01em;
+      }
+      .meta {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-bottom: 8px;
+      }
+      .chip {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        padding: 3px 8px;
+        border-radius: 999px;
+      }
+      .chip.p0 {
+        background: var(--p0-soft);
+        color: var(--p0);
+      }
+      .chip.p1 {
+        background: var(--p1-soft);
+        color: var(--p1);
+      }
+      .chip.p2 {
+        background: var(--p2-soft);
+        color: var(--p2);
+      }
+      .chip.eff {
+        background: #f2f4f7;
+        color: #344054;
+        text-transform: none;
+        letter-spacing: 0;
+        font-weight: 600;
+      }
+      .chip.id {
+        background: #fff;
+        border: 1px solid var(--line);
+        color: var(--muted);
+        font-weight: 600;
+      }
+      .row {
+        margin-top: 8px;
+      }
+      .row b {
+        display: block;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+        margin-bottom: 2px;
+      }
+      .row p {
+        margin: 0;
+      }
+      .verdict {
+        margin-top: 12px;
+        display: inline-flex;
+        gap: 8px;
+        align-items: flex-start;
+        padding: 8px 12px;
+        border-radius: 10px;
+        font-size: 13.5px;
+      }
+      .verdict.do {
+        background: var(--brand-soft);
+        color: #14544a;
+      }
+      .verdict.skip {
+        background: var(--p2-soft);
+        color: #344054;
+      }
+      .verdict strong {
+        white-space: nowrap;
+      }
+      table.decide {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        overflow: hidden;
+        font-size: 14px;
+      }
+      table.decide th,
+      table.decide td {
+        text-align: left;
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--line);
+        vertical-align: top;
+      }
+      table.decide th {
+        background: #f1f5f4;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted);
+      }
+      table.decide tr:last-child td {
+        border-bottom: 0;
+      }
+      .tag {
+        font-size: 11.5px;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 999px;
+        white-space: nowrap;
+      }
+      .tag.now {
+        background: var(--ok-soft);
+        color: var(--ok);
+      }
+      .tag.next {
+        background: var(--p1-soft);
+        color: var(--p1);
+      }
+      .tag.skip {
+        background: var(--p2-soft);
+        color: var(--p2);
+      }
+      .note {
+        background: #fff8e6;
+        border: 1px solid #f2d58a;
+        border-radius: 12px;
+        padding: 14px 16px;
+        margin: 18px 0;
+        font-size: 14px;
+      }
+      .note b {
+        color: #7a4d00;
+      }
+      footer {
+        margin-top: 48px;
+        color: var(--muted);
+        font-size: 12.5px;
+        border-top: 1px solid var(--line);
+        padding-top: 16px;
+      }
+      @media (max-width: 820px) {
+        .card {
+          grid-template-columns: 1fr;
+        }
+        .shot img {
+          max-height: 320px;
+        }
+      }
+      @media print {
+        body {
+          background: #fff;
+        }
+        .card {
+          break-inside: avoid;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="hero">
+        <h1>Guest journey review: what to fix, what to skip</h1>
+        <p>
+          Search to deposit refund, checked at phone, tablet, desktop and dark mode. 27 findings.
+          This board is the decision sheet: each item shows the screen the guest actually sees, what
+          is wrong, the change I propose, and whether I would do it now.
+        </p>
+        <div class="stats">
+          <div class="stat"><b>3</b><span>must fix first</span></div>
+          <div class="stat"><b>13</b><span>should fix</span></div>
+          <div class="stat"><b>11</b><span>polish, can wait</span></div>
+          <div class="stat"><b>0</b><span>lines of app code changed so far</span></div>
+        </div>
+      </header>
+
+      <div class="note">
+        <b>Read this first.</b> Two of the three top items are not design taste. They are money and
+        trust: the guest is asked to pay without seeing the total, and asked where to send their
+        refund without seeing the amount. The third is a promise the marketing page makes and the
+        product does not keep. Everything else is craft.
+      </div>
+
+      <h2>Proposed order of work</h2>
+      <table class="decide">
+        <thead>
+          <tr>
+            <th style="width: 40%">Batch</th>
+            <th style="width: 34%">Items</th>
+            <th style="width: 13%">Effort</th>
+            <th style="width: 13%">Call</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>1. Trust at the money moment</b></td>
+            <td>G1, G2, G3</td>
+            <td>Small</td>
+            <td><span class="tag now">Do now</span></td>
+          </tr>
+          <tr>
+            <td><b>2. Cheap confusion fixes</b></td>
+            <td>G4, G6, G8, G9, G10, G11, G13, G14, G15, G16</td>
+            <td>Small</td>
+            <td><span class="tag now">Do now</span></td>
+          </tr>
+          <tr>
+            <td><b>3. Recovery and comprehension</b></td>
+            <td>G5, G7, G12</td>
+            <td>Medium</td>
+            <td><span class="tag next">Next pass</span></td>
+          </tr>
+          <tr>
+            <td><b>4. Polish backlog</b></td>
+            <td>G17 to G27</td>
+            <td>Small each</td>
+            <td><span class="tag skip">Skip for now</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Must fix first <span class="count">3 items</span></h2>
+      <p class="lead">
+        Each of these either costs a booking or hides money from the guest. All three are contained
+        changes, no schema work.
+      </p>
+
+      <article class="card">
+        <div class="shot zoom" style="--zoom:1.9"><img src="screenshots/desktop/34-signin-wall.jpg" alt="Log in or sign up dialog over the guest form" /></div>
+        <div class="body">
+          <div class="meta">
+            <span class="chip id">G1</span><span class="chip p0">Must fix</span>
+            <span class="chip eff">Small, but a decision</span>
+          </div>
+          <h3>The form asks for an account, the home page says "No account needed"</h3>
+          <div class="row">
+            <b>What the guest sees</b>
+            <p>
+              They tap Reserve on a listing, pick dates, and land on a login wall. The home page
+              step still reads "Pick your dates, add your guests and a valid ID. No account needed."
+            </p>
+          </div>
+          <div class="row">
+            <b>What I would change</b>
+            <p>
+              One decision, then one small edit. Either keep the account requirement and rewrite
+              that sentence plus the FAQ, or allow a true guest booking. The code already documents
+              the gate as intentional, so this is copy and product, not a bug hunt.
+            </p>
+          </div>
+          <div class="verdict do"><strong>Do now:</strong> tell me which way to go, I will do the copy pass in the same change.</div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="shot zoom"><img src="screenshots/desktop/22-sd-refund.jpg" alt="Refund options with no amount shown" /></div>
+        <div class="body">
+          <div class="meta">
+            <span class="chip id">G2</span><span class="chip p0">Must fix</span>
+            <span class="chip eff">Small</span>
+          </div>
+          <h3>The refund step never shows the refund amount</h3>
+          <div class="row">
+            <b>What the guest sees</b>
+            <p>
+              Three payout options and a submit button. No deposit amount, no deductions, no total
+              coming back, no payout time. The number was shown days earlier on the trip page.
+            </p>
+          </div>
+          <div class="row">
+            <b>What I would change</b>
+            <p>
+              Add one summary line above the options: security deposit, deductions if any, refund
+              total. Add the payout window near the button instead of only on the done screen.
+            </p>
+          </div>
+          <div class="verdict do"><strong>Do now:</strong> contained UI change, data is already in the payload.</div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="shot zoom"><img src="screenshots/desktop/19-form-payment.jpg" alt="Payment step showing only downpayment and total due now" /></div>
+        <div class="body">
+          <div class="meta">
+            <span class="chip id">G3</span><span class="chip p0">Must fix</span>
+            <span class="chip eff">Small to medium</span>
+          </div>
+          <h3>The payment step hides what the stay costs</h3>
+          <div class="row">
+            <b>What the guest sees</b>
+            <p>
+              "Downpayment ₱2,000" and "Total due now ₱2,000". The nightly rate, the stay total, the
+              deposit and the balance on arrival are all missing.
+            </p>
+          </div>
+          <div class="row">
+            <b>What I would change</b>
+            <p>
+              Always show the full breakdown, not only when a voucher applies: rate times nights,
+              deposit, downpayment, balance due later. The trip page already proves the numbers exist.
+            </p>
+          </div>
+          <div class="verdict do"><strong>Do now:</strong> highest trust impact of the whole list.</div>
+        </div>
+      </article>
+
+      <h2>Cheap confusion fixes <span class="count">10 items, all small</span></h2>
+      <p class="lead">
+        Each is a few hours at most and removes a moment where the guest has to guess. I would batch
+        these right after the top three.
+      </p>
+
+      <article class="card">
+        <div class="shot"><img src="screenshots/mobile/m14-guest-form-sheet.jpg" alt="Guest form bottom sheet with no step indicator" /></div>
+        <div class="body">
+          <div class="meta">
+            <span class="chip id">G4</span><span class="chip p1">Confusing</span>
+            <span class="chip eff">Small</span>
+          </div>
+          <h3>Same form, two shells, one without a progress indicator</h3>
+          <div class="row">
+            <b>What the guest sees</b>
+            <p>
+              Booking from the listing opens a sheet titled "Guest Form" with no step count. The
+              full-page version of the same form shows five steps.
+            </p>
+          </div>
+          <div class="row"><b>Change</b><p>Put the compact "Guest, 1 of 5" line in the sheet header.</p></div>
+          <div class="verdict do"><strong>Do now:</strong> one header component, reused.</div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="shot zoom"><img src="screenshots/desktop/35-date-sheet-disabled.jpg" alt="Date picker with a disabled Select dates button that still looks active" /></div>
+        <div class="body">
+          <div class="meta">
+            <span class="chip id">G6</span><span class="chip p1">Confusing</span>
+            <span class="chip eff">Small</span>
+          </div>
+          <h3>Disabled buttons look enabled</h3>
+          <div class="row">
+            <b>What the guest sees</b>
+            <p>
+              This "Select dates" is disabled. It still looks like the live teal button. The same
+              happens with "Submit guest form" while the policy box is unticked: it stays enabled and
+              the click does nothing visible.
+            </p>
+          </div>
+          <div class="row"><b>Change</b><p>Give disabled its own grey surface, and wire submit to the agreement.</p></div>
+          <div class="verdict do"><strong>Do now:</strong> token plus one guard.</div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="shot zoom"><img src="screenshots/desktop/05-calendar.jpg" alt="Calendar with most dates greyed out and no legend" /></div>
+        <div class="body">
+          <div class="meta">
+            <span class="chip id">G5</span><span class="chip p1">Confusing</span>
+            <span class="chip eff">Medium</span>
+          </div>
+          <h3>Guests cannot tell which nights are free</h3>
+          <div class="row">
+            <b>What the guest sees</b>
+            <p>
+              Four visual states (past, booked, available, today) are all pale numbers, with no key
+              anywhere. Screen readers get the right words, sighted guests get nothing.
+            </p>
+          </div>
+          <div class="row"><b>Change</b><p>Add a compact legend and give booked nights a real treatment, not just lower opacity.</p></div>
+          <div class="verdict do"><strong>Next pass:</strong> it needs a small design decision, not just code.</div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="shot zoom"><img src="screenshots/desktop/09-guest-review.jpg" alt="Review unavailable card with no action" /></div>
+        <div class="body">
+          <div class="meta">
+            <span class="chip id">G7</span><span class="chip p1">Dead end</span>
+            <span class="chip eff">Medium</span>
+          </div>
+          <h3>Expired links are dead ends in developer language</h3>
+          <div class="row">
+            <b>What the guest sees</b>
+            <p>
+              "Review unavailable. Access token required." with no button at all. The refund form
+              offers only "Back to home". The trip page says "Booking not found" for a booking that
+              does exist, because the guest is signed out.
+            </p>
+          </div>
+          <div class="row"><b>Change</b><p>One shared expired-link screen: plain words, "Send me a new link", "Message the host".</p></div>
+          <div class="verdict next" style="background: var(--p1-soft); color: var(--p1)">
+            <strong>Next pass:</strong> needs a reset-link endpoint, not only UI.
+          </div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="shot zoom"><img src="screenshots/desktop/14-sd-form-token.jpg" alt="SD Refund Form title above the review step" /></div>
+        <div class="body">
+          <div class="meta">
+            <span class="chip id">G8</span><span class="chip p1">Confusing</span>
+            <span class="chip eff">Small</span>
+          </div>
+          <h3>"SD Refund Form" is internal shorthand</h3>
+          <div class="row"><b>What the guest sees</b><p>A title, a done screen and an email that all say "SD". Guests know it as the security deposit.</p></div>
+          <div class="row"><b>Change</b><p>"Security deposit refund" on guest surfaces, "SD" stays for host screens.</p></div>
+          <div class="verdict do"><strong>Do now:</strong> string change only.</div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="shot zoom"><img src="screenshots/desktop/20-sd-voucher.jpg" alt="Voucher wheel screen thanking the guest for a review they skipped" /></div>
+        <div class="body">
+          <div class="meta">
+            <span class="chip id">G9</span><span class="chip p1">Wrong copy</span>
+            <span class="chip eff">Small</span>
+          </div>
+          <h3>The voucher thanks the guest for a review they declined</h3>
+          <div class="row"><b>What the guest sees</b><p>They tapped "Not now", then read "Thanks for your review!".</p></div>
+          <div class="row"><b>Change</b><p>Branch the line on whether a review was submitted.</p></div>
+          <div class="verdict do"><strong>Do now:</strong> two-line conditional.</div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="shot zoom-lower"><img src="screenshots/tablet/t05-trip.jpg" alt="Trip page progress bar showing fewer than three of five segments" /></div>
+        <div class="body">
+          <div class="meta">
+            <span class="chip id">G10</span><span class="chip p1">Inconsistent</span>
+            <span class="chip eff">Small</span>
+          </div>
+          <h3>"Step 3 of 5" fills about 2.4 of 5 bars</h3>
+          <div class="row"><b>What the guest sees</b><p>The label and the bar disagree, so they cannot tell if they are behind.</p></div>
+          <div class="row"><b>Change</b><p>Drive the fill from step over total, or drop the number.</p></div>
+          <div class="verdict do"><strong>Do now:</strong> one expression.</div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="shot zoom-lower"><img src="screenshots/desktop/13-trip-token.jpg" alt="Trip page what happens next checklist with identical circles" /></div>
+        <div class="body">
+          <div class="meta">
+            <span class="chip id">G11</span><span class="chip p1">Inconsistent</span>
+            <span class="chip eff">Small</span>
+          </div>
+          <h3>"What happens next" has no done state</h3>
+          <div class="row"><b>What the guest sees</b><p>Three rows that all look the same. Only a dotted ring hints at in-progress.</p></div>
+          <div class="row"><b>Change</b><p>Filled check for done, ring for in-progress, muted outline for upcoming, plus a status word.</p></div>
+          <div class="verdict do"><strong>Do now:</strong> same component, three variants.</div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="shot zoom-lower"><img src="screenshots/desktop/26-detail-booking-card.jpg" alt="Listing booking card with only a nightly rate" /></div>
+        <div class="body">
+          <div class="meta">
+            <span class="chip id">G12</span><span class="chip p1">Trust</span>
+            <span class="chip eff">Medium</span>
+          </div>
+          <h3>The booking card never previews the total</h3>
+          <div class="row">
+            <b>What the guest sees</b>
+            <p>Rate per night, dates, guests, Reserve. No stay total, no refundable deposit, no fee line.</p>
+          </div>
+          <div class="row"><b>Change</b><p>After dates are chosen, show the stay total and the deposit before the form.</p></div>
+          <div class="verdict next" style="background: var(--p1-soft); color: var(--p1)">
+            <strong>Next pass:</strong> overlaps G3, better done in the same sweep.
+          </div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="shot"><img src="screenshots/mobile/m07-sd-form.jpg" alt="Review step with small star ratings" /></div>
+        <div class="body">
+          <div class="meta">
+            <span class="chip id">G13</span><span class="chip p1">Accessibility</span>
+            <span class="chip eff">Small</span>
+          </div>
+          <h3>Rating stars are about 20px</h3>
+          <div class="row"><b>What the guest sees</b><p>Small targets, and in the six category rows they sit at the far edge of a phone screen.</p></div>
+          <div class="row"><b>Change</b><p>44px hit area per star, or a segmented 1 to 5 control on phone.</p></div>
+          <div class="verdict do"><strong>Do now:</strong> house rule already says 44px.</div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="shot"><img src="screenshots/mobile/m02-search.jpg" alt="Mobile search chips clipped by the filter button" /></div>
+        <div class="body">
+          <div class="meta">
+            <span class="chip id">G14</span><span class="chip p1">Visual bug</span>
+            <span class="chip eff">Small</span>
+          </div>
+          <h3>The "Parkings" chip is cut in half</h3>
+          <div class="row"><b>What the guest sees</b><p>The chip row runs under the round filter button, mid-word, with no fade or scroll hint.</p></div>
+          <div class="row"><b>Change</b><p>Trailing padding plus the documented fade, or move the button to its own row.</p></div>
+          <div class="verdict do"><strong>Do now:</strong> spacing fix.</div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="shot"><img src="screenshots/mobile/m03-property-detail.jpg" alt="Hosted by Kame with truncated name" /></div>
+        <div class="body">
+          <div class="meta">
+            <span class="chip id">G15</span><span class="chip p1">Visual bug</span>
+            <span class="chip eff">Small</span>
+          </div>
+          <h3>The host name truncates to "Hosted by Kame ..."</h3>
+          <div class="row"><b>What the guest sees</b><p>An ellipsis where the host name should be. It reads like a broken layout.</p></div>
+          <div class="row"><b>Change</b><p>Allow two lines, or put "Hosted by" on its own line.</p></div>
+          <div class="verdict do"><strong>Do now:</strong> one class.</div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="shot"><img src="screenshots/mobile/m05-form.jpg" alt="Draft restore banner covering the guest form header" /></div>
+        <div class="body">
+          <div class="meta">
+            <span class="chip id">G16</span><span class="chip p1">Visual bug</span>
+            <span class="chip eff">Small</span>
+          </div>
+          <h3>The draft banner covers the property header on phone</h3>
+          <div class="row"><b>What the guest sees</b><p>A floating card hiding the header, with "Saved 11/23/2026, 5:42:05 AM" in US order with seconds.</p></div>
+          <div class="row"><b>Change</b><p>Make it a normal row below the header and format the time for Manila.</p></div>
+          <div class="verdict do"><strong>Do now:</strong> layout plus a date helper.</div>
+        </div>
+      </article>
+
+      <h2>Polish backlog <span class="count">11 items, skip for now</span></h2>
+      <p class="lead">
+        Real, but none of them stop a guest or cost trust. I would leave these until after the batches
+        above, and some may not be worth doing at all.
+      </p>
+
+      <table class="decide">
+        <thead>
+          <tr><th style="width: 8%">ID</th><th style="width: 62%">Item</th><th style="width: 30%">Why I would skip for now</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>G17</td><td>No h1 on search, properties, calendar and form; the trip h1 is the property name</td><td>Screen reader navigation only, no visual effect</td></tr>
+          <tr><td>G18</td><td>Search card meta reads "6 2 2" with no accessible names</td><td>Cheap, but belongs with an a11y sweep, not a redesign</td></tr>
+          <tr><td>G19</td><td>Asterisk spacing differs between "Friend's Name*" and "Check-in Date *"</td><td>Cosmetic, one label component later</td></tr>
+          <tr><td>G20</td><td>Emoji in product UI (confetti in a checkbox, party popper on the voucher)</td><td>Taste call, ask before removing</td></tr>
+          <tr><td>G21</td><td>Voucher code letter-spacing makes "OFF-50" read as "OFF - 50"</td><td>Only matters when a guest retypes the code</td></tr>
+          <tr><td>G22</td><td>Forms sit in a 768px column on a 1440px screen</td><td>Focused-column is a valid choice; changing it needs design work</td></tr>
+          <tr><td>G23</td><td>Contact host sheet has an unlabeled date field and dead space</td><td>Low traffic path, revisit with messaging work</td></tr>
+          <tr><td>G24</td><td>The success route silently redirects to the calendar</td><td>Legacy route, no guest traffic expected</td></tr>
+          <tr><td>G25</td><td>Share and Save overlap the top-right gallery photo</td><td>Conventional pattern, low harm</td></tr>
+          <tr><td>G26</td><td>Dark mode placeholders fail contrast</td><td>One token fix, can ride along with G6</td></tr>
+          <tr><td>G27</td><td>Trip page repeats "Check-in" across three heading levels</td><td>Reads fine in practice, low value</td></tr>
+        </tbody>
+      </table>
+
+      <h2>What I would not touch</h2>
+      <p class="lead">
+        Worth saying out loud, because these are working and easy to break while fixing the rest.
+      </p>
+      <table class="decide">
+        <tbody>
+          <tr><td style="width: 30%"><b>The trip page</b></td><td>Sticky summary, one primary action, then payment, cancellation, directions, host, reference. Strongest screen in the flow.</td></tr>
+          <tr><td><b>The refund stepper</b></td><td>Three steps, review skippable, voucher survives a reload, reduced-motion respected. Only the copy and the missing amount need work.</td></tr>
+          <tr><td><b>Mobile chrome</b></td><td>Bottom sheets for dates, full-screen search overlay, the Trip, Messages, Listing tab set. All correct.</td></tr>
+          <tr><td><b>Calendar accessibility</b></td><td>Day labels already say "November 24, booked". Do not rewrite this while adding the legend.</td></tr>
+        </tbody>
+      </table>
+
+      <footer>
+        Guest journey UX review. 27 findings, 31 screenshots, one 64 second recording. Source:
+        <code>docs/workflow/in-progress/guest-flow-ux-audit/README.md</code>. Tests:
+        <code>bun run test:e2e:guest-journey</code>. No application code has been changed yet.
+      </footer>
+    </div>
+  </body>
+</html>

@@ -2,7 +2,7 @@
 title: 'In progress'
 status: active
 tags: [workflow, in-progress]
-updated: 2026-11-23
+updated: 2026-11-24
 stage: in-progress
 kind: reference
 ---
@@ -17,6 +17,7 @@ Plans with **implementation complete** and only manual QA left live in [`../for-
 
 | Plan                                                                                                           | Open scope                                                                                                                                                                                                                                                                                 |
 | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [`guest-flow-ux-audit/`](./guest-flow-ux-audit/README.md)                                                      | Guest journey audit complete: 15 of 27 findings fixed (all 3 P0s, 12 P1s) after re-verifying against `origin/main`. G12 withdrawn (already worked). Remaining: host-side self-serve resend for expired links (G7) and the P2 polish backlog. Before/after board: `before-after.html`       |
 | [`marketing-video-trending-music.md`](./marketing-video-trending-music.md)                                     | Music picker with Trending, Popular, genres, moods and stay collections over Jamendo and Audius, plus Instagram's Reels music added by Meta on publish. Phases 1 to 3 built and tested with mocks. Open: one live check of Meta's `ig_audio` and a post-deploy check of Jamendo tag groups |
 | [`guest-inbox-meta-sync-overhaul.md`](./guest-inbox-meta-sync-overhaul.md)                                     | Phase 1 shipped (stop data loss, close the Page-token leak, webhook ordering, thread summary). Phases 2-8 remain: durable outbox, server-owned import and reconciliation, Broadcast realtime, host copy, messaging parity, observability, cleanup                                          |
 | [`parking-module-hardening.md`](./parking-module-hardening.md)                                                 | Phase 0 (payment, claim, CI) and the RBAC slice shipped. Host and guest UX coverage plus the remaining lifecycle items                                                                                                                                                                     |

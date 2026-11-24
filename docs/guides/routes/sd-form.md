@@ -13,15 +13,15 @@ Route: `/properties/:propertySlug/sd-form?bookingId=` (legacy `/sd-form?property
 
 ## Progress overview
 
-| Section        | E2E save | Validation | Docs       | Notes                                                                                                                    |
-| -------------- | -------- | ---------- | ---------- | ------------------------------------------------------------------------------------------------------------------------ |
-| Brand shell    | ✅       | —          | Documented | `MainLayout` + `GuestFormBrandHeader` via `get-guest-payment-info`                                                       |
-| Step 1 Review  | ✅       | ✅ Zod     | Documented | Overall + 6 required categories, skip allowed, voucher decoupled. `SdFormReviewSection` → `submit-guest-review`          |
-| Step 2 Voucher | ✅       | Server     | Documented | `claim-sd-voucher`; idempotent                                                                                           |
-| Step 3 Refund  | ✅       | ✅ Zod     | Documented | `submit-sd-form` → workflow transition                                                                                   |
-| Balance gate   | ✅       | Server     | Documented | `awaiting_balance_settlement` polling                                                                                    |
-| Airbnb variant | ✅       | —          | Documented | Standalone `/guest-review` route                                                                                         |
-| Mobile shell   | —        | —          | Documented | Step 3 Back/Submit floats via `ContextualActionBar`; steps 1–2 keep the `MainLayout` tab bar (no single dominant action) |
+| Section        | E2E save | Validation | Docs       | Notes                                                                                                                                                        |
+| -------------- | -------- | ---------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Brand shell    | ✅       | —          | Documented | `MainLayout` + `GuestFormBrandHeader` via `get-guest-payment-info`; guest-facing title is **Security deposit refund** (`SD` stays internal to host surfaces) |
+| Step 1 Review  | ✅       | ✅ Zod     | Documented | Overall + 6 required categories, skip allowed, voucher decoupled. `SdFormReviewSection` → `submit-guest-review`                                              |
+| Step 2 Voucher | ✅       | Server     | Documented | `claim-sd-voucher`; idempotent                                                                                                                               |
+| Step 3 Refund  | ✅       | ✅ Zod     | Documented | `submit-sd-form` → workflow transition                                                                                                                       |
+| Balance gate   | ✅       | Server     | Documented | `awaiting_balance_settlement` polling                                                                                                                        |
+| Airbnb variant | ✅       | —          | Documented | Standalone `/guest-review` route                                                                                                                             |
+| Mobile shell   | —        | —          | Documented | Step 3 Back/Submit floats via `ContextualActionBar`; steps 1–2 keep the `MainLayout` tab bar (no single dominant action)                                     |
 
 ---
 
@@ -53,6 +53,17 @@ After check-out, guests are guided through three quick steps before their securi
   A: Yes, until the 14-day window closes or both sides have reviewed. After that the review is locked. Skipping the review still lets them claim a voucher.
 - Q: What if a guest wants a cash refund?
   A: They can choose "Cash pickup" in step 3, but they're told to message the host first. Cash refunds need on-site staff, so they can't be sent automatically like GCash or bank transfers.
+
+---
+
+## Link problems (expired / revoked)
+
+`get-sd-form` answers `401` when the access token is missing or stale. The page no longer prints
+that server string: `SdFormPage` renders **`GuestLinkUnavailable`**, which maps the error with
+`describeGuestLinkProblem()` and offers **Message the host** plus **Back to home**. The same
+component backs the guest-review page's error state (which previously had no action at all).
+A guest still cannot mint a replacement link themselves; that needs a `request-guest-link`
+endpoint with per-booking rate limiting (tracked in the guest-flow audit, G7).
 
 ---
 
@@ -88,6 +99,7 @@ Skipped when the property has **`vouchers_enabled = false`** (guest goes review 
 ### Behavior / edge cases
 
 - Reveal copy and reel chrome are **property-neutral** (no fixed org nicknames). Reel style: muted frame, single center highlight, flat alternating voucher chips (code + prize label).
+- **The intro thanks the guest for a review only when one exists.** `guest_review_submitted` from `get-sd-form` drives `VoucherReveal.reviewSubmitted`; a guest who tapped **Not now** sees "Tap below to win …" without the thank-you line.
 - If `awaiting_balance_settlement` is true when this step is reached, the voucher UI is replaced by a spinner/wait card; `get-sd-form` is polled every 8s (`refetchInterval`) until settlement completes and status advances (then voucher or refund per `vouchers_enabled`).
 
 ---
@@ -95,6 +107,8 @@ Skipped when the property has **`vouchers_enabled = false`** (guest goes review 
 ## Step 3 — Refund details
 
 **Mobile shell (2026-09-10):** Back / **Submit security deposit refund** (`SdRefundStepTwoActions`) floats via `ContextualActionBar` below `lg`, matching `/form`. Steps 1–2 (review, voucher reveal) have no single dominant action, so the `MainLayout` tab bar stays visible there.
+
+**Refund amount (2026-11-24).** The step opens with a **Refund amount** summary (`RefundAmountSummary`): the total first, then `Security deposit`, `Deductions`, and `Added by your host` when those are non-zero, plus the payout expectation ("usually within 1 to 2 hours of submitting"). The figures come from `get-sd-form` → `refund_preview` (`{ security_deposit, deductions, additions, total }`, computed from `computeBookingFinancials`), so the guest never chooses a payout method without seeing what they are getting back. Deductions stay changeable by the host until the refund is settled, which the summary states in words.
 
 ### Fields
 
@@ -172,11 +186,12 @@ A standalone **`/properties/:propertySlug/guest-review?bookingId=`** route (`Gue
 
 ## Testing
 
-| Layer | Path / spec                                                                     | Manual                            |
-| ----- | ------------------------------------------------------------------------------- | --------------------------------- |
-| Unit  | `ui/src/features/guest/sd-form/lib/voucher*.ts` (existing voucher tests)        | —                                 |
-| E2E   | `ui/e2e/features/guest-form/sdFormSubmit.spec.ts` (`@ci`, mocked `get-sd-form`) | PayMongo / live refund settlement |
-| N/A   | —                                                                               | CAPTCHA on submit in production   |
+| Layer | Path / spec                                                                                                                  | Manual                            |
+| ----- | ---------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| Unit  | `ui/src/features/guest/sd-form/lib/voucher*.ts` (existing voucher tests)                                                     | —                                 |
+| E2E   | `ui/e2e/features/guest-form/sdFormSubmit.spec.ts` (`@ci`, mocked `get-sd-form`)                                              | PayMongo / live refund settlement |
+| E2E   | `ui/e2e/features/guest-form/guestJourneyEndToEnd.spec.ts` — skip review → claim voucher → submit refund (`@smoke @critical`) | —                                 |
+| N/A   | —                                                                                                                            | CAPTCHA on submit in production   |
 
 ---
 

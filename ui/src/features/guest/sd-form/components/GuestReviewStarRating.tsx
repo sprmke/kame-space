@@ -84,7 +84,7 @@ export function GuestReviewStarRating({
             >
               <Star
                 className={cn(
-                  isGuest ? 'size-8 sm:size-9' : 'size-[18px]',
+                  isGuest ? 'size-8 sm:size-9' : 'size-[22px]',
                   'transition-colors duration-150',
                   filled ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/35'
                 )}
