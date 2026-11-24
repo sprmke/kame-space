@@ -38,8 +38,8 @@ flips red the moment they are fixed.
 
 > Scope note: the request header named **Bookings & Booking Detail** while the body referred to the
 > property **Finance** page. This pass covers Bookings. Finance already has two audits:
-> [`../finance-ux-review/`](../finance-ux-review/README.md) and
-> [`../money-modules-ux-audit/`](../money-modules-ux-audit/README.md).
+> `docs/workflow/in-progress/finance-ux-review/` and `…/money-modules-ux-audit/` (both still on
+> their own branches, so not linked from `develop` yet).
 
 ## Verdict
 
@@ -343,8 +343,8 @@ those defects are fixed, which is the signal to delete the annotation.
 - Workflow invariants: `.cursor/rules/booking-workflow.mdc`
 - Earlier audit: [`../full-app-ux-audit/03-booking-workflow.md`](../full-app-ux-audit/03-booking-workflow.md)
 - Plan + permission matrix: `docs/architecture/plans-feature-matrix.md`
-- Sibling reviews with the same method: [`../reviews-ux-review/`](../reviews-ux-review/README.md) ·
-  [`../finance-ux-review/`](../finance-ux-review/README.md) · [`../settings-ux-review/`](../settings-ux-review/README.md)
+- Sibling reviews with the same method (each still on its own branch):
+  `docs/workflow/in-progress/reviews-ux-review/`, `…/finance-ux-review/`, `…/settings-ux-review/`
 
 ## Screenshot index
 
