@@ -143,7 +143,7 @@
     "test:e2e:ci": "playwright test --project=chromium-ci --grep @ci",
     "test:e2e:csp": "rm -f test-results/csp-violations.ndjson; PLAYWRIGHT_CSP=1 playwright test --project=csp; code=$?; node scripts/dev/assert-no-csp-violations.mjs && exit $code",
     "test:e2e:headed": "playwright test --headed",
-    "test:e2e:analytics": "playwright test ui/e2e/features/analytics/propertyAnalytics.spec.ts --project=chromium-ci",
+    "test:e2e:analytics": "playwright test ui/e2e/features/analytics --project=chromium-ci",
     "test:e2e:analytics:tour": "PLAYWRIGHT_SLOW_MO=700 PLAYWRIGHT_DEMO_PAUSE_MS=1300 playwright test ui/e2e/features/analytics/analyticsTour.slowmo.spec.ts --project=chromium",
     "test:e2e:analytics:tour:video": "PLAYWRIGHT_RECORD_VIDEO=1 PLAYWRIGHT_SLOW_MO=700 PLAYWRIGHT_DEMO_PAUSE_MS=1300 playwright test ui/e2e/features/analytics/analyticsTour.slowmo.spec.ts --project=chromium",
     "test:e2e:parking": "playwright test ui/e2e/features/parking --project=chromium --grep-invert \"parking live local flow\"",

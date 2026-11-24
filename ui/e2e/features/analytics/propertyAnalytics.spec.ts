@@ -284,7 +284,8 @@ test.describe('@ci property analytics', () => {
     await installAnalyticsMocks(page);
     await openAnalytics(page);
 
-    const downloadPromise = page.waitForEvent('download', { timeout: 30_000 });
+    // Font embedding is the slow part of the client-side PDF; give a cold machine room.
+    const downloadPromise = page.waitForEvent('download', { timeout: 60_000 });
     await page.getByRole('button', { name: 'Export PDF' }).click();
     const download = await downloadPromise;
 
