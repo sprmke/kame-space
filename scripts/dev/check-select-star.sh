@@ -140,6 +140,9 @@ ALLOWLIST=(
   '_shared/telegramStaff.ts'
   '_shared/voiceReceptionistService.ts'
   '_shared/webGuestChatService.ts'
+  # Host-first booking chat: single-row conversation lookups / update-returning
+  # (`.maybeSingle()` / `.limit(1).single()`); full row returned to the inbox client.
+  '_shared/hostWebChatFromBooking.ts'
   '_shared/webInboxAutoReply.ts'
   'approve-org-verification/index.ts'
   'create-development/index.ts'

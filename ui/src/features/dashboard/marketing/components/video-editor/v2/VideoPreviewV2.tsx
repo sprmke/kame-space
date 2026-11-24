@@ -32,7 +32,8 @@ import { cn } from '@/lib/utils';
 import type { PlayerRef } from '@remotion/player';
 
 /** Shorter than the scene editor's: the timeline shares the column, so the preview flexes. */
-const PREVIEW_SHELL_MIN_HEIGHT_CLASS = 'min-h-[220px] sm:min-h-[300px] lg:min-h-[260px]';
+const PREVIEW_SHELL_MIN_HEIGHT_CLASS =
+  'min-h-[min(140px,22dvh)] sm:min-h-[300px] lg:min-h-[260px]';
 
 const SCROLLBAR_HIDDEN =
   '[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden';
@@ -53,6 +54,7 @@ type Props = {
   showSafeArea: boolean;
   readOnly?: boolean;
   onSelect: (ids: string[]) => void;
+  onEditText?: (itemId: string) => void;
   onPatch: (patch: CanvasPatch) => void;
   onGestureEnd: () => void;
   onTogglePlay: () => void;
@@ -76,6 +78,7 @@ export const VideoPreviewV2 = forwardRef<VideoPreviewV2Handle, Props>(function V
     showSafeArea,
     readOnly,
     onSelect,
+    onEditText,
     onPatch,
     onGestureEnd,
     onTogglePlay,
@@ -316,6 +319,7 @@ export const VideoPreviewV2 = forwardRef<VideoPreviewV2Handle, Props>(function V
                     snap={snap}
                     readOnly={readOnly}
                     onSelect={onSelect}
+                    onEditText={onEditText}
                     onPatch={onPatch}
                     onGestureEnd={onGestureEnd}
                   />

@@ -36,6 +36,7 @@ export const AI_FEATURES = [
   'marketing_image_generate',
   'marketing_video_generate',
   'marketing_trends_classify',
+  'marketing_video_captions',
   'identity_extraction',
 ] as const;
 
@@ -347,6 +348,19 @@ const FEATURE_MODELS: Record<AiFeature, AiModelConfig> = {
     thinkingBudget: 0,
     timeoutMs: 45000,
     groqFallback: true,
+  },
+  // Speech to text for Videos auto captions (Groq Whisper, word timestamps). Priced per hour of
+  // audio, not per token: callers pass `estimatedCostUsd` and `durationSeconds` to
+  // recordAiUsage, so the token rates below are unused.
+  marketing_video_captions: {
+    model: 'whisper-large-v3-turbo',
+    tier: 'flash_lite',
+    inputUsdPer1M: 0,
+    outputUsdPer1M: 0,
+    defaultMaxOutputTokens: 0,
+    thinkingBudget: 0,
+    timeoutMs: 60000,
+    groqFallback: false,
   },
 };
 

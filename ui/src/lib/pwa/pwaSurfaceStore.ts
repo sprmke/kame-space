@@ -1,12 +1,12 @@
 import { create } from 'zustand';
 
 /**
- * One floating PWA surface at a time.
+ * One PWA surface at a time among kill / update / offline / install / push.
  *
- * Stacking an install offer on top of an update prompt on top of the offline
- * banner is how a "helpful" PWA becomes noise. Every surface claims a slot; only
- * the highest-priority claimant renders. Non-floating chrome (the layout-integrated
- * offline strip) does not go through here.
+ * Stacking install on update on offline is noise. Every surface claims a slot; only
+ * the highest-priority claimant renders. Cookie consent is separate: install and
+ * update use the same fixed bottom chrome and stack above the cookie bar when both
+ * are open.
  *
  * Priorities follow the plan (§2D): kill notice > forced update > offline banner >
  * update prompt > push soft-ask > install offer.

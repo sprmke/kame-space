@@ -7,6 +7,7 @@ import {
   Eye,
   Gauge,
   MapPin,
+  Megaphone,
   Percent,
   PieChart,
   Sparkles,
@@ -47,7 +48,7 @@ const PROPERTY_OVERVIEW_HEADERS: Array<{ title: string; icon: LucideIcon }> = [
   { title: 'Guest origins', icon: MapPin },
   { title: 'Where bookings come from', icon: PieChart },
   { title: 'Listing visits', icon: Eye },
-  { title: 'How you compare', icon: Gauge },
+  { title: 'Marketing results', icon: Megaphone },
 ];
 
 /** Matches `AnalyticsKpiStrip`: 2×2 on phone, 4 across on lg. */

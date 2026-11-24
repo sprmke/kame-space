@@ -2,10 +2,16 @@ import { Trash2 } from 'lucide-react';
 
 import {
   OptionSelect,
+  SectionTitle,
   TimingFields,
   type InspectorActions,
 } from '@/features/dashboard/marketing/components/video-editor/v2/inspector/InspectorShared';
+import { TextLookGallery } from '@/features/dashboard/marketing/components/video-editor/v2/TextLookGallery';
 import { VideoTextStyleControls } from '@/features/dashboard/marketing/components/video-editor/VideoTextStyleControls';
+import {
+  applyTextLook,
+  detectTextLook,
+} from '@/features/dashboard/marketing/lib/video/v2/textLooks';
 import type {
   LayerItem,
   TextAnimation,
@@ -18,7 +24,7 @@ import { Textarea } from '@/components/ui/textarea';
 
 const ENTRANCES: Array<{ value: TextAnimation; label: string }> = [
   { value: 'none', label: 'None' },
-  { value: 'template', label: 'Template default' },
+  { value: 'template', label: 'Auto' },
   { value: 'fade', label: 'Fade' },
   { value: 'rise', label: 'Rise' },
   { value: 'slide-up', label: 'Slide up' },
@@ -99,10 +105,26 @@ export function LayerItemInspector({ item, actions }: Props) {
         </div>
       ) : null}
 
+      <SectionTitle>Timing</SectionTitle>
       <TimingFields item={item} actions={actions} />
+
+      {isText ? <SectionTitle>Style</SectionTitle> : null}
+      {isText ? (
+        <TextLookGallery
+          value={detectTextLook(layer, actions.lookColors)}
+          colors={actions.lookColors}
+          onChange={(look) =>
+            actions.update(item.id, (current) => ({
+              ...(current as LayerItem),
+              layer: applyTextLook((current as LayerItem).layer, look, actions.lookColors),
+            }))
+          }
+        />
+      ) : null}
 
       {isText ? (
         <VideoTextStyleControls
+          showTextInput={false}
           layer={layer}
           templateTypography={actions.typography}
           onChange={patchLayer}
@@ -110,14 +132,15 @@ export function LayerItemInspector({ item, actions }: Props) {
       ) : null}
 
       <section className="space-y-3" aria-label="Animation">
+        <SectionTitle>Animation</SectionTitle>
         <OptionSelect<TextAnimation>
-          label="Animate in"
+          label="Comes in"
           value={item.animationIn?.type ?? 'none'}
           options={ENTRANCES}
           onChange={(type) => setAnimation('animationIn', type)}
         />
         <OptionSelect<TextAnimation>
-          label="Animate out"
+          label="Goes out"
           value={item.animationOut?.type ?? 'none'}
           options={EXITS}
           onChange={(type) => setAnimation('animationOut', type)}

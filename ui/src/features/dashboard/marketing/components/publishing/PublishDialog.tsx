@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Loader2, Send, Sparkles } from 'lucide-react';
+import { Loader2, Music, Send, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { usePublicPropertyDetail } from '@/features/guest/marketing/properties/hooks/usePublicPropertyDetail';
@@ -18,7 +18,16 @@ import {
   publishToMetaRequest,
   useGenerateMarketingCaption,
 } from '@/features/dashboard/marketing/lib/marketingPublishApi';
+import {
+  captionPostType,
+  instagramAudioPayload,
+  instagramSongApplies,
+  publishFormatOptions,
+  resolvePublishFormat,
+  type PublishFormat,
+} from '@/features/dashboard/marketing/lib/marketingPublishFormat';
 import { MARKETING_PUBLISH_META_LABEL } from '@/features/dashboard/marketing/lib/marketingStudioCopy';
+import type { InstagramSong } from '@/features/dashboard/marketing/lib/video/v2/videoProjectV2Types';
 import { useOrgContext } from '@/features/dashboard/org/components/RequireOrgContext';
 import {
   useOrgIdParam,
@@ -61,6 +70,8 @@ export type PublishMedia = {
   dataUrl?: string;
   mediaType: 'image' | 'video';
   templateId?: string;
+  /** The song Instagram adds when a video is posted as a Reel. */
+  instagramSong?: InstagramSong;
 };
 
 type Props = {
@@ -106,7 +117,7 @@ export function PublishDialog({ open, onOpenChange, media }: Props) {
   const queryClient = useQueryClient();
 
   const [platform, setPlatform] = useState<'facebook' | 'instagram'>('facebook');
-  const [postType, setPostType] = useState<'post' | 'story'>('post');
+  const [format, setFormat] = useState<PublishFormat>('post');
   const [connectionIds, setConnectionIds] = useState<string[]>([]);
   const [caption, setCaption] = useState('');
   const [batchMode, setBatchMode] = useState(false);
@@ -139,6 +150,21 @@ export function PublishDialog({ open, onOpenChange, media }: Props) {
     [channels, platform]
   );
 
+  const mediaType = media?.mediaType ?? 'image';
+  const postType = resolvePublishFormat(format, platform, mediaType);
+  const formatOptions = publishFormatOptions(platform, mediaType);
+  const song = media?.instagramSong ?? null;
+  const songApplies = instagramSongApplies(platform, postType, mediaType, song);
+  const hasInstagramChannel = channels.some((c) => c.platform === 'instagram');
+
+  // A video with an Instagram song is meant for a Reel: start there once Instagram is known.
+  const songId = song?.audioId;
+  useEffect(() => {
+    if (!open || !songId || !hasInstagramChannel) return;
+    setPlatform('instagram');
+    setFormat('reel');
+  }, [open, songId, hasInstagramChannel]);
+
   useEffect(() => {
     if (!open) return;
     const first = platformChannels[0];
@@ -156,7 +182,7 @@ export function PublishDialog({ open, onOpenChange, media }: Props) {
     const rate = publicProperty?.pricing.baseRate ?? 2799;
     const captionText = await generateCaption.mutateAsync({
       platform,
-      postType,
+      postType: captionPostType(postType),
       contentHint: media?.templateId,
       nightlyRate: `${formatMoneyCompact(rate)} / night`,
       availabilityText: availabilityTextForMonth(bookedDates ?? [], new Date()),
@@ -212,6 +238,7 @@ export function PublishDialog({ open, onOpenChange, media }: Props) {
         mediaType: media.mediaType,
         mediaUrl,
         templateId: media.templateId,
+        instagramAudio: instagramAudioPayload(song, songApplies),
       }));
 
       let publishedCount = 1;
@@ -233,6 +260,7 @@ export function PublishDialog({ open, onOpenChange, media }: Props) {
         platform,
         post_type: postType,
         media_type: media.mediaType,
+        has_instagram_song: songApplies,
         channel_count: connectionIds.length,
         batch_mode: batchMode,
         published_count: publishedCount,
@@ -351,27 +379,60 @@ export function PublishDialog({ open, onOpenChange, media }: Props) {
                 <Label>Format</Label>
                 <RadioGroup
                   value={postType}
-                  onValueChange={(v) => setPostType(v as 'post' | 'story')}
+                  onValueChange={(v) => setFormat(v as PublishFormat)}
                   className="flex gap-4"
                 >
-                  <div className="flex items-center gap-2">
-                    <RadioGroupItem value="post" id="publish-post" />
-                    <Label htmlFor="publish-post" className="font-normal">
-                      Post
-                    </Label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <RadioGroupItem
-                      value="story"
-                      id="publish-story"
-                      disabled={media?.mediaType === 'video' && platform === 'facebook'}
-                    />
-                    <Label htmlFor="publish-story" className="font-normal">
-                      Story
-                    </Label>
-                  </div>
+                  {formatOptions.map((option) => (
+                    <div key={option.value} className="flex items-center gap-2">
+                      <RadioGroupItem
+                        value={option.value}
+                        id={`publish-${option.value}`}
+                        disabled={option.disabled}
+                      />
+                      <Label htmlFor={`publish-${option.value}`} className="font-normal">
+                        {option.label}
+                      </Label>
+                    </div>
+                  ))}
                 </RadioGroup>
               </div>
+
+              {song ? (
+                <div
+                  className="border-border flex items-center gap-3 rounded-lg border p-2"
+                  data-testid="publish-instagram-song"
+                >
+                  <span className="bg-muted text-muted-foreground flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-md">
+                    {song.imageUrl ? (
+                      <img src={song.imageUrl} alt="" className="size-full object-cover" />
+                    ) : (
+                      <Music className="size-4" aria-hidden />
+                    )}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{song.title}</p>
+                    <p className="text-muted-foreground text-xs">
+                      {songApplies
+                        ? 'Instagram adds this song to your Reel'
+                        : 'Only added when you post to Instagram as a Reel'}
+                    </p>
+                  </div>
+                  {!songApplies && hasInstagramChannel ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="min-h-[44px] shrink-0"
+                      onClick={() => {
+                        setPlatform('instagram');
+                        setFormat('reel');
+                      }}
+                    >
+                      Use Reel
+                    </Button>
+                  ) : null}
+                </div>
+              ) : null}
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between gap-2">

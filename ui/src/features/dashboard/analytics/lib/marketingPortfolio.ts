@@ -54,6 +54,14 @@ export function rankListingsForPromotion(
   return candidates.sort((a, b) => b.score - a.score).slice(0, limit);
 }
 
+/** Top promotion candidates keyed by listing id for row-level hints. */
+export function promotionHintsByListingId(
+  rows: readonly OrgPortfolioRow[],
+  options: RankOptions = {}
+): ReadonlyMap<string, PromotionCandidate> {
+  return new Map(rankListingsForPromotion(rows, options).map((candidate) => [candidate.id, candidate]));
+}
+
 /** Path into a listing's plan, with today's window selected. */
 export function orgPropertyPlanHref(orgSlug: string, slug: string): string {
   return `/org/${orgSlug}/property/${slug}/marketing?plan=1&range=today`;

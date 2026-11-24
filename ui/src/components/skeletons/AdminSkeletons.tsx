@@ -19,6 +19,7 @@ import {
   LayoutGrid,
   ListChecks,
   Mail,
+  MessageSquare,
   PencilLine,
   Percent,
   PieChart,
@@ -33,6 +34,7 @@ import {
   Users,
   Wallet,
   Wrench,
+  CalendarRange,
 } from 'lucide-react';
 
 import {
@@ -585,8 +587,8 @@ export function MaintenanceOverviewSkeleton() {
   );
 }
 
-/** Org Plans default view: billing summary card, Billing | Plans | Compare | FAQs tabs, then
- * the Billing tab's payment history card. */
+/** Org Plans default view: summary card, Plans | Billing | Compare | FAQs tabs, then
+ * the Plans tab's tier rail (Choose your plan). */
 export function PlansPageSkeleton() {
   return (
     <div
@@ -613,31 +615,35 @@ export function PlansPageSkeleton() {
       <div className="min-w-0">
         <PlansTabsListSkeleton
           items={[
-            { label: 'Billing', icon: Receipt },
             { label: 'Plans', icon: LayoutGrid },
+            { label: 'Billing', icon: Receipt },
             { label: 'Compare', icon: FileText },
             { label: 'FAQs', icon: HelpCircle },
           ]}
         />
 
         <div className="surface-card mt-3 p-4 md:p-5">
-          <Skeleton className="mb-3 h-5 w-24 sm:mb-4" />
-          <div className="divide-border divide-y">
+          <h2 className="text-foreground mb-3 text-base font-semibold tracking-tight sm:mb-4 sm:text-lg">
+            Choose your plan
+          </h2>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 3 }).map((_, i) => (
               <div
                 key={i}
-                className="flex items-start gap-3 py-3.5 last:pb-0"
+                className="border-border/60 flex flex-col gap-3 rounded-xl border p-4"
                 style={{ opacity: 1 - i * 0.08 }}
               >
-                <Skeleton className="mt-0.5 size-9 shrink-0 rounded-full" />
-                <div className="min-w-0 flex-1 space-y-1.5">
-                  <Skeleton className="h-3.5 w-40 max-w-full" />
-                  <Skeleton className="h-3 w-28 max-w-full" />
+                <div className="flex items-center gap-2.5">
+                  <Skeleton className="size-9 shrink-0 rounded-xl" />
+                  <Skeleton className="h-4 w-24" />
                 </div>
-                <div className="flex shrink-0 flex-col items-end gap-1 pl-3">
-                  <Skeleton className="h-3.5 w-16" />
-                  <Skeleton className="h-5 w-12 rounded-md" />
+                <Skeleton className="h-7 w-28" />
+                <div className="space-y-2">
+                  <Skeleton className="h-3 w-full" />
+                  <Skeleton className="h-3 w-40 max-w-full" />
+                  <Skeleton className="h-3 w-32 max-w-full" />
                 </div>
+                <Skeleton className="mt-auto h-10 w-full rounded-md" />
               </div>
             ))}
           </div>
@@ -957,9 +963,13 @@ function DashboardListRowSkeleton({ tall = false }: { tall?: boolean }) {
 export function DashboardSkeleton({
   showFinance = true,
   showMaintenance = true,
+  showInbox = true,
+  showPricing = true,
 }: {
   showFinance?: boolean;
   showMaintenance?: boolean;
+  showInbox?: boolean;
+  showPricing?: boolean;
 } = {}) {
   return (
     <div
@@ -972,7 +982,7 @@ export function DashboardSkeleton({
         <div className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4 lg:gap-4">
           {[
             { title: 'Total Revenue', icon: DollarSign },
-            { title: 'Total Bookings', icon: FileText },
+            { title: 'Nights booked', icon: FileText },
             { title: 'Occupancy Rate', icon: Percent },
             { title: 'Average Nightly Rate', icon: BedDouble },
           ].map((card) => (
@@ -982,25 +992,7 @@ export function DashboardSkeleton({
       </section>
 
       <div className="grid min-w-0 items-stretch gap-2.5 sm:gap-3 lg:grid-cols-2 lg:gap-4">
-        {/* Calendar | Needs attention */}
-        <section className="surface-card flex h-full min-w-0 flex-col overflow-hidden p-3 sm:p-4">
-          <DashboardChartCardHeaderSkeleton
-            action="toggle"
-            title="Calendar"
-            icon={CalendarDays}
-            descriptionWidthClass="w-52"
-          />
-          <div className="grid grid-cols-7 gap-0.5 px-0.5 pb-1 pt-1">
-            {Array.from({ length: 7 }).map((_, i) => (
-              <Skeleton key={`dow-${i}`} className="mx-auto h-3 w-6 rounded-full" />
-            ))}
-            {Array.from({ length: 35 }).map((_, i) => (
-              <Skeleton key={`day-${i}`} className="h-[3rem] w-full self-start rounded-md" />
-            ))}
-          </div>
-        </section>
-
-        <section className="surface-card flex h-full min-w-0 flex-col overflow-hidden p-3 sm:p-4">
+        <section className="surface-card flex h-full min-w-0 flex-col overflow-hidden p-3 max-lg:order-1 sm:p-4">
           <DashboardChartCardHeaderSkeleton
             action="badge"
             title="Needs attention"
@@ -1022,55 +1014,72 @@ export function DashboardSkeleton({
           </div>
         </section>
 
-        {/* Cash flow | Breakdown */}
-        {showFinance ? (
-          <>
-            <section className="surface-card flex h-full min-w-0 flex-col p-3 sm:p-4">
-              <DashboardChartCardHeaderSkeleton
-                action="view"
-                title="Cash flow"
-                icon={BarChart3}
-                descriptionWidthClass="w-48"
-              />
-              <Skeleton className="h-[180px] w-full min-w-0 rounded-xl sm:h-[220px]" />
-            </section>
+        <section className="surface-card flex h-full min-w-0 flex-col overflow-hidden p-3 max-lg:order-2 sm:p-4">
+          <DashboardChartCardHeaderSkeleton
+            action="toggle"
+            title="Calendar"
+            icon={CalendarDays}
+            descriptionWidthClass="w-52"
+          />
+          <div className="grid grid-cols-7 gap-0.5 px-0.5 pb-1 pt-1">
+            {Array.from({ length: 7 }).map((_, i) => (
+              <Skeleton key={`dow-${i}`} className="mx-auto h-3 w-6 rounded-full" />
+            ))}
+            {Array.from({ length: 35 }).map((_, i) => (
+              <Skeleton key={`day-${i}`} className="h-[3rem] w-full self-start rounded-md" />
+            ))}
+          </div>
+        </section>
 
-            <section className="surface-card flex h-full min-w-0 flex-col p-3 sm:p-4">
-              <DashboardChartCardHeaderSkeleton
-                action="segment"
-                title="Breakdown"
-                icon={PieChart}
-              />
-              <div className="flex min-h-[180px] flex-1 items-center justify-center px-2 sm:min-h-[220px]">
-                <Skeleton className="size-36 shrink-0 rounded-full sm:size-44" />
-              </div>
-            </section>
-          </>
-        ) : null}
-
-        {/* Maintenance | Transactions */}
-        {showMaintenance ? (
-          <section className="surface-card flex h-full min-w-0 flex-col overflow-hidden p-3 sm:p-4">
+        {showInbox ? (
+          <section className="surface-card flex h-full min-w-0 flex-col overflow-hidden p-3 max-lg:order-3 sm:p-4">
             <DashboardChartCardHeaderSkeleton
               action="view"
-              title="Maintenance"
-              icon={Wrench}
-              descriptionWidthClass="w-36"
+              title="Messages"
+              icon={MessageSquare}
+              descriptionWidthClass="w-28"
             />
             <div className="mb-3 flex flex-wrap gap-2">
               <Skeleton className="h-7 w-20 rounded-full" />
-              <Skeleton className="h-7 w-16 rounded-full" />
             </div>
             <div className="flex min-h-0 flex-1 flex-col space-y-2">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <DashboardListRowSkeleton key={`maint-${i}`} tall />
+              {Array.from({ length: 2 }).map((_, i) => (
+                <DashboardListRowSkeleton key={`msg-${i}`} tall />
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {showPricing ? (
+          <section className="surface-card flex h-full min-w-0 flex-col overflow-hidden p-3 max-lg:order-4 sm:p-4">
+            <DashboardChartCardHeaderSkeleton
+              action="view"
+              title="Rates"
+              icon={CalendarRange}
+              descriptionWidthClass="w-28"
+            />
+            <div className="space-y-2">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={`rate-${i}`} className="h-12 w-full rounded-xl" />
               ))}
             </div>
           </section>
         ) : null}
 
         {showFinance ? (
-          <section className="surface-card flex h-full min-w-0 flex-col overflow-hidden p-3 sm:p-4">
+          <section className="surface-card flex h-full min-w-0 flex-col p-3 max-lg:order-5 sm:p-4 lg:col-span-2">
+            <DashboardChartCardHeaderSkeleton
+              action="view"
+              title="Cash flow"
+              icon={BarChart3}
+              descriptionWidthClass="w-48"
+            />
+            <Skeleton className="h-[180px] w-full min-w-0 rounded-xl sm:h-[220px]" />
+          </section>
+        ) : null}
+
+        {showFinance ? (
+          <section className="surface-card flex h-full min-w-0 flex-col overflow-hidden p-3 max-lg:order-6 sm:p-4">
             <DashboardChartCardHeaderSkeleton
               action="view"
               title="Transactions"
@@ -1084,6 +1093,26 @@ export function DashboardSkeleton({
             <div className="flex min-h-0 flex-1 flex-col space-y-2">
               {Array.from({ length: 3 }).map((_, i) => (
                 <DashboardListRowSkeleton key={`txn-${i}`} tall />
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {showMaintenance ? (
+          <section className="surface-card flex h-full min-w-0 flex-col overflow-hidden p-3 max-lg:order-7 sm:p-4">
+            <DashboardChartCardHeaderSkeleton
+              action="view"
+              title="Maintenance"
+              icon={Wrench}
+              descriptionWidthClass="w-36"
+            />
+            <div className="mb-3 flex flex-wrap gap-2">
+              <Skeleton className="h-7 w-20 rounded-full" />
+              <Skeleton className="h-7 w-16 rounded-full" />
+            </div>
+            <div className="flex min-h-0 flex-1 flex-col space-y-2">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <DashboardListRowSkeleton key={`maint-${i}`} tall />
               ))}
             </div>
           </section>
@@ -1618,8 +1647,8 @@ const REVIEWS_METRICS: Array<{ title: string; icon: LucideIcon }> = [
   { title: 'To write', icon: PencilLine },
 ];
 
-/** Mirrors `ReviewsPageTab` without importing feature types into the skeleton module. */
-export type ReviewsSkeletonTab = 'received' | 'written' | 'to_write' | 'properties';
+/** Mirrors `ReviewListTab` without importing feature types into the skeleton module. */
+export type ReviewsSkeletonTab = 'received' | 'written' | 'to_write';
 
 const REVIEWS_TABLE_MIN_WIDTH: Record<
   ReviewsSkeletonTab,
@@ -1628,14 +1657,12 @@ const REVIEWS_TABLE_MIN_WIDTH: Record<
   received: { withListing: 800, withoutListing: 680 },
   written: { withListing: 760, withoutListing: 640 },
   to_write: { withListing: 680, withoutListing: 560 },
-  properties: { withListing: 720, withoutListing: 720 },
 };
 
 const REVIEWS_TABLE_ROW_COUNT: Record<ReviewsSkeletonTab, number> = {
   received: 6,
   written: 6,
   to_write: 5,
-  properties: 5,
 };
 
 function ReviewsTableHeaderCells({
@@ -1645,19 +1672,6 @@ function ReviewsTableHeaderCells({
   tab: ReviewsSkeletonTab;
   showProperty: boolean;
 }) {
-  if (tab === 'properties') {
-    return (
-      <>
-        <AdminTableTh className="pl-4 pr-3 sm:pl-5">Listing</AdminTableTh>
-        <AdminTableTh className="px-3 sm:px-4">Rating</AdminTableTh>
-        <AdminTableTh className="hidden px-3 sm:px-4 md:table-cell">Reviews</AdminTableTh>
-        <AdminTableTh className="hidden px-3 sm:px-4 lg:table-cell">Responded</AdminTableTh>
-        <AdminTableTh className="px-3 sm:px-4">To write</AdminTableTh>
-        <AdminTableActionsTh />
-      </>
-    );
-  }
-
   return (
     <>
       <AdminTableTh className="pl-4 pr-3 sm:pl-5">Guest</AdminTableTh>
@@ -1696,31 +1710,6 @@ function ReviewsTableSkeletonRow({
   index: number;
 }) {
   const rowClassName = index > 0 ? 'border-separator border-t' : undefined;
-
-  if (tab === 'properties') {
-    return (
-      <tr className={rowClassName}>
-        <td className={adminTableCell.status}>
-          <Skeleton className="h-3.5 w-36 max-w-full" />
-        </td>
-        <td className={adminTableCell.body}>
-          <Skeleton className="h-3.5 w-20 rounded" />
-        </td>
-        <td className={cn('hidden md:table-cell', adminTableCell.body)}>
-          <Skeleton className="h-3 w-8" />
-        </td>
-        <td className={cn('hidden lg:table-cell', adminTableCell.body)}>
-          <Skeleton className="h-3 w-10" />
-        </td>
-        <td className={adminTableCell.body}>
-          <Skeleton className="h-5 w-10 rounded-full" />
-        </td>
-        <td className={adminTableCell.action}>
-          <Skeleton className="ml-auto size-8 rounded-lg" />
-        </td>
-      </tr>
-    );
-  }
 
   return (
     <tr className={rowClassName}>
@@ -1775,7 +1764,7 @@ function ReviewsTableSkeletonRow({
 
 /**
  * Reviews feed table — real column labels for the active tab, skeleton rows only.
- * Column order and breakpoints mirror `ReviewsTable` / `OrgPropertyReviewsTable`.
+ * Column order and breakpoints mirror `ReviewsTable`.
  */
 export function ReviewsTableSkeleton({
   tab = 'received',
@@ -1889,7 +1878,6 @@ export function ReviewsPageSkeleton({
     if (label === 'From guests') return { label, icon: Quote };
     if (label === 'To write') return { label, icon: PencilLine };
     if (label === 'About guests') return { label, icon: UserCheck };
-    if (label === 'By property') return { label, icon: Building2 };
     return { label };
   });
 

@@ -217,6 +217,20 @@
      */
     --mobile-bottom-bar-row-h: 3.5rem;
     --mobile-bottom-bar-h: calc(var(--mobile-bottom-bar-row-h) + var(--safe-bottom));
+
+    /*
+     * Desktop admin rail width. AdminLayout publishes the live px value so fixed
+     * overlays (cookie consent, install, update) can hug the content column and
+     * track collapse. Zero below `lg` and when the shell is unmounted.
+     */
+    --admin-rail-width: 0px;
+
+    /*
+     * Live heights of fixed bottom notices (0 when hidden). Install / update
+     * stack above the cookie bar; Quick Access lifts by the combined stack.
+     */
+    --cookie-consent-h: 0px;
+    --pwa-bottom-notice-h: 0px;
   }
 
   @media (min-width: 640px) {
@@ -3402,24 +3416,79 @@ html.guest-embed-preview *::-webkit-scrollbar {
   }
 
   /*
-   * Cookie consent: flush to the safe-area bottom on pages with no docked bar
-   * (auth, standalone status pages), and stacked above the bar when one is mounted.
-   * `:has(.mobile-bottom-bar)` covers both the persistent tab bar and a screen-owned
-   * ContextualActionBar, so the banner never covers the dock. Pair with z-[45] on the
-   * overlay (above the bar at z-40, under Sheet z-50 / Dialog z-[100]).
+   * Fixed bottom notices (cookie, install, update): flush bars, not floating pills.
+   * - Cookie sits on the dock / safe-area bottom and publishes `--cookie-consent-h`.
+   * - Install / update (`.pwa-bottom-notice-overlay`) stack above the cookie bar so
+   *   they never clash; install stays visible while consent is unanswered.
+   * - Dashboard desktop: `left` tracks `--admin-rail-width` (same 300ms as the rail).
+   * z: tab bar 40 < notices 45/46 < Quick Access 47 < Sheet 50 / Dialog 100.
    */
+  .cookie-consent-overlay,
+  .pwa-bottom-notice-overlay {
+    inset-inline: 0;
+    z-index: 45;
+    transition:
+      left 300ms ease-out,
+      bottom 300ms ease-out;
+  }
   .cookie-consent-overlay {
-    bottom: max(0.75rem, var(--safe-bottom));
+    bottom: 0;
+  }
+  .pwa-bottom-notice-overlay {
+    bottom: var(--cookie-consent-h, 0px);
+    /* Above cookie if heights briefly lag during resize. */
+    z-index: 46;
+  }
+  .fixed-bottom-notice-bar {
+    /* Home-indicator clearance when the bar sits on the viewport bottom. */
+    padding-bottom: max(0.625rem, var(--safe-bottom));
+  }
+  /* Cookie owns the home indicator; the stacked PWA notice stays compact. */
+  body:has(.cookie-consent-overlay) .pwa-bottom-notice-overlay .fixed-bottom-notice-bar {
+    padding-bottom: 0.625rem;
+  }
+  /*
+   * Quick Access FAB: always above fixed notices (z-47), and lifted by their
+   * combined height so it never sits under the cookie / install / update bars.
+   */
+  .admin-quick-access-hub {
+    z-index: 47;
+    transition: bottom 300ms ease-out;
   }
   @media (max-width: 1023px) {
     body:has(.mobile-bottom-bar) .cookie-consent-overlay {
-      bottom: calc(var(--mobile-bottom-bar-h) + 0.75rem);
+      bottom: var(--mobile-bottom-bar-h);
+    }
+    body:has(.mobile-bottom-bar) .pwa-bottom-notice-overlay {
+      bottom: calc(var(--mobile-bottom-bar-h) + var(--cookie-consent-h, 0px));
+    }
+    /* Tab bar already owns the safe area; avoid double inset on the docked bar. */
+    body:has(.mobile-bottom-bar) .cookie-consent-overlay .fixed-bottom-notice-bar,
+    body:has(.mobile-bottom-bar):not(:has(.cookie-consent-overlay))
+      .pwa-bottom-notice-overlay
+      .fixed-bottom-notice-bar {
+      padding-bottom: 0.75rem;
+    }
+    .admin-quick-access-hub {
+      bottom: calc(
+        var(--mobile-bottom-bar-h) + 0.5rem + var(--cookie-consent-h, 0px) +
+          var(--pwa-bottom-notice-h, 0px)
+      );
+      padding-bottom: 0;
     }
   }
   @media (min-width: 1024px) {
-    .cookie-consent-overlay {
-      bottom: 0;
-      padding-bottom: calc(1rem + var(--safe-bottom));
+    body:has([data-dashboard-mode]) .cookie-consent-overlay,
+    body:has([data-dashboard-mode]) .pwa-bottom-notice-overlay {
+      left: var(--admin-rail-width, 0px);
+      right: 0;
+    }
+    .admin-quick-access-hub {
+      bottom: calc(
+        0.75rem + var(--safe-bottom) + var(--cookie-consent-h, 0px) +
+          var(--pwa-bottom-notice-h, 0px)
+      );
+      padding-bottom: 0;
     }
   }
 }
@@ -3590,5 +3659,16 @@ html[data-mode-transition='reduced']::view-transition-new(*) {
   }
   to {
     transform: scaleX(1);
+  }
+}
+
+/*
+ * Video editor on a phone covers the app, so a toast must not sit on the editor's own top bar
+ * (it hid the Export button). Keep it just below the bar instead.
+ */
+@media (max-width: 1023px) {
+  html[data-editor-fullscreen] [data-sonner-toaster] {
+    --offset-top: calc(env(safe-area-inset-top, 0px) + 60px) !important;
+    --mobile-offset-top: calc(env(safe-area-inset-top, 0px) + 60px) !important;
   }
 }

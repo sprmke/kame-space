@@ -6,7 +6,7 @@ Loading UI must mirror the **layout that appears after data loads**, on phone an
 
 1. **Chrome stays mounted.** Page hero (`AdminMobilePage` / `AdminPageHeader`), nav, sidebars, and marketing footer stay visible. Only the **data region** shows a skeleton.
 2. **Shape matches content.** Reuse domain skeletons from `ui/src/components/skeletons/` (or add a sibling module). Do not reuse unrelated dashboards (e.g. property dashboard skeleton on org analytics).
-3. **Default view.** The skeleton shows the page's default view: default tab (org Plans opens on **Billing**), default list mode (org listings follow `defaultOrgListingViewMode`: list under 5 items, table at 5+ on desktop, grid at 5+ below `lg`), bookings `?view=` (table on desktop, cards on phone).
+3. **Default view.** The skeleton shows the page's default view: default tab (org Plans opens on **Plans** / Choose your plan), default list mode (org listings follow `defaultOrgListingViewMode`: list under 5 items, table at 5+ on desktop, grid at 5+ below `lg`), bookings `?view=` (table on desktop, cards on phone).
 4. **Route skeletons carry page chrome.** Page chrome is rendered by the lazy page, so route skeletons render the same `AdminMobilePage` (title, subtitle, `titleId`, `dense`, `className`, date-filter overlap placeholder, desktop header actions) as the loaded page. Without it the hero and header jump when the chunk resolves.
 5. **State-aware fallbacks.** Show a skeleton only on the first load (`isLoading && !data`); cached data stays on screen during refetches so a refresh never replaces a populated page. Match the page's default/selected state (`?view=`, default tab, section nav, **empty vs list**). A list that ends as a mascot empty must not load as fake rows.
 6. **Cheap by construction.** Skeletons are static markup: no timers, observers, fetches, or shared query subscriptions. They reuse the same `StatCardSkeleton` / table / card primitives as the loaded page so metrics and spacing line up at 375, 768, and 1024px+.
@@ -40,28 +40,28 @@ Nested layouts with lazy children keep their own `Suspense` around `<Outlet />` 
 
 ## Module map (eager skeletons)
 
-| File                                | Domains                                                                                                                                                          |
-| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `AdminSkeletons.tsx`                | Shared admin primitives, list toolbar, bookings, finance, settings nav, listings, org dashboard, plans, team, reviews (tab-aware table/cards/empty), guest inbox |
-| `OrgListingSkeleton.tsx`            | Org Properties / Parkings page body, org listing table / grid / list views (inventory + analytics variants)                                                      |
-| `AnalyticsSkeleton.tsx`             | Org + property analytics                                                                                                                                         |
-| `AnnouncementsSkeleton.tsx`         | Host announcements list / detail body                                                                                                                            |
-| `BookingsExtrasSkeleton.tsx`        | Stage KPI strip, kanban                                                                                                                                          |
-| `FinancePageSkeleton.tsx`           | Property/parking Finance and Maintenance data regions (KPIs, cash-flow / breakdown, toolbar, responsive ledger view)                                             |
-| `NotificationsSkeleton.tsx`         | Property/parking Notifications hub — four KPI cards, Activity/Telegram tab bar, activity rows                                                                    |
-| `MarketingSkeletons.tsx`            | Marketing Studio — library, template browser, AI Studio home + conversation, themes, publish history, and design/video/calendar editor chrome                    |
-| `PricingSkeleton.tsx`               | Property/parking pricing body — real-month week rows with day + price cells, property fee rows, parking payout lines + direct-link card                          |
-| `ParkingSkeleton.tsx`               | Parking dashboard (KPI + Cash flow / Breakdown / Calendar / Transactions grid matching `ParkingDashboardCalendarSection`), booking detail                        |
-| `GuestMarketingSkeleton.tsx`        | Property detail, development detail, browse grids, account gate, property chat                                                                                   |
-| `HelpSupportSkeleton.tsx`           | Help & Support page (module nav, intro, FAQs / guides / tickets), documentation topics                                                                           |
-| `TicketsWorkspaceSkeleton.tsx`      | My Tickets workspace — empty chrome (no title / New) or list + thread chrome with **My Tickets**; driven by cached count / session layout hint                   |
-| `SuperAdminSkeletons.tsx`           | List/overview/audit bodies, settings cards, card lists, host detail, organization hub                                                                            |
-| `AiAssistantSkeleton.tsx`           | AI assistant panel chunk                                                                                                                                         |
-| `GuestPageSkeletons.tsx`            | Guest form page                                                                                                                                                  |
-| `GuestAccountSkeletons.tsx`         | Profile form (incl. ID verification), Help home (mascot + topics), empty-state mascot chrome, favorites grid, trips rows, voucher wallet                         |
-| `ImportWizardSkeleton.tsx`          | Import wizard commit step                                                                                                                                        |
-| `TemplateWorkbenchSkeleton.tsx`     | Property Templates workbench — library rail (search, grouped rows) beside the editor pane; rail only below `lg`                                                  |
-| `PropertyListingStatusSkeleton.tsx` | Property Settings → Listing status card (badge, actions, optional delete row) and lifecycle confirm sheet bodies while impact loads                              |
+| File                                | Domains                                                                                                                                                               |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AdminSkeletons.tsx`                | Shared admin primitives, list toolbar, bookings, finance, settings nav, listings, org dashboard, plans, team, reviews (tab-aware table/cards/empty), guest inbox      |
+| `OrgListingSkeleton.tsx`            | Org Properties / Parkings page body, org listing table / grid / list views (inventory + analytics variants)                                                           |
+| `AnalyticsSkeleton.tsx`             | Org + property analytics                                                                                                                                              |
+| `AnnouncementsSkeleton.tsx`         | Host announcements list / detail body                                                                                                                                 |
+| `BookingsExtrasSkeleton.tsx`        | Stage KPI strip, kanban                                                                                                                                               |
+| `FinancePageSkeleton.tsx`           | Property/parking Finance and Maintenance data regions (KPIs, cash-flow / breakdown, toolbar, responsive ledger view)                                                  |
+| `NotificationsSkeleton.tsx`         | Property/parking Notifications hub — four KPI cards, Activity/Telegram tab bar, activity rows                                                                         |
+| `MarketingSkeletons.tsx`            | Marketing Studio — library, template browser, AI Studio home + conversation, themes, publish history, and design/video/calendar editor chrome                         |
+| `PricingSkeleton.tsx`               | Property/parking pricing body — real-month week rows with day + price cells and muted adjacent-month pads, property fee rows, parking payout lines + direct-link card |
+| `ParkingSkeleton.tsx`               | Parking dashboard (KPI + Cash flow / Breakdown / Calendar / Transactions grid matching `ParkingDashboardCalendarSection`), booking detail                             |
+| `GuestMarketingSkeleton.tsx`        | Property detail, development detail, browse grids, account gate, property chat                                                                                        |
+| `HelpSupportSkeleton.tsx`           | Help & Support page (module nav, intro, FAQs / guides / tickets), documentation topics                                                                                |
+| `TicketsWorkspaceSkeleton.tsx`      | My Tickets workspace — empty chrome (no title / New) or list + thread chrome with **My Tickets**; driven by cached count / session layout hint                        |
+| `SuperAdminSkeletons.tsx`           | List/overview/audit bodies, settings cards, card lists, host detail, organization hub                                                                                 |
+| `AiAssistantSkeleton.tsx`           | AI assistant panel chunk                                                                                                                                              |
+| `GuestPageSkeletons.tsx`            | Guest form page                                                                                                                                                       |
+| `GuestAccountSkeletons.tsx`         | Profile form (incl. ID verification), Help home (mascot + topics), empty-state mascot chrome, favorites grid, trips rows, voucher wallet                              |
+| `ImportWizardSkeleton.tsx`          | Import wizard commit step                                                                                                                                             |
+| `TemplateWorkbenchSkeleton.tsx`     | Property Templates workbench — library rail (search, grouped rows) beside the editor pane; rail only below `lg`                                                       |
+| `PropertyListingStatusSkeleton.tsx` | Property Settings → Listing status card (badge, actions, optional delete row) and lifecycle confirm sheet bodies while impact loads                                   |
 
 ### Tickets workspace state
 
@@ -101,7 +101,6 @@ The reviews feed keys its body skeleton to the active state, not one generic tab
 | -------------------------------- | ------------------------------------------------------------------------------------------------------------ |
 | `?tab=received` / `written`      | `ReviewsTableSkeleton` with Guest, Listing (org), Rating, Review, Response/Host again, Stay/Submitted labels |
 | `?tab=to_write`                  | `ReviewsTableSkeleton` with Guest, Listing (org), Stay, Window                                               |
-| `?tab=properties` (org)          | `ReviewsTableSkeleton` with Listing, Rating, Reviews, Responded, To write                                    |
 | `?view=card` / below `lg`        | `ReviewsCardGridSkeleton`                                                                                    |
 | Tab known empty from the summary | `ReviewsEmptySkeleton` (empty-state shape, no implied rows)                                                  |
 
@@ -138,7 +137,7 @@ first data load. Both use the same page chrome, so nothing jumps when the chunk 
 | `/org/:orgSlug/team`                      | `OrgTeamRouteSkeleton`                     | `TeamPageSkeleton`                                                                                          |
 | `/org/:orgSlug/plans`                     | `OrgPlansRouteSkeleton`                    | `PlansPageSkeleton`                                                                                         |
 | `/org/:orgSlug/analytics`                 | `OrgAnalyticsRouteSkeleton`                | `OrgAnalyticsSkeleton`                                                                                      |
-| property `dashboard`                      | `PropertyDashboardRouteSkeleton`           | `DashboardSkeleton`                                                                                         |
+| property `dashboard`                      | `PropertyDashboardRouteSkeleton`           | `DashboardSkeleton` (KPIs + ops board: attention, calendar, Messages, Rates, cash flow)                     |
 | property `bookings`                       | `PropertyBookingsRouteSkeleton`            | `BookingsListBodySkeleton` (table / cards / calendar / kanban, cards below `md`)                            |
 | property `bookings/:bookingId`            | `PropertyBookingDetailRouteSkeleton`       | `BookingDetailPageSkeleton`                                                                                 |
 | property `notifications`                  | `PropertyNotificationsRouteSkeleton`       | `NotificationsPageBodySkeleton`                                                                             |

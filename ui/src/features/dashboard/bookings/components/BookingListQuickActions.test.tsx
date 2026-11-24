@@ -12,6 +12,7 @@ const navigate = vi.fn();
 const toastFn = vi.fn();
 const toastError = vi.fn();
 const fetchBookingChats = vi.fn();
+const ensureBookingWebChat = vi.fn();
 const propertyAccess = vi.fn();
 const parkingAccess = vi.fn();
 
@@ -23,6 +24,7 @@ vi.mock('sonner', () => ({
 }));
 vi.mock('@/features/dashboard/inbox/lib/inboxApi', () => ({
   fetchBookingChats: (...args: unknown[]) => fetchBookingChats(...args),
+  ensureBookingWebChat: (...args: unknown[]) => ensureBookingWebChat(...args),
 }));
 vi.mock('@/features/dashboard/org/components/RequireOrgContext', () => ({
   useOptionalOrgContext: () => null,
@@ -202,21 +204,40 @@ describe('BookingListQuickActions click', () => {
     expect(navigate).toHaveBeenCalledWith('/org/acme/property/solea/messages?search=Maria+Santos');
   });
 
-  it('explains when there is no chat and offers a search', async () => {
+  it('explains when there is no chat and the viewer cannot reply', async () => {
     renderActions(propertyRow);
     fireEvent.click(chatButton()!);
     await waitFor(() => expect(toastFn).toHaveBeenCalled());
     const [message, options] = toastFn.mock.calls[0]!;
     expect(message).toBe('No chat for this booking yet');
+    expect(ensureBookingWebChat).not.toHaveBeenCalled();
     expect(navigate).not.toHaveBeenCalled();
     options.action.onClick();
     expect(navigate).toHaveBeenCalledWith('/org/acme/property/solea/messages?search=Maria+Santos');
   });
 
+  it('creates a web chat and opens Messages when none exists and the host can reply', async () => {
+    propertyAccess.mockReturnValue({
+      data: { permissions: ['inbox:view', 'inbox.messages:edit'] },
+    });
+    ensureBookingWebChat.mockResolvedValue(chat({ id: 'c-new', platform: 'web' }));
+    renderActions(propertyRow);
+    fireEvent.click(chatButton()!);
+    await waitFor(() =>
+      expect(ensureBookingWebChat).toHaveBeenCalledWith('acme', 'org-1', 'b-1', {
+        propertyId: 'p-1',
+      })
+    );
+    expect(navigate).toHaveBeenCalledWith(
+      '/org/acme/property/solea/messages?conversationId=c-new&platform=web'
+    );
+    expect(toastFn).not.toHaveBeenCalled();
+  });
+
   it.each([
     [new EdgeResponseError('x', 403), 'You do not have access to Messages here'],
     [new EdgeResponseError('x', 404), 'This booking is no longer available'],
-    [new Error('network'), 'Could not check chats. Try again'],
+    [new Error('network'), 'Could not open chat. Try again'],
   ])('reports a failed lookup (%#) without navigating', async (error, message) => {
     fetchBookingChats.mockRejectedValue(error);
     renderActions(propertyRow);

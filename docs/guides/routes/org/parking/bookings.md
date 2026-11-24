@@ -91,7 +91,7 @@ Manage guests who booked **this parking slot only**. If a guest's parking is bun
 
 `GET list-bookings?parking_id=…` — parking team `bookings:view`
 
-Chat icon: `GET social-inbox-booking-chats?booking_id=&parking_id=` — parking `inbox:view`; Chat threads only (no Facebook or Instagram).
+Chat icon: `GET social-inbox-booking-chats?booking_id=&parking_id=` — parking `inbox:view`; Chat threads only (no Facebook or Instagram). When none match and the host has `inbox:reply`, `POST social-inbox-ensure-booking-chat` opens or creates the web thread.
 
 `POST transition-parking-booking?parking_id=…` — `{ bookingId, toStatus, reason?, note? }` (rejects `PENDING_HOST_ACCEPTANCE` and `PENDING_PAYMENT` — use claim/decline below; `PENDING_PAYMENT` only resolves via guest payment, timeout, or guest cancel). Cancelling a paid booking (`PENDING_REVIEW` / `READY_FOR_CHECKIN`) requires `reason`; the guest is emailed, the ledger row moves to `refund_review`, and the payout is blocked until a super admin records the refund.
 

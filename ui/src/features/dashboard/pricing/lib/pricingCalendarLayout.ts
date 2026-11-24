@@ -14,10 +14,19 @@ export function pricingCalendarWeekGapClassName(compactChrome: boolean): string 
   return compactChrome ? 'gap-0.5 sm:gap-1' : 'gap-1.5 sm:gap-2';
 }
 
+/**
+ * Leading/trailing adjacent-month pads. Same tile shape as in-month days
+ * (markers / booked state) with muted surfaces instead of cell opacity so
+ * week-edge stay pills sit on matching tiles without failing contrast.
+ */
 export function pricingCalendarOutsideCellClassName(compactChrome: boolean): string {
   return cn(
+    'border-border/50 bg-muted/25 relative flex min-w-0 flex-col rounded-lg border text-left',
+    'hover:bg-muted/40 focus-visible:bg-muted/40',
     'sm:aspect-square',
-    compactChrome ? 'min-h-[3rem] sm:min-h-[3.25rem]' : 'min-h-[3.5rem] sm:min-h-[4.5rem]'
+    compactChrome
+      ? 'min-h-[3rem] p-0.5 sm:min-h-[3.25rem]'
+      : 'min-h-[3.5rem] p-1 sm:min-h-[4.5rem] sm:p-2'
   );
 }
 

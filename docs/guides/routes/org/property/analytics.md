@@ -14,17 +14,6 @@ Route: `/org/:orgSlug/property/:propertySlug/analytics`
 > Ask Analytics), Phase 5 shipped as org portfolio rollup + CSV export.
 > Plan: [`../../../../workflow/for-testing/host-analytics-module.md`](../../../../workflow/for-testing/host-analytics-module.md)
 
-## Promote this week
-
-`OrgMarketingRanking` is a compact strip above the org listings list (not a full surface card).
-It ranks unlocked property rows by open nights in the next 30 days times ADR, so a cheap listing
-with one gap never outranks an expensive listing with an empty week. Each row links straight to
-that property's plan.
-
-- Hidden when every listing is full or the org has no unlocked properties.
-- Parkings are excluded: the planner markets properties only.
-- Pure ranking in `lib/marketingPortfolio.ts`, unit-tested.
-
 ## Marketing results
 
 `MarketingResultsCard` sits in the Overview grid. It reads the `marketing` block on
@@ -33,8 +22,9 @@ grouped by channel.
 
 - Numbers are **at least**: attribution is first-touch and campaign-code based, so Instagram link
   in bio and manual posts undercount.
-- The card renders only when the server returns the block; a missing or failed query says
-  "No tracked planner visits in this period" rather than showing zeros as fact.
+- The card renders only when the server returns the block. Empty periods show a centered message
+  and an **Open plan** button into Marketing; periods with data keep the channel list plus the
+  same plan action.
 
 ## Progress overview
 
@@ -107,8 +97,10 @@ Tabs and their contents:
      **Direct** (website) bookings; aliases like `direct` / `website` roll up with `Direct`.
    - **Listing visits** — matching donut with page views in the center and referrers on hover
      (empty donut when views are 0).
-   - **How you compare** — "vs Kame median" benchmark; dashed empty state when peer sample is
-     too small.
+   - **Marketing results** — planner tracked visits and attributed booking requests (when the
+     summary includes the marketing block). Empty state is centered with an **Open plan** CTA.
+     Peer occupancy/ADR comparison is not on Overview; it still appears in Export PDF when the
+     peer sample is large enough.
 2. **Trends**
    - **New bookings** — bookings **created** in the selected range (daily when ≤45 days, else
      weekly) as a monotone area/line chart (finance-style), optional dashed last-year series.
@@ -242,11 +234,9 @@ rates, bookings, and guest mix.
   alongside OTAs and social sources.
 - Q: Can I download a report on Free?
   A: **Export PDF** is on Pro. The button still shows; tapping it opens Plans.
-- Q: What does How you compare mean?
-  A: It shows your occupancy and average nightly rate against the median of other active Pro
-  listings on Kame (not named competitors). It stays empty until enough peer listings have
-  bookings in the same kind of period, so one or two other hosts are never exposed as "the
-  market."
+- Q: What does Marketing results show?
+  A: Visits and booking requests from tracked planner posts in this period. Numbers are a lower
+  bound. If nothing was tracked, Open plan takes you to Marketing to schedule posts.
 - Q: Does the AI review change my rates or settings?
   A: No. It's advisory only. It can suggest an action (e.g. raise your weekend rate) but never
   applies one. You'd still make that change yourself on the Pricing page.

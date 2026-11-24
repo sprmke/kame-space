@@ -2,7 +2,7 @@
 title: 'Audit 25: host dashboard design critique'
 status: active
 tags: [audit, design, dashboard, org, property, mobile]
-updated: 2026-11-19
+updated: 2026-11-23
 ---
 
 # 25: Host dashboard design critique
@@ -133,7 +133,7 @@ contrast check to the design guard.
 - "Guest origins" lists six rows all at `16.67%` with six identical bars: a table pretending to be a chart.
 - "Party size" bars have no y-axis and no value labels.
 - Legends list categories unsorted (79, 6, 1 | 11, 2), so size does not map to order.
-- "How you compare" is a permanent empty panel.
+- "How you compare" was a permanent empty panel (removed from Overview; PDF still uses peers).
 
 **Change:** one chart palette derived from the brand tokens; legends sorted by value; label or table-ise
 donuts; delete panels that can never fill.

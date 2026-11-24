@@ -980,7 +980,7 @@ export const PLAN_FAQ_ITEMS: PlanFaqItem[] = [
 export const planTabSectionTitleClass =
   'text-foreground text-base font-semibold tracking-tight sm:text-lg';
 
-/** Shared in-card section title + spacing for org Plans tabs (Billing / Plans / Compare / FAQs). */
+/** Shared in-card section title + spacing for org Plans tabs (Plans / Billing / Compare / FAQs). */
 export const planTabCardHeadingClass = `${planTabSectionTitleClass} mb-3 sm:mb-4`;
 
 /** Org Plans tab panel titles — rendered inside each tab's card with shared heading spacing. */

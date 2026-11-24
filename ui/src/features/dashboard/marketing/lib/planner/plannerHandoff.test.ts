@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import {
   applyPlannerSeedToDesignBinding,
+  clearPlannerFinishing,
+  getPlannerFinishing,
   handoffDescription,
   resolveHandoffTarget,
   setPendingPlannerDraft,
@@ -40,7 +42,8 @@ describe('resolveHandoffTarget', () => {
 });
 
 describe('pending planner draft', () => {
-  it('is consumed once', () => {
+  it('is consumed once and keeps a finishing cue', () => {
+    clearPlannerFinishing();
     const payload = {
       itemId: 'item-1',
       title: 'Open this weekend',
@@ -52,8 +55,15 @@ describe('pending planner draft', () => {
       photoIds: [],
     };
     setPendingPlannerDraft(payload);
+    expect(getPlannerFinishing()).toEqual({
+      itemId: 'item-1',
+      title: 'Open this weekend',
+    });
     expect(takePendingPlannerDraft()).toEqual(payload);
     expect(takePendingPlannerDraft()).toBeNull();
+    expect(getPlannerFinishing()?.title).toBe('Open this weekend');
+    clearPlannerFinishing();
+    expect(getPlannerFinishing()).toBeNull();
   });
 });
 

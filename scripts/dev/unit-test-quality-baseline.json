@@ -119,7 +119,6 @@
     "ui/src/features/dashboard/marketing/lib/propertyBindingMedia.ts",
     "ui/src/features/dashboard/marketing/lib/renderMarketingVideoThumbnail.ts",
     "ui/src/features/dashboard/marketing/lib/video/applyGuestReviewToVideoProject.ts",
-    "ui/src/features/dashboard/marketing/lib/video/importVideoMusic.ts",
     "ui/src/features/dashboard/marketing/lib/video/videoAiProjectBuilder.ts",
     "ui/src/features/dashboard/marketing/lib/video/videoCategories.ts",
     "ui/src/features/dashboard/marketing/lib/video/videoFormatDimensions.ts",

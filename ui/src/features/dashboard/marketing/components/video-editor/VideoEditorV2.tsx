@@ -6,11 +6,11 @@ import {
   LayoutTemplate,
   Loader2,
   Maximize2,
+  Mic,
+  Subtitles,
   Minimize2,
   Music2,
   Redo2,
-  RotateCcw,
-  Scaling,
   Send,
   SlidersHorizontal,
   Sparkles,
@@ -26,7 +26,11 @@ import { usePublicPropertyDetail } from '@/features/guest/marketing/properties/h
 
 import { MarketingTemplateBrowser } from '@/features/dashboard/marketing/components/library/MarketingTemplateBrowser';
 import type { MarketingTemplatePick } from '@/features/dashboard/marketing/components/library/MarketingTemplateBrowser';
-import { MarketingMediaLibrary } from '@/features/dashboard/marketing/components/media-library/MarketingMediaLibrary';
+import {
+  MarketingMediaLibrary,
+  type MediaLibraryTab,
+} from '@/features/dashboard/marketing/components/media-library/MarketingMediaLibrary';
+import type { InstagramPickerConfig } from '@/features/dashboard/marketing/components/media-library/music/InstagramMusicPanel';
 import {
   MarketingAiGeneratePanel,
   type MarketingAiGenerateInput,
@@ -36,7 +40,6 @@ import type {
   MarketingEditorDocument,
   MarketingEditorNav,
 } from '@/features/dashboard/marketing/components/shared/MarketingEditorHost';
-import { MarketingEditorMobileToolbar } from '@/features/dashboard/marketing/components/shared/MarketingEditorMobileToolbar';
 import {
   MarketingEditorInspector,
   MarketingEditorRail,
@@ -48,11 +51,25 @@ import { MarketingReplaceTemplateDialog } from '@/features/dashboard/marketing/c
 import { MarketingReviewSidebarSection } from '@/features/dashboard/marketing/components/shared/MarketingReviewSidebarSection';
 import { MarketingSizeDialog } from '@/features/dashboard/marketing/components/shared/MarketingSizeDialog';
 import { useMarketingTheme } from '@/features/dashboard/marketing/components/themes/MarketingThemeProvider';
+import { AutoCaptionsSheet } from '@/features/dashboard/marketing/components/video-editor/v2/AutoCaptionsSheet';
+import { EditCaptionsSheet } from '@/features/dashboard/marketing/components/video-editor/v2/EditCaptionsSheet';
 import type { InspectorActions } from '@/features/dashboard/marketing/components/video-editor/v2/inspector/InspectorShared';
 import {
   VideoInspectorV2,
   inspectorTitle,
 } from '@/features/dashboard/marketing/components/video-editor/v2/inspector/VideoInspectorV2';
+import { InstagramSongCard } from '@/features/dashboard/marketing/components/video-editor/v2/InstagramSongCard';
+import {
+  PANEL_ACTIONS,
+  VideoClipPanel,
+} from '@/features/dashboard/marketing/components/video-editor/v2/mobile/VideoClipPanel';
+import { VideoExportSheet } from '@/features/dashboard/marketing/components/video-editor/v2/mobile/VideoExportSheet';
+import { VideoLandscapeHint } from '@/features/dashboard/marketing/components/video-editor/v2/mobile/VideoLandscapeHint';
+import { VideoRecordPanel } from '@/features/dashboard/marketing/components/video-editor/v2/mobile/VideoRecordPanel';
+import { VideoTextPickPanel } from '@/features/dashboard/marketing/components/video-editor/v2/mobile/VideoTextPickPanel';
+import { VideoToolStrip } from '@/features/dashboard/marketing/components/video-editor/v2/mobile/VideoToolStrip';
+import { VideoTrimPanel } from '@/features/dashboard/marketing/components/video-editor/v2/mobile/VideoTrimPanel';
+import { TextPresetGrid } from '@/features/dashboard/marketing/components/video-editor/v2/TextPresetGrid';
 import { VideoTimelineV2 } from '@/features/dashboard/marketing/components/video-editor/v2/timeline/VideoTimelineV2';
 import { useVideoEditorShortcutsV2 } from '@/features/dashboard/marketing/components/video-editor/v2/useVideoEditorShortcutsV2';
 import { useVideoTransportV2 } from '@/features/dashboard/marketing/components/video-editor/v2/useVideoTransportV2';
@@ -60,11 +77,11 @@ import {
   VideoExportDialog,
   type VideoExportState,
 } from '@/features/dashboard/marketing/components/video-editor/v2/VideoExportDialog';
-import { VideoMobileActionBar } from '@/features/dashboard/marketing/components/video-editor/v2/VideoMobileActionBar';
 import {
   VideoPreviewV2,
   type VideoPreviewV2Handle,
 } from '@/features/dashboard/marketing/components/video-editor/v2/VideoPreviewV2';
+import { useAutoCaptions } from '@/features/dashboard/marketing/hooks/useAutoCaptions';
 import {
   useResolveDefaultVideoMusic,
   type SetMusic,
@@ -84,6 +101,8 @@ import {
   useVideoProjectHistory,
   useVideoProjectHistoryShortcuts,
 } from '@/features/dashboard/marketing/hooks/useVideoProjectHistory';
+import { useVideoVoiceover } from '@/features/dashboard/marketing/hooks/useVideoVoiceover';
+import { isVoiceRecordingSupported } from '@/features/dashboard/marketing/hooks/useVoiceRecorder';
 import type { DesignBinding } from '@/features/dashboard/marketing/lib/designCanvasTypes';
 import { blobToDataUrl } from '@/features/dashboard/marketing/lib/exportVideoMedia';
 import { exportVideoV2, VideoExportError } from '@/features/dashboard/marketing/lib/exportVideoV2';
@@ -110,6 +129,7 @@ import {
 import { fetchMarketingMediaPage } from '@/features/dashboard/marketing/lib/media/marketingMediaApi';
 import type { MediaDragPayload } from '@/features/dashboard/marketing/lib/media/mediaDrag';
 import { hasMediaDrag, readMediaDrag } from '@/features/dashboard/marketing/lib/media/mediaDrag';
+import type { MusicTrack } from '@/features/dashboard/marketing/lib/music/musicTypes';
 import {
   propertyGalleryMediaItems,
   propertyMediaItems,
@@ -127,7 +147,20 @@ import {
 import { isReviewVideoTemplate } from '@/features/dashboard/marketing/lib/video/applyGuestReviewToVideoProject';
 import { applyGuestReviewToVideoProjectV2 } from '@/features/dashboard/marketing/lib/video/v2/applyGuestReviewToVideoProjectV2';
 import { applyCanvasPatch } from '@/features/dashboard/marketing/lib/video/v2/canvasPatch';
+import { withCaptionText } from '@/features/dashboard/marketing/lib/video/v2/captionLines';
+import { countCaptionSources } from '@/features/dashboard/marketing/lib/video/v2/captions/captionAudio';
 import {
+  captionLinesOf,
+  deleteAllCaptions,
+  hasCaptions,
+  replaceCaptions,
+} from '@/features/dashboard/marketing/lib/video/v2/captions/captionOps';
+import {
+  captionStyleOf,
+  withCaptionStyle,
+} from '@/features/dashboard/marketing/lib/video/v2/captionStyle';
+import {
+  audioItemFromPayload,
   clipboardFor,
   duplicateItems,
   itemLabel,
@@ -136,10 +169,11 @@ import {
   insertPayload,
   TEXT_PRESETS,
   textPresetById,
+  visibleFrameForText,
   type TextPresetId,
 } from '@/features/dashboard/marketing/lib/video/v2/editorCommands';
 import {
-  cacheJamendoAudioForExport,
+  cacheCatalogAudioForExport,
   remapAudioUrls,
 } from '@/features/dashboard/marketing/lib/video/v2/exportAudio';
 import { migrateVideoProjectV1 } from '@/features/dashboard/marketing/lib/video/v2/migrateVideoProjectV1';
@@ -148,12 +182,20 @@ import {
   noticeForFailure,
 } from '@/features/dashboard/marketing/lib/video/v2/opNotices';
 import {
+  DEFAULT_PHONE_TOOL_OPTIONS,
+  selectionKind,
+  toolsForSelection,
+  type PhoneToolAction,
+  type PhoneToolOptions,
+} from '@/features/dashboard/marketing/lib/video/v2/phoneTools';
+import {
   buildDefaultProjectV2,
   loadProjectV2,
   withResolvedMusic,
   type LoadedProjectV2,
 } from '@/features/dashboard/marketing/lib/video/v2/projectLoad';
 import type { ShortcutCommand } from '@/features/dashboard/marketing/lib/video/v2/shortcuts';
+import { lookColorsFromPalette } from '@/features/dashboard/marketing/lib/video/v2/textLooks';
 import {
   deleteItems,
   findItem,
@@ -161,6 +203,8 @@ import {
   moveItem,
   pasteItems,
   setPlaybackRate,
+  separateSound,
+  setSourceWindow,
   setTransition,
   splitItems,
   trimItem,
@@ -168,11 +212,6 @@ import {
   type ClipboardEntry,
   type OpResult,
 } from '@/features/dashboard/marketing/lib/video/v2/timelineOps';
-import {
-  MAX_ZOOM,
-  MIN_ZOOM,
-  stepZoom,
-} from '@/features/dashboard/marketing/lib/video/v2/timelineScale';
 import {
   allItems,
   itemEnd,
@@ -182,6 +221,9 @@ import {
 import {
   isAudioItem,
   isMediaItem,
+  type AudioItem,
+  type CaptionItem,
+  type InstagramSong,
   type VideoItem,
   type VideoProjectV2,
 } from '@/features/dashboard/marketing/lib/video/v2/videoProjectV2Types';
@@ -205,7 +247,8 @@ import { registerVideoThumbnailPlaybackPause } from '@/features/dashboard/market
 import { useOrgContext } from '@/features/dashboard/org/components/RequireOrgContext';
 import { useOrgSettings } from '@/features/dashboard/org/hooks/useOrgSettings';
 import { usePropertyIdParam } from '@/features/dashboard/org/lib/adminApiScope';
-import { TierBadge, TierBadgeAnchor } from '@/features/dashboard/plans/components/TierBadge';
+import { propertyInboxPath } from '@/features/dashboard/org/lib/tenantPaths';
+import { TierBadgeAnchor } from '@/features/dashboard/plans/components/TierBadge';
 import { useUpgradeModal } from '@/features/dashboard/plans/components/UpgradeModalProvider';
 import { useFeatureGate } from '@/features/dashboard/plans/hooks/useFeatureGate';
 
@@ -223,6 +266,8 @@ type VideoExportPayloadV2 = {
   project: VideoProjectV2;
   blob: Blob;
   dataUrl: string;
+  /** The song Instagram adds when this is posted as a Reel. */
+  instagramSong?: InstagramSong;
 };
 
 type Props = {
@@ -235,7 +280,10 @@ const DEFAULT_VIDEO_TEMPLATE = 'quiet-morning';
 const VIDEO_FORMATS = new Set<string>(Object.keys(VIDEO_FORMAT_DIMENSIONS));
 /** Below this width the library starts closed so the preview and timeline keep their room. */
 const WIDE_LAYOUT_PX = 1536;
-const PREVIEW_MIN_HEIGHT_CLASS = 'min-h-[220px] lg:min-h-[280px]';
+// Small on phones so a short screen (an iPhone SE) still fits panel, timeline and tools.
+// Phone floor rises slightly once chrome is dense, so a short SE still keeps a readable preview.
+const PREVIEW_MIN_HEIGHT_CLASS =
+  'min-h-[min(140px,22dvh)] sm:min-h-[220px] lg:min-h-[280px]';
 const EDITOR_PANELS = new Set(['media', 'text', 'templates', 'reviews']);
 
 function asVideoFormat(value: unknown, fallback: VideoFormat): VideoFormat {
@@ -268,7 +316,7 @@ function loadedFromRecord(
 }
 
 export function VideoEditorV2({ document, nav, onPublish }: Props) {
-  const { property, org } = useOrgContext();
+  const { property, org, orgSlug } = useOrgContext();
   const propertyId = usePropertyIdParam();
   const { data: orgSettings } = useOrgSettings();
   const { active: activeTheme } = useMarketingTheme();
@@ -318,6 +366,21 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
   );
   const [inspectorOpen, setInspectorOpen] = useState(!isBelowLg);
   const [mobilePanel, setMobilePanel] = useState<string | null>(null);
+  /** Phone: the tool whose panel is open above the tool strip. */
+  const [phoneAction, setPhoneAction] = useState<PhoneToolAction | null>(null);
+  const [exportSheetOpen, setExportSheetOpen] = useState(false);
+  /** The next library pick becomes the sound of a video, not a clip. */
+  const [pickSoundMode, setPickSoundMode] = useState(false);
+  /** Which media library tab to land on; the nonce re-applies it when the panel is already open. */
+  const [mediaTabRequest, setMediaTabRequest] = useState<{
+    tab: MediaLibraryTab;
+    nonce: number;
+  } | null>(null);
+  const [voiceOpen, setVoiceOpen] = useState(false);
+  const [captionsSheet, setCaptionsSheet] = useState<'make' | 'edit' | null>(null);
+  const autoCaptions = useAutoCaptions();
+  /** Phone: the next library pick goes on top of the video instead of onto the main row. */
+  const pickOnTopRef = useRef(false);
   const [sizeOpen, setSizeOpen] = useState(false);
   const [pendingTemplate, setPendingTemplate] = useState<
     (MarketingTemplatePick & { name: string }) | null
@@ -673,6 +736,14 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
     [isBelowLg]
   );
 
+  const openMediaTab = useCallback(
+    (tab: MediaLibraryTab) => {
+      setMediaTabRequest((prev) => ({ tab, nonce: (prev?.nonce ?? 0) + 1 }));
+      openRailPanel('media');
+    },
+    [openRailPanel]
+  );
+
   const handleSelect = useCallback(
     (ids: string[]) => {
       setSelectedIds(ids);
@@ -717,28 +788,86 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
         }
         setReplaceTargetId(null);
       }
+      if (pickSoundMode) {
+        setPickSoundMode(false);
+        if (payload.kind !== 'video') {
+          toast.message('Pick a video to use its sound.');
+          return;
+        }
+        const sound: AudioItem = {
+          ...audioItemFromPayload(payload, { fps: current.fps, from: currentFrameRef.current }),
+          role: 'sound',
+          volume: 1,
+          label: 'Sound',
+          title: payload.title,
+        };
+        apply((p) => insertItem(p, sound, { kind: 'audio', atFrame: currentFrameRef.current }));
+        if (isBelowLg) setMobilePanel(null);
+        return;
+      }
+      const onTop = pickOnTopRef.current;
       handleDropMedia(payload, {
         frame: currentFrameRef.current,
         trackId: null,
-        onMain: payload.kind !== 'audio',
+        onMain: payload.kind !== 'audio' && !onTop,
       });
-      if (isBelowLg) setMobilePanel(null);
+      pickOnTopRef.current = false;
+      if (isBelowLg) {
+        setMobilePanel(null);
+        // The sheet closes after each pick; one tap brings it back for the next photo.
+        toast.success('Added', {
+          // Long enough to read and reach for the button.
+          duration: 7000,
+          action: {
+            label: 'Add more',
+            onClick: () => {
+              pickOnTopRef.current = onTop;
+              openRailPanel('media');
+            },
+          },
+        });
+      } else if (payload.kind === 'audio') {
+        // Music and sound leave the preview clear so Download and the timeline stay reachable.
+        setRailPanel(null);
+      }
     },
-    [apply, handleDropMedia, isBelowLg, replaceTargetId]
+    [apply, handleDropMedia, isBelowLg, openRailPanel, pickSoundMode, replaceTargetId]
   );
 
   const handleAddText = useCallback(
     (presetId: TextPresetId) => {
       const item = layerItemFromPreset(textPresetById(presetId), {
         from: currentFrameRef.current,
+        colors: lookColorsFromPalette(projectRef.current?.palette),
       });
       apply((current) =>
         insertItem(current, item, { kind: 'text', atFrame: currentFrameRef.current })
       );
-      if (isBelowLg) setMobilePanel(null);
-      openEditPanel();
+      // Show the new text, not a box around a clip that is still fading in.
+      transport.pause();
+      transport.seek(visibleFrameForText(item));
+      if (isBelowLg) {
+        setMobilePanel(null);
+        setPhoneAction('clip-edit');
+      } else {
+        openEditPanel();
+      }
     },
-    [apply, isBelowLg, openEditPanel]
+    [apply, isBelowLg, openEditPanel, transport]
+  );
+
+  /** A second tap on text or a caption on the preview: edit its words. */
+  const handleEditText = useCallback(
+    (itemId: string) => {
+      setSelectedIds([itemId]);
+      if (isBelowLg) {
+        setVoiceOpen(false);
+        setPhoneAction('clip-edit');
+      } else {
+        openEditPanel();
+      }
+    },
+    [isBelowLg, openEditPanel]
   );
 
   const startReplace = useCallback(
@@ -814,6 +943,10 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
         ? {
             project,
             typography: templateTypography,
+            lookColors: lookColorsFromPalette(project.palette),
+            captionStyle: captionStyleOf(project),
+            setCaptionStyle: (style) =>
+              changeProject((current) => withCaptionStyle(current, style)),
             update: (id, fn) => apply((p) => updateItem(p, id, fn)),
             trim: (id, edge, frame) => apply((p) => trimItem(p, id, edge, frame)),
             moveTo: (id, frame) => apply((p) => moveItem(p, id, { frame })),
@@ -856,7 +989,7 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
     exportAbortRef.current = controller;
     setExportState({ phase: 'preparing', progress: 0 });
     try {
-      const audio = await cacheJamendoAudioForExport(current, propertyId);
+      const audio = await cacheCatalogAudioForExport(current, propertyId);
       if (controller.signal.aborted) throw new VideoExportError('cancelled', 'Export cancelled');
       if (audio.cached.size > 0) {
         // Keep the Storage copy on the saved project so the next export skips the download.
@@ -908,6 +1041,11 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
     link.click();
     window.document.body.removeChild(link);
     URL.revokeObjectURL(url);
+    if (projectRef.current?.instagramSong) {
+      toast.message('Your Instagram song is not in this download', {
+        description: 'Instagram adds it when you post the video as a Reel.',
+      });
+    }
   }, [
     canEditContent,
     canUseMarketingStudio,
@@ -935,6 +1073,7 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
         project: current,
         blob,
         dataUrl: await blobToDataUrl(blob),
+        instagramSong: current.instagramSong,
       });
     } catch {
       toast.error('Video export failed');
@@ -1204,14 +1343,34 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
     selectedLocation &&
     (isMediaItem(selectedLocation.item) || isAudioItem(selectedLocation.item))
   );
-  const showClipActions = isBelowLg && selectedIds.length > 0 && !mobilePanel;
+  const selection = project ? selectionKind(project, selectedIds) : 'none';
+  const selectedItem = selectedLocation?.item ?? null;
+  const phoneToolOptions = useMemo<PhoneToolOptions>(
+    () => ({
+      ...DEFAULT_PHONE_TOOL_OPTIONS,
+      canGenerate,
+      soundTools: true,
+      voice: isVoiceRecordingSupported(),
+      captions: canGenerate,
+      hasCaptions: project ? hasCaptions(project) : false,
+    }),
+    [canGenerate, project]
+  );
+  const disabledPhoneActions = useMemo(() => {
+    const disabled = new Set<PhoneToolAction>();
+    if (!canSplitSelection) disabled.add('clip-split');
+    if (!canReplaceSelection) disabled.add('clip-replace');
+    return disabled;
+  }, [canSplitSelection, canReplaceSelection]);
 
   const replaceTarget = replaceTargetId && project ? findItem(project, replaceTargetId) : null;
   const replaceKinds = replaceTarget
     ? isAudioItem(replaceTarget.item)
       ? (['audio'] as const)
       : (['image', 'video'] as const)
-    : undefined;
+    : pickSoundMode
+      ? (['video'] as const)
+      : undefined;
 
   const sizeDialog = (
     <MarketingSizeDialog
@@ -1231,6 +1390,209 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
       onOpenChange={isBelowLg ? setSizeOpen : undefined}
       hideTrigger={isBelowLg}
     />
+  );
+
+  const makeCaptions = useCallback(
+    async (options: Parameters<typeof autoCaptions.run>[1]) => {
+      const current = projectRef.current;
+      if (!current || !canEditContent) return;
+      playerRef.current?.pause();
+      const lines = await autoCaptions.run(current, options);
+      if (!lines) return;
+      apply((p) => replaceCaptions(p, lines));
+      setCaptionsSheet(null);
+      toast.success('Captions added');
+    },
+    [apply, autoCaptions, canEditContent]
+  );
+
+  const deleteCaptions = useCallback(() => {
+    apply((p) => deleteAllCaptions(p));
+    setCaptionsSheet(null);
+    setSelectedIds([]);
+    toast.message('Captions deleted', { action: { label: 'Undo', onClick: undo } });
+  }, [apply, undo]);
+
+  const handlePhoneAction = useCallback(
+    (action: PhoneToolAction) => {
+      if (action === 'clip-trim' || PANEL_ACTIONS.has(action)) {
+        setPhoneAction((current) => (current === action ? null : action));
+        return;
+      }
+      setPhoneAction(null);
+      setVoiceOpen(false);
+      pickOnTopRef.current = false;
+      setPickSoundMode(false);
+      switch (action) {
+        case 'clip-split':
+          handleCommand({ type: 'split' });
+          return;
+        case 'clip-duplicate':
+          handleCommand({ type: 'duplicate' });
+          return;
+        case 'clip-delete':
+          handleCommand({ type: 'delete', ripple: false });
+          return;
+        case 'clip-replace':
+          if (selectedIds[0]) startReplace(selectedIds[0]);
+          return;
+        case 'clip-separate-sound':
+          if (selectedIds[0]) {
+            const id = selectedIds[0];
+            apply((current) => separateSound(current, id));
+          }
+          return;
+        case 'audio-from-video':
+          setPickSoundMode(true);
+          openRailPanel('media');
+          return;
+        case 'audio-record':
+          setVoiceOpen(true);
+          return;
+        case 'captions-make':
+          autoCaptions.reset();
+          setCaptionsSheet('make');
+          return;
+        case 'captions-edit':
+          setCaptionsSheet('edit');
+          return;
+        case 'captions-delete':
+          deleteCaptions();
+          return;
+        case 'text-add':
+        case 'text-styles':
+          setSelectedIds([]);
+          setPhoneAction('text-pick');
+          return;
+        case 'clip-more':
+          setMobilePanel('edit');
+          return;
+        case 'audio-music':
+          openMediaTab('music');
+          return;
+        case 'audio-upload':
+          openMediaTab('audio');
+          return;
+        case 'media-add':
+          openRailPanel('media');
+          return;
+        case 'media-add-on-top':
+          pickOnTopRef.current = true;
+          openRailPanel('media');
+          return;
+        case 'open-templates':
+          openRailPanel('templates');
+          return;
+        case 'open-reviews':
+          openRailPanel('reviews');
+          return;
+        case 'open-size':
+          setSizeOpen(true);
+          return;
+        case 'open-background':
+          setSelectedIds([]);
+          setMobilePanel('edit');
+          return;
+        case 'open-ai':
+          setAiGenerateOpen(true);
+          return;
+        case 'open-reset':
+          handleResetProject();
+          return;
+        case 'open-guide':
+          setShowSafeArea((value) => !value);
+          return;
+        default:
+          return;
+      }
+    },
+    [
+      apply,
+      autoCaptions,
+      deleteCaptions,
+      handleAddText,
+      handleCommand,
+      handleResetProject,
+      openMediaTab,
+      openRailPanel,
+      selectedIds,
+      startReplace,
+    ]
+  );
+
+  // A panel only stays open while its tool still belongs to the selected clip.
+  // text-pick is a root action (no clip selected), so it is always valid while open.
+  const phoneActionApplies = Boolean(
+    phoneAction &&
+    (phoneAction === 'text-pick'
+      ? true
+      : phoneAction === 'clip-trim'
+        ? selection === 'video'
+        : toolsForSelection(selection, phoneToolOptions).some(
+            (tool) => tool.action === phoneAction
+          ))
+  );
+  useEffect(() => {
+    if (phoneAction && !phoneActionApplies) setPhoneAction(null);
+  }, [phoneAction, phoneActionApplies]);
+  useEffect(() => {
+    if (!mobilePanel) pickOnTopRef.current = false;
+  }, [mobilePanel]);
+
+  const {
+    recorder,
+    muteWhileRecording,
+    setMuteWhileRecording,
+    saving: savingVoice,
+    start: handleStartRecording,
+  } = useVideoVoiceover({
+    projectRef,
+    currentFrameRef,
+    playerRef,
+    isPlaying,
+    canEdit: canEditContent,
+    pausePlayback: transport.pause,
+    seek: transport.seek,
+    apply,
+    // The take is on the timeline: put the recorder away so the voice tools show.
+    onSaved: () => setVoiceOpen(false),
+  });
+
+  const phoneTopActions = (
+    <>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="admin-overflow-trigger"
+        aria-label="Undo"
+        disabled={!canUndo}
+        onClick={undo}
+      >
+        <Undo2 className="size-4" aria-hidden />
+      </Button>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="admin-overflow-trigger"
+        aria-label="Redo"
+        disabled={!canRedo}
+        onClick={redo}
+      >
+        <Redo2 className="size-4" aria-hidden />
+      </Button>
+      {canEditContent || (onPublish && canPublish) ? (
+        <Button
+          type="button"
+          className="relative ml-1 h-8 min-h-0 px-3 text-xs before:absolute before:-inset-x-1 before:-inset-y-2 before:content-['']"
+          disabled={!hasProject || exporting}
+          onClick={() => setExportSheetOpen(true)}
+        >
+          Export
+        </Button>
+      ) : null}
+    </>
   );
 
   const topBarActions = (
@@ -1267,6 +1629,56 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
     </>
   );
 
+  const handlePickInstagramSong = useCallback(
+    (track: MusicTrack) => {
+      changeProject((p) => ({
+        ...p,
+        instagramSong: {
+          audioId: track.id,
+          title: track.title,
+          artist: track.artist,
+          imageUrl: track.imageUrl,
+          durationSec: track.durationSec,
+          volume: p.instagramSong?.volume ?? 100,
+        },
+      }));
+      toast.success('Song set for Instagram', {
+        description: 'Instagram adds it when you post this video as a Reel.',
+      });
+      // Close the library so the song bar above the timeline is free to use (remove, volume).
+      if (isBelowLg) setMobilePanel(null);
+      else setRailPanel(null);
+    },
+    [changeProject, isBelowLg]
+  );
+
+  const handleRemoveInstagramSong = useCallback(() => {
+    changeProject((p) => {
+      const { instagramSong: _removed, ...rest } = p;
+      return rest;
+    });
+  }, [changeProject]);
+
+  // Instagram songs only matter for a post, so the tab appears only for people who can publish.
+  const instagramMusic = useMemo<InstagramPickerConfig | null>(
+    () =>
+      onPublish && canPublish
+        ? {
+            selectedAudioId: project?.instagramSong?.audioId ?? null,
+            onPick: handlePickInstagramSong,
+            connectHref: propertyInboxPath(orgSlug, property.slug),
+          }
+        : null,
+    [
+      canPublish,
+      handlePickInstagramSong,
+      onPublish,
+      orgSlug,
+      project?.instagramSong?.audioId,
+      property.slug,
+    ]
+  );
+
   const mediaPanel = (
     <div className="flex min-h-0 flex-1 flex-col gap-3">
       {replaceTarget ? (
@@ -1289,26 +1701,20 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
         allowedKinds={replaceKinds ? [...replaceKinds] : undefined}
         propertyItems={propertyImages}
         includeMusic
+        instagramMusic={replaceTarget || pickSoundMode ? null : instagramMusic}
+        tabRequest={mediaTabRequest}
         onPick={handlePickMedia}
       />
     </div>
   );
 
   const textPanel = (
-    <div className="grid gap-2">
-      {TEXT_PRESETS.map((preset) => (
-        <Button
-          key={preset.id}
-          type="button"
-          variant="outline"
-          className="min-h-[44px] justify-start"
-          disabled={!canEditContent || !hasProject}
-          onClick={() => handleAddText(preset.id)}
-        >
-          {preset.label}
-        </Button>
-      ))}
-    </div>
+    <TextPresetGrid
+      presets={TEXT_PRESETS}
+      colors={lookColorsFromPalette(project?.palette)}
+      disabled={!canEditContent || !hasProject}
+      onPick={handleAddText}
+    />
   );
 
   const templatesPanel = (
@@ -1337,13 +1743,64 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
     />
   );
 
+  const audioPanel = (
+    <div className="space-y-3">
+      {isVoiceRecordingSupported() ? (
+        <VideoRecordPanel
+          phase={recorder.phase}
+          count={recorder.count}
+          elapsedMs={recorder.elapsedMs}
+          level={recorder.level}
+          error={recorder.error}
+          saving={savingVoice}
+          muteWhileRecording={muteWhileRecording}
+          readOnly={!canEditContent}
+          onMuteChange={setMuteWhileRecording}
+          onStart={handleStartRecording}
+          onStop={recorder.stop}
+          onCancel={recorder.cancel}
+          onClose={() => setRailPanel(null)}
+        />
+      ) : null}
+      <Button
+        type="button"
+        variant="outline"
+        className="min-h-[44px] w-full justify-start"
+        disabled={!canEditContent || !hasProject}
+        onClick={() => openMediaTab('music')}
+      >
+        Music
+      </Button>
+      <Button
+        type="button"
+        variant="outline"
+        className="min-h-[44px] w-full justify-start"
+        disabled={!canEditContent || !hasProject}
+        onClick={() => {
+          setPickSoundMode(true);
+          openRailPanel('media');
+        }}
+      >
+        Sound from a video
+      </Button>
+    </div>
+  );
+
   const railSections: MarketingRailSection[] = [
-    { key: 'media', label: 'Media', icon: Music2, panel: mediaPanel, title: 'Media library' },
+    { key: 'media', label: 'Media', icon: Music2, panel: mediaPanel, title: 'Your media' },
+    { key: 'audio', label: 'Audio', icon: Mic, panel: audioPanel, title: 'Audio' },
     { key: 'text', label: 'Text', icon: Type, panel: textPanel, title: 'Add text' },
     { key: 'templates', label: 'Templates', icon: LayoutTemplate, panel: templatesPanel },
     { key: 'reviews', label: 'Reviews', icon: Star, panel: reviewsPanel, title: 'Guest reviews' },
     ...(canGenerate
       ? [
+          {
+            key: 'captions',
+            label: 'Captions',
+            icon: Subtitles,
+            panel: null,
+            onActivate: () => setCaptionsSheet(project && hasCaptions(project) ? 'edit' : 'make'),
+          },
           {
             key: 'ai',
             label: 'AI',
@@ -1441,13 +1898,13 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
               size="icon"
               className="h-9 min-h-[44px] w-9 min-w-[44px]"
               onClick={() => setShowSafeArea((value) => !value)}
-              aria-label="Safe area guide"
+              aria-label="Screen guide"
               aria-pressed={showSafeArea}
             >
               <Frame className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Safe area guide</TooltipContent>
+          <TooltipContent>Screen guide</TooltipContent>
         </Tooltip>
         {!inspectorOpen ? (
           <>
@@ -1468,7 +1925,8 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
   );
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+      <VideoLandscapeHint />
       <MarketingEditorTopBar
         backLabel={nav.backLabel}
         onBack={handleBack}
@@ -1492,10 +1950,11 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
         }
         size={sizeDialog}
         actions={topBarActions}
+        phoneActions={phoneTopActions}
       />
       {isBelowLg ? sizeDialog : null}
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
+      <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
         {isBelowLg ? (
           <MarketingEditorRail
             layoutKey="video"
@@ -1509,10 +1968,11 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
             sections={railSections}
             active={railPanel}
             onActiveChange={setRailPanel}
+            panelMode="overlay"
           />
         )}
 
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain max-lg:pb-24 lg:overflow-hidden">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
           {project && inputProps ? (
             <>
               <div
@@ -1552,12 +2012,22 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
                   showSafeArea={showSafeArea}
                   readOnly={!canEditContent}
                   onSelect={handleCanvasSelect}
+                  onEditText={handleEditText}
                   onPatch={(patch) => changeProject((current) => applyCanvasPatch(current, patch))}
                   onGestureEnd={() => undefined}
                   onTogglePlay={transport.togglePlay}
                   onSeek={transport.seek}
                 />
               </div>
+              {project.instagramSong ? (
+                <InstagramSongCard
+                  className="mx-3 mb-2 shrink-0"
+                  song={project.instagramSong}
+                  propertyId={propertyId}
+                  readOnly={!canEditContent}
+                  onRemove={handleRemoveInstagramSong}
+                />
+              ) : null}
               <VideoTimelineV2
                 className="shrink-0"
                 project={project}
@@ -1566,8 +2036,6 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
                 selectedIds={selectedIds}
                 zoom={timelineZoom}
                 snapEnabled={snapEnabled}
-                canUndo={canUndo}
-                canRedo={canRedo}
                 readOnly={!canEditContent}
                 mobile={isBelowLg}
                 peaksFor={peaksFor}
@@ -1580,16 +2048,89 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
                 onToggleSnap={() => setSnapEnabled((value) => !value)}
                 onApply={apply}
                 onDropMedia={handleDropMedia}
-                handlers={{
+                  handlers={{
                   undo,
                   redo,
                   duplicate: () => handleCommand({ type: 'duplicate' }),
                   remove: (ripple) => handleCommand({ type: 'delete', ripple }),
-                  addText: () => openRailPanel('text'),
+                  addText: () => {
+                    if (isBelowLg) {
+                      setSelectedIds([]);
+                      setPhoneAction('text-pick');
+                      return;
+                    }
+                    openRailPanel('text');
+                  },
                   addMedia: () => openRailPanel('media'),
                   addAudio: () => openRailPanel('media'),
                 }}
               />
+              {isBelowLg ? (
+                <>
+                  {voiceOpen ? (
+                    <VideoRecordPanel
+                      phase={recorder.phase}
+                      count={recorder.count}
+                      elapsedMs={recorder.elapsedMs}
+                      level={recorder.level}
+                      error={recorder.error}
+                      saving={savingVoice}
+                      muteWhileRecording={muteWhileRecording}
+                      readOnly={!canEditContent}
+                      onMuteChange={setMuteWhileRecording}
+                      onStart={handleStartRecording}
+                      onStop={recorder.stop}
+                      onCancel={recorder.cancel}
+                      onClose={() => setVoiceOpen(false)}
+                    />
+                  ) : phoneActionApplies && phoneAction === 'text-pick' ? (
+                    <VideoTextPickPanel
+                      presets={TEXT_PRESETS}
+                      colors={lookColorsFromPalette(project.palette)}
+                      disabled={!canEditContent}
+                      onPick={handleAddText}
+                      onClose={() => setPhoneAction(null)}
+                    />
+                  ) : phoneActionApplies &&
+                    phoneAction === 'clip-trim' &&
+                    selectedItem?.type === 'video' ? (
+                    <VideoTrimPanel
+                      item={selectedItem}
+                      fps={project.fps}
+                      onApply={(start, end) =>
+                        apply((current) => setSourceWindow(current, selectedItem.id, start, end))
+                      }
+                      onClose={() => setPhoneAction(null)}
+                    />
+                  ) : phoneActionApplies && phoneAction && selectedItem && inspectorActions ? (
+                    <VideoClipPanel
+                      action={phoneAction}
+                      item={selectedItem}
+                      actions={inspectorActions}
+                      onClose={() => setPhoneAction(null)}
+                    />
+                  ) : null}
+                  {!canEditContent ? (
+                    <p className="text-muted-foreground border-border bg-card shrink-0 border-t px-4 py-2 text-center text-xs">
+                      View only
+                    </p>
+                  ) : null}
+                  <VideoToolStrip
+                    options={phoneToolOptions}
+                    selection={selection}
+                    activeAction={
+                      phoneAction === 'text-pick' ? 'text-add' : phoneAction
+                    }
+                    readOnly={!canEditContent}
+                    disabledActions={disabledPhoneActions}
+                    onAction={handlePhoneAction}
+                    onDone={() => {
+                      setSelectedIds([]);
+                      setPhoneAction(null);
+                    }}
+                  />
+                </>
+              ) : null}
             </>
           ) : (
             <div
@@ -1616,142 +2157,51 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
           onOpenChange={(open) =>
             isBelowLg ? setMobilePanel(open ? 'edit' : null) : setInspectorOpen(open)
           }
+          panelMode={isBelowLg ? 'push' : 'overlay'}
         >
           {settingsPanel}
         </MarketingEditorInspector>
       </div>
 
-      {/* Mobile editor dock (max-lg): sheets for Media / Text / Edit / Templates, AI, and ⋯. */}
-      {showClipActions ? (
-        <VideoMobileActionBar
-          canSplit={canSplitSelection}
-          canReplace={canReplaceSelection}
-          readOnly={!canEditContent}
-          onDone={() => setSelectedIds([])}
-          onSplit={() => handleCommand({ type: 'split' })}
-          onEdit={() => setMobilePanel('edit')}
-          onReplace={() => selectedIds[0] && startReplace(selectedIds[0])}
-          onDuplicate={() => handleCommand({ type: 'duplicate' })}
-          onDelete={() => handleCommand({ type: 'delete', ripple: false })}
-        />
-      ) : (
-        <MarketingEditorMobileToolbar
-          panels={[
-            { key: 'media', label: 'Media', icon: Music2 },
-            { key: 'text', label: 'Text', icon: Type },
-            { key: 'edit', label: 'Edit', icon: SlidersHorizontal },
-            { key: 'templates', label: 'Templates', icon: LayoutTemplate },
-            ...(canGenerate ? [{ key: 'ai', label: 'AI', icon: Sparkles }] : []),
-          ]}
-          activePanel={mobilePanel}
-          onSelectPanel={(key) => {
-            if (key === 'ai') {
-              setAiGenerateOpen(true);
-              return;
-            }
-            setMobilePanel(key);
-          }}
-          overflowItems={[
-            {
-              key: 'undo',
-              label: 'Undo',
-              icon: <Undo2 className="size-5" aria-hidden />,
-              disabled: !canUndo,
-              onSelect: undo,
-            },
-            {
-              key: 'redo',
-              label: 'Redo',
-              icon: <Redo2 className="size-5" aria-hidden />,
-              disabled: !canRedo,
-              onSelect: redo,
-            },
-            {
-              key: 'size',
-              label: 'Size',
-              icon: <Scaling className="size-5" aria-hidden />,
-              disabled: !hasProject,
-              onSelect: () => setSizeOpen(true),
-            },
-            {
-              key: 'reviews',
-              label: 'Guest reviews',
-              icon: <Star className="size-5" aria-hidden />,
-              onSelect: () => setMobilePanel('reviews'),
-            },
-            {
-              key: 'zoom-in',
-              label: 'Preview zoom in',
-              icon: <ZoomIn className="size-5" aria-hidden />,
-              disabled: relativeZoom >= VIDEO_MAX_RELATIVE_ZOOM,
-              onSelect: () => setRelativeZoom((prev) => stepVideoZoomIn(prev)),
-            },
-            {
-              key: 'zoom-out',
-              label: 'Preview zoom out',
-              icon: <ZoomOut className="size-5" aria-hidden />,
-              disabled: relativeZoom <= VIDEO_MIN_RELATIVE_ZOOM,
-              onSelect: () => setRelativeZoom((prev) => stepVideoZoomOut(prev)),
-            },
-            {
-              key: 'timeline-zoom-in',
-              label: 'Timeline zoom in',
-              icon: <ZoomIn className="size-5" aria-hidden />,
-              disabled: timelineZoom >= MAX_ZOOM,
-              onSelect: () => setTimelineZoom((prev) => stepZoom(prev, 1)),
-            },
-            {
-              key: 'timeline-zoom-out',
-              label: 'Timeline zoom out',
-              icon: <ZoomOut className="size-5" aria-hidden />,
-              disabled: timelineZoom <= MIN_ZOOM,
-              onSelect: () => setTimelineZoom((prev) => stepZoom(prev, -1)),
-            },
-            {
-              key: 'fit',
-              label: 'Fit to view',
-              icon: <Minimize2 className="size-5" aria-hidden />,
-              onSelect: handleFitToView,
-            },
-            {
-              key: 'fullscreen',
-              label: 'Fullscreen preview',
-              icon: <Maximize2 className="size-5" aria-hidden />,
-              onSelect: handleToggleFullscreen,
-            },
-            {
-              key: 'reset',
-              label: 'Reset to template',
-              icon: <RotateCcw className="size-5" aria-hidden />,
-              onSelect: handleResetProject,
-            },
-            ...(canEditContent
-              ? [
-                  {
-                    key: 'download',
-                    label: exporting ? 'Exporting…' : 'Download MP4',
-                    icon: <Download className="size-5" aria-hidden />,
-                    trailing: <TierBadge feature="marketingStudio" />,
-                    disabled: exporting || !hasProject,
-                    onSelect: () => void handleDownload(),
-                  },
-                ]
-              : []),
-            ...(onPublish && canPublish
-              ? [
-                  {
-                    key: 'publish',
-                    label: MARKETING_PUBLISH_META_LABEL,
-                    icon: <Send className="size-5" aria-hidden />,
-                    trailing: <TierBadge feature="marketingPublishLimitPerGroup" />,
-                    disabled: exporting || !hasProject,
-                    onSelect: () => void handlePublish(),
-                  },
-                ]
-              : []),
-          ]}
-        />
-      )}
+      <VideoExportSheet
+        open={exportSheetOpen}
+        onOpenChange={setExportSheetOpen}
+        exporting={exporting}
+        canDownload={canEditContent}
+        canPublish={Boolean(onPublish && canPublish)}
+        onDownload={() => void handleDownload()}
+        onPublish={() => void handlePublish()}
+      />
+
+      <AutoCaptionsSheet
+        open={captionsSheet === 'make'}
+        onOpenChange={(open) => setCaptionsSheet(open ? 'make' : null)}
+        counts={project ? countCaptionSources(project) : { voice: 0, video: 0 }}
+        replacing={project ? hasCaptions(project) : false}
+        busy={autoCaptions.busy}
+        phase={autoCaptions.phase}
+        error={autoCaptions.error}
+        onMake={(options) => void makeCaptions(options)}
+        onCancel={autoCaptions.cancel}
+        onUpgrade={() => openUpgradeModal('aiMarketingGeneration')}
+      />
+      <EditCaptionsSheet
+        open={captionsSheet === 'edit'}
+        onOpenChange={(open) => setCaptionsSheet(open ? 'edit' : null)}
+        lines={project ? captionLinesOf(project) : []}
+        fps={project?.fps ?? 30}
+        readOnly={!canEditContent}
+        onChangeText={(id, text) =>
+          apply((p) =>
+            updateItem(p, id, (item) => withCaptionText(item as CaptionItem, text, p.fps))
+          )
+        }
+        onMakeAgain={() => {
+          autoCaptions.reset();
+          setCaptionsSheet('make');
+        }}
+        onDeleteAll={deleteCaptions}
+      />
 
       <VideoExportDialog state={exportState} onCancel={() => exportAbortRef.current?.abort()} />
 

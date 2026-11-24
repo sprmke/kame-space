@@ -555,6 +555,7 @@ function dashboardStatsPayload() {
       periodDays: 31,
       checkInsToday: 0,
       checkOutsToday: 0,
+      stayingToday: 0,
       checkInsInPeriod: 0,
     },
     kpis: {
@@ -1100,7 +1101,12 @@ function marketingGenerationJobFixture(overrides: Record<string, unknown> = {}) 
   };
 }
 
-type ReviewsTab = 'received' | 'written' | 'to_write' | 'properties';
+type ReviewsTab = 'received' | 'written' | 'to_write';
+
+function parseReviewsMockTab(raw: string | null): ReviewsTab {
+  if (raw === 'written' || raw === 'to_write' || raw === 'received') return raw;
+  return 'received';
+}
 
 const REVIEW_CATEGORY_RATINGS = {
   cleanliness: 5,
@@ -1174,7 +1180,7 @@ function reviewsItems(tab: ReviewsTab) {
 
 function propertyReviewsPage(tab: ReviewsTab) {
   return {
-    tab: tab === 'properties' ? 'received' : tab,
+    tab,
     summary: reviewsSummary(),
     items: reviewsItems(tab),
     total: 1,
@@ -1187,11 +1193,20 @@ function orgReviewsPage(tab: ReviewsTab) {
     propertySlug: TEAM_E2E_PROPERTY_SLUG,
     propertyName: 'Solea Mactan',
   };
+  const listing2 = {
+    propertyId: TEAM_E2E_PROPERTY_ID_2,
+    propertySlug: TEAM_E2E_PROPERTY_SLUG_2,
+    propertyName: TEAM_E2E_PROPERTY_NAME_2,
+  };
   return {
-    tab: tab === 'properties' ? 'received' : tab,
+    tab,
     summary: {
       ...reviewsSummary(),
-      properties: [{ ...listing, count: 1, avgOverall: 5, responseRate: 0, dueCount: 1 }],
+      // Two listings so the org toolbar shows All listings and the feed shows Listing.
+      properties: [
+        { ...listing, count: 1, avgOverall: 5, responseRate: 0, dueCount: 1 },
+        { ...listing2, count: 0, avgOverall: null, responseRate: null, dueCount: 0 },
+      ],
     },
     items: reviewsItems(tab).map((item) => ({
       ...item,
@@ -1441,14 +1456,29 @@ export async function installPropertyTeamRbacMocks(
           data: { conversations: opts?.bookingChats ?? [] },
         });
         return;
+      case 'social-inbox-ensure-booking-chat':
+        await fulfillJson(route, {
+          success: true,
+          data: {
+            created: true,
+            conversation: {
+              id: 'conv-web-new',
+              platform: 'web',
+              participant_name: 'Jane Guest',
+              booking_id: 'booking-team-e2e-001',
+              match: 'booking',
+            },
+          },
+        });
+        return;
       case 'list-property-reviews': {
-        const tab = url.searchParams.get('tab') ?? 'received';
-        await fulfillJson(route, { success: true, data: propertyReviewsPage(tab as ReviewsTab) });
+        const tab = parseReviewsMockTab(url.searchParams.get('tab'));
+        await fulfillJson(route, { success: true, data: propertyReviewsPage(tab) });
         return;
       }
       case 'list-org-reviews': {
-        const tab = url.searchParams.get('tab') ?? 'received';
-        await fulfillJson(route, { success: true, data: orgReviewsPage(tab as ReviewsTab) });
+        const tab = parseReviewsMockTab(url.searchParams.get('tab'));
+        await fulfillJson(route, { success: true, data: orgReviewsPage(tab) });
         return;
       }
       case 'respond-to-guest-review':

@@ -19,13 +19,11 @@ export function orgReviewsQueryKey(orgSlug: string | null, tab: ReviewListTab, p
 export function useOrgReviews(
   tab: ReviewListTab,
   query: ReviewsQuery,
-  options: { enabled?: boolean; listingsOnly?: boolean } = {}
+  options: { enabled?: boolean } = {}
 ) {
   const orgSlug = useOrgSlugParam();
   const orgId = useResolvedOrgId();
   const search = reviewsQueryToApiParams(tab, query);
-  // The By-property tab only needs the rollup, so it skips the feed server-side.
-  if (options.listingsOnly) search.set('tab', 'properties');
   if (orgId) search.set('org_id', orgId);
   else if (orgSlug) search.set('org_slug', orgSlug);
   const params = search.toString();

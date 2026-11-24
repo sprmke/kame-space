@@ -2,6 +2,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MarketingOverflowMenu } from '@/features/dashboard/marketing/components/shared/MarketingOverflowMenu';
 import { formatItemTime } from '@/features/dashboard/marketing/lib/planner/plannerRange';
+import { describeClaimLines } from '@/features/dashboard/marketing/lib/planner/plannerRange';
 import {
   channelLabel,
   formatLabel,
@@ -23,7 +24,7 @@ type Props = {
   day: string;
   today: string;
   onOpen: (item: PlannerItemDto) => void;
-  /** Opens the editor for an item that already has a draft in progress. */
+  /** Opens the editor that finishes this item. */
   onOpenEditor?: (item: PlannerItemDto) => void;
   onSkip: (item: PlannerItemDto) => void;
   onMarkPosted: (item: PlannerItemDto) => void;
@@ -41,9 +42,17 @@ export function PlanItemCard({
   const view = planItemStatusView(item.status);
   const time = formatItemTime(item.scheduledFor);
   const manual = isManualChannel(item.channelKind);
+  const claimLine = describeClaimLines(item.claims)[0] ?? null;
+  const leadPhoto = item.brief.photoUrls?.[0] ?? null;
+  const why = item.brief.why?.trim() || null;
 
   const overflowItems = [];
   if (!readOnly) {
+    overflowItems.push({
+      id: 'details',
+      label: 'Edit details',
+      onSelect: () => onOpen(item),
+    });
     if (manual && item.status !== 'posted_manually') {
       overflowItems.push({
         id: 'posted',
@@ -60,24 +69,58 @@ export function PlanItemCard({
     }
   }
 
+  const runPrimary = () => {
+    if (view.action === 'fix') {
+      onOpen(item);
+      return;
+    }
+    if (view.action === 'share') {
+      onMarkPosted(item);
+      return;
+    }
+    // Make this / Continue / Open → Studio when available; else details sheet.
+    if (onOpenEditor && (view.action === 'create' || view.action === 'review')) {
+      onOpenEditor(item);
+      return;
+    }
+    onOpen(item);
+  };
+
   return (
     <article className="border-border/70 bg-card space-y-2.5 rounded-xl border p-3.5 sm:p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 space-y-0.5">
-          <p className="text-caption text-muted-foreground">
-            {[time, formatLabel(item.format), channelLabel(item.channelKind)]
-              .filter(Boolean)
-              .join(' · ')}
-          </p>
-          <h4 className="text-sm font-semibold leading-snug">{item.title}</h4>
+      <div className="flex items-start gap-3">
+        {leadPhoto ? (
+          <img
+            src={leadPhoto}
+            alt=""
+            className="border-border/60 size-12 shrink-0 rounded-lg border object-cover"
+          />
+        ) : null}
+        <div className="min-w-0 flex-1 space-y-0.5">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 space-y-0.5">
+              <p className="text-caption text-muted-foreground">
+                {[time, formatLabel(item.format), channelLabel(item.channelKind)]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </p>
+              <h4 className="text-sm font-semibold leading-snug">{item.title}</h4>
+            </div>
+            <Badge variant="outline" className={cn('shrink-0', TONE_CLASS[view.tone])}>
+              {view.label}
+            </Badge>
+          </div>
         </div>
-        <Badge variant="outline" className={cn('shrink-0', TONE_CLASS[view.tone])}>
-          {view.label}
-        </Badge>
       </div>
 
-      {item.brief.hook ? (
+      {why ? <p className="text-sm leading-snug text-foreground/90">{why}</p> : null}
+      {!why && item.brief.hook ? (
         <p className="text-sm leading-snug text-foreground/90">{item.brief.hook}</p>
+      ) : null}
+      {claimLine ? (
+        <p className="text-caption text-muted-foreground">
+          {claimLine}. We pause this if the dates book.
+        </p>
       ) : null}
       {item.statusReason ? (
         <p className="text-caption text-warning-foreground dark:text-warning">{item.statusReason}</p>
@@ -91,13 +134,13 @@ export function PlanItemCard({
       {!readOnly ? (
         <div className="flex items-center gap-2 pt-0.5">
           {view.actionLabel ? (
-            <Button
-              size="sm"
-              onClick={() =>
-                view.action === 'review' && onOpenEditor ? onOpenEditor(item) : onOpen(item)
-              }
-            >
+            <Button size="sm" onClick={runPrimary}>
               {view.actionLabel}
+            </Button>
+          ) : null}
+          {manual && view.phase !== 'done' ? (
+            <Button size="sm" variant="outline" onClick={() => onMarkPosted(item)}>
+              Share
             </Button>
           ) : null}
           {manual && item.manualTargets.length > 0 ? (

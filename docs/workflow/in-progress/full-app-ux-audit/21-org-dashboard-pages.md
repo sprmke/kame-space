@@ -2,7 +2,7 @@
 title: 'Audit 21: org dashboard pages'
 status: active
 tags: [audit, dashboard, org]
-updated: 2026-11-19
+updated: 2026-11-23
 ---
 
 # 21: Org dashboard pages
@@ -100,9 +100,9 @@ tab; door-code Save disabled until changed; mobile collapse/expand.
 
 ## Reviews
 
-**Works:** rating-breakdown dialog; tabs From guests / To write / About guests / By property; filters,
-search, sort, pagination; per-row Respond and overflow menu (open booking, use in marketing, report);
-1000-character response limit.
+**Works:** rating-breakdown dialog; tabs From guests / To write / About guests; Listing column + All
+listings filter (By property rollup tab removed); filters, search, sort, pagination; per-row Respond
+and overflow menu (open booking, use in marketing, report); 1000-character response limit.
 
 ### P2
 
@@ -113,7 +113,6 @@ search, sort, pagination; per-row Respond and overflow menu (open booking, use i
 ### P3
 
 - "Responded 0%" has no denominator.
-- The fourth mobile tab ("By property") clips at the right edge with no scroll hint.
 - AI draft fails locally with no fallback advice.
 
 ---

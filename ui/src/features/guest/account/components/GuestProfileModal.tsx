@@ -7,6 +7,7 @@ import {
 
 import { UnsavedChangesDialog } from '@/components/forms/UnsavedChangesDialog';
 import { AppInfoCard } from '@/components/pwa/AppInfoCard';
+import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import {
   ResponsiveModal,
@@ -81,6 +82,10 @@ export function GuestProfileModal({ open, onOpenChange }: GuestProfileModalProps
               formId={PROFILE_FORM_ID}
               onFormStateChange={setFormState}
             />
+            <div className="border-border/70 mt-6 space-y-3 border-t pt-4">
+              <p className="text-foreground text-sm font-semibold">Theme</p>
+              <ThemeToggle variant="segmented" className="w-full" />
+            </div>
             <AppInfoCard variant="embedded" className="mt-6" />
           </div>
 

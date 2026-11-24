@@ -1,6 +1,6 @@
 import {
   ensureVideoMusicForExport,
-  isJamendoStreamUrl,
+  isCatalogStreamUrl,
 } from '@/features/dashboard/marketing/lib/video/importVideoMusic';
 import { musicClipAsCue } from '@/features/dashboard/marketing/lib/video/v2/projectLoad';
 import {
@@ -9,12 +9,12 @@ import {
   type VideoProjectV2,
 } from '@/features/dashboard/marketing/lib/video/v2/videoProjectV2Types';
 
-/** Audio clips still pointing at a Jamendo stream, which the browser export cannot read. */
-export function jamendoStreamClips(project: VideoProjectV2): AudioItem[] {
+/** Audio clips still pointing at a Jamendo or Audius stream, which the browser export cannot read. */
+export function catalogStreamClips(project: VideoProjectV2): AudioItem[] {
   return project.tracks
     .flatMap((track) => track.items)
     .filter(isAudioItem)
-    .filter((item) => isJamendoStreamUrl(item.media.url));
+    .filter((item) => isCatalogStreamUrl(item.media.url));
 }
 
 /** Swap clip URLs (`string`) or drop clips (`null`). Unlisted clips are untouched. */
@@ -39,7 +39,7 @@ export function remapAudioUrls(
 }
 
 export type ExportAudioResult = {
-  /** What to render. Unreadable Jamendo clips are dropped. */
+  /** What to render. Unreadable catalog clips are dropped. */
   project: VideoProjectV2;
   /** Cached copies to keep on the saved project (clip id to Storage URL). */
   cached: Map<string, string>;
@@ -47,23 +47,21 @@ export type ExportAudioResult = {
 };
 
 /**
- * Jamendo's CDN blocks browser reads, so each stream clip is cached to Storage first. A clip that
- * cannot be cached is left out of the export (and reported) instead of failing the whole render.
+ * Jamendo's CDN blocks browser reads and Audius streams redirect, so each stream clip is cached to
+ * Storage first. A clip that cannot be cached is left out of the export (and reported) instead of
+ * failing the whole render.
  */
-export async function cacheJamendoAudioForExport(
+export async function cacheCatalogAudioForExport(
   project: VideoProjectV2,
   propertyId: string | null
 ): Promise<ExportAudioResult> {
-  const clips = jamendoStreamClips(project);
+  const clips = catalogStreamClips(project);
   const cached = new Map<string, string>();
   const changes = new Map<string, string | null>();
   let dropped = 0;
   for (const clip of clips) {
-    const { music, strippedJamendo } = await ensureVideoMusicForExport(
-      musicClipAsCue(clip),
-      propertyId
-    );
-    if (!strippedJamendo && music?.url) {
+    const { music, stripped } = await ensureVideoMusicForExport(musicClipAsCue(clip), propertyId);
+    if (!stripped && music?.url) {
       cached.set(clip.id, music.url);
       changes.set(clip.id, music.url);
     } else {

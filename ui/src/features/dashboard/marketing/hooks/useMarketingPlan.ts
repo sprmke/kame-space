@@ -1,8 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
-import { usePropertyIdParam } from '@/features/dashboard/org/lib/adminApiScope';
-import { captureAppEvent } from '@/lib/posthog/capture';
 import {
   fetchMarketingPlan,
   fetchPlannerSettings,
@@ -15,6 +13,9 @@ import {
   updatePlannerItem,
 } from '@/features/dashboard/marketing/lib/planner/plannerApi';
 import type { PlannerRange } from '@/features/dashboard/marketing/lib/planner/plannerRange';
+import { usePropertyIdParam } from '@/features/dashboard/org/lib/adminApiScope';
+
+import { captureAppEvent } from '@/lib/posthog/capture';
 
 export const marketingPlanQueryKey = (propertyId: string | null, range: PlannerRange) =>
   ['marketing-plan', propertyId, range] as const;

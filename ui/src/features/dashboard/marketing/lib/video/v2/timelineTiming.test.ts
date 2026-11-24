@@ -19,8 +19,15 @@ import {
   timelineFramesForSource,
   topmostVisualAt,
 } from '@/features/dashboard/marketing/lib/video/v2/timelineTiming';
-import { caption, clip, photo, project, song, track } from '@/features/dashboard/marketing/lib/video/v2/videoV2Fixtures';
 import { VIDEO_V2_FPS } from '@/features/dashboard/marketing/lib/video/v2/videoProjectV2Types';
+import {
+  caption,
+  clip,
+  photo,
+  project,
+  song,
+  track,
+} from '@/features/dashboard/marketing/lib/video/v2/videoV2Fixtures';
 
 describe('formatTimecode', () => {
   it('pads seconds and drops tenths by default', () => {

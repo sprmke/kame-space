@@ -19,9 +19,12 @@ import { useFinanceLineItems } from '@/features/dashboard/finance/hooks/useFinan
 import { buildFinanceChartData } from '@/features/dashboard/finance/lib/financeChartData';
 import { FINANCE_CHART_BOOKINGS_LIMIT } from '@/features/dashboard/finance/lib/financePeriod';
 import { DEFAULT_FINANCE_QUERY, type FinanceQuery } from '@/features/dashboard/finance/lib/types';
+import { useDashboardCompactChrome } from '@/features/dashboard/lib/dashboardChromeContext';
 import { propertySectionPath } from '@/features/dashboard/org/lib/tenantPaths';
 import { DashboardAttentionCard } from '@/features/dashboard/property/components/DashboardAttentionCard';
 import { DashboardMaintenanceRemindersCard } from '@/features/dashboard/property/components/DashboardMaintenanceRemindersCard';
+import { DashboardMessagesPulseCard } from '@/features/dashboard/property/components/DashboardMessagesPulseCard';
+import { DashboardRatesPulseCard } from '@/features/dashboard/property/components/DashboardRatesPulseCard';
 import { DashboardTransactionsDueCard } from '@/features/dashboard/property/components/DashboardTransactionsDueCard';
 import type {
   DashboardAttentionItem,
@@ -29,10 +32,10 @@ import type {
 } from '@/features/dashboard/property/lib/types';
 
 import { AdminSurfaceCardHeader } from '@/components/shared/AdminSurfaceCardHeader';
-import { useDashboardCompactChrome } from '@/features/dashboard/lib/dashboardChromeContext';
-
 import { useAfterFirstPaint } from '@/hooks/useAfterFirstPaint';
 import { formatDateRangeDisplay, fromIsoDate, type DatePreset } from '@/lib/date/navigation';
+
+const CALENDAR_SYNC_ATTENTION_ID = 'calendar-sync-attention';
 
 type Props = {
   from: string;
@@ -45,13 +48,17 @@ type Props = {
   attentionLoading?: boolean;
   canViewFinance?: boolean;
   canViewMaintenance?: boolean;
+  canViewInbox?: boolean;
+  canViewPricing?: boolean;
+  canEditRates?: boolean;
 };
 
 /**
- * Equal-width 2×3 board after KPIs:
- * Calendar         | Needs attention (or Recent bookings when clear)
- * Cash flow        | Breakdown
- * Maintenance      | Transactions
+ * Ops board after KPIs:
+ * Needs attention | Calendar
+ * Messages        | Rates (open nights + quick edit)
+ * Cash flow (full) when finance:view
+ * Transactions    | Maintenance
  */
 export function DashboardFinanceCalendarSection({
   from,
@@ -64,6 +71,9 @@ export function DashboardFinanceCalendarSection({
   attentionLoading,
   canViewFinance = true,
   canViewMaintenance = true,
+  canViewInbox = true,
+  canViewPricing = true,
+  canEditRates = false,
 }: Props) {
   const compactChrome = useDashboardCompactChrome();
   const rangeFrom = fromIsoDate(from);
@@ -72,6 +82,15 @@ export function DashboardFinanceCalendarSection({
     rangeFrom && rangeTo
       ? formatDateRangeDisplay(rangeFrom, rangeTo, datePreset, { compact: compactChrome })
       : '';
+
+  const syncConflictItem = useMemo(
+    () => attentionItems.find((item) => item.id === CALENDAR_SYNC_ATTENTION_ID) ?? null,
+    [attentionItems]
+  );
+  const opsAttentionItems = useMemo(
+    () => attentionItems.filter((item) => item.id !== CALENDAR_SYNC_ATTENTION_ID),
+    [attentionItems]
+  );
 
   const financeQuery = useMemo(
     (): FinanceQuery => ({
@@ -131,7 +150,19 @@ export function DashboardFinanceCalendarSection({
 
   return (
     <div className="grid min-w-0 items-stretch gap-2.5 sm:gap-3 lg:grid-cols-2 lg:gap-4">
-      <section className="surface-card flex h-full min-w-0 flex-col overflow-hidden p-3 sm:p-4">
+      {/* Mobile: attention first so urgent work is not below the calendar. */}
+      <DashboardAttentionCard
+        className="h-full max-lg:order-1 lg:order-none"
+        items={opsAttentionItems}
+        recentBookings={recentBookings}
+        orgSlug={orgSlug}
+        propertySlug={propertySlug}
+        viewAllHref={bookingsHref}
+        rangeLabel={rangeLabel}
+        isLoading={attentionLoading}
+      />
+
+      <section className="surface-card flex h-full min-w-0 flex-col overflow-hidden p-3 max-lg:order-2 sm:p-4 lg:order-none">
         <AdminSurfaceCardHeader
           icon={CalendarDays}
           title="Calendar"
@@ -160,20 +191,26 @@ export function DashboardFinanceCalendarSection({
         />
       </section>
 
-      <DashboardAttentionCard
-        className="h-full"
-        items={attentionItems}
-        recentBookings={recentBookings}
-        orgSlug={orgSlug}
-        propertySlug={propertySlug}
-        viewAllHref={bookingsHref}
-        rangeLabel={rangeLabel}
-        isLoading={attentionLoading}
-      />
+      {canViewInbox ? (
+        <DashboardMessagesPulseCard className="h-full max-lg:order-3 lg:order-none" />
+      ) : null}
+
+      {canViewPricing ? (
+        <DashboardRatesPulseCard
+          className="h-full max-lg:order-4 lg:order-none"
+          orgSlug={orgSlug}
+          propertySlug={propertySlug}
+          syncConflictItem={syncConflictItem}
+          enabled={ready}
+          canEditRates={canEditRates}
+        />
+      ) : null}
 
       {canViewFinance ? (
         <FinanceTransactionsChart
           embedded
+          showBreakdown={false}
+          cashFlowCardClassName="max-lg:order-5 lg:col-span-2 lg:order-none"
           isLoading={financeChartsLoading}
           cashFlowData={chartData.cashFlowData}
           incomeBreakdown={chartData.incomeBreakdown}
@@ -182,12 +219,9 @@ export function DashboardFinanceCalendarSection({
         />
       ) : null}
 
-      {canViewMaintenance ? (
-        <DashboardMaintenanceRemindersCard from={from} to={to} rangeLabel={rangeLabel} />
-      ) : null}
-
       {canViewFinance ? (
         <DashboardTransactionsDueCard
+          className="max-lg:order-6 lg:order-none"
           items={lineItemsQuery.data ?? []}
           from={from}
           to={to}
@@ -196,6 +230,15 @@ export function DashboardFinanceCalendarSection({
           transactionsHref={financeHref}
           isLoading={lineItemsQuery.isLoading}
           isRefreshing={lineItemsQuery.isFetching}
+        />
+      ) : null}
+
+      {canViewMaintenance ? (
+        <DashboardMaintenanceRemindersCard
+          className="max-lg:order-7 lg:order-none"
+          from={from}
+          to={to}
+          rangeLabel={rangeLabel}
         />
       ) : null}
     </div>

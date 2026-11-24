@@ -148,7 +148,10 @@ function normalizeProjectMusic(raw: Partial<VideoProjectMusic> | undefined): Vid
     title: typeof raw.title === 'string' ? raw.title : undefined,
     artist: typeof raw.artist === 'string' ? raw.artist : undefined,
     source:
-      raw.source === 'jamendo' || raw.source === 'upload' || raw.source === 'url'
+      raw.source === 'jamendo' ||
+      raw.source === 'audius' ||
+      raw.source === 'upload' ||
+      raw.source === 'url'
         ? raw.source
         : undefined,
     trackId: typeof raw.trackId === 'string' ? raw.trackId : undefined,
