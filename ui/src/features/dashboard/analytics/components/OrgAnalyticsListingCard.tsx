@@ -51,9 +51,14 @@ function Metric({
   );
 }
 
-function RevenueValue({ row }: { row: UnlockedRow }) {
+function RevenueValue({ row, stacked = false }: { row: UnlockedRow; stacked?: boolean }) {
   return (
-    <span className="inline-flex min-w-0 items-baseline gap-1.5">
+    <span
+      className={cn(
+        'inline-flex min-w-0 gap-1.5',
+        stacked ? 'flex-col items-start gap-0.5' : 'items-baseline'
+      )}
+    >
       <span className="whitespace-nowrap">{formatMoneyCompact(row.grossRevenue)}</span>
       <OrgAnalyticsRevenueChange pct={row.revenueChangePct} />
     </span>
@@ -171,7 +176,7 @@ export function OrgAnalyticsListingRow({ row, orgSlug, promote }: Props) {
           <div className="grid min-w-0 flex-1 grid-cols-3 gap-3 xl:max-w-md">
             <Metric label="Occupancy">{row.occupancyRate}%</Metric>
             <Metric label="Revenue">
-              <RevenueValue row={row} />
+              <RevenueValue row={row} stacked />
             </Metric>
             <Metric label="Bookings">{row.reservations}</Metric>
           </div>
