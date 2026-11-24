@@ -134,11 +134,11 @@ function useRafMeasure(measure: () => void) {
 
 const EMPTY_REMEASURE_DEPS: unknown[] = [];
 
-export function useSlidingActivePill(
+export function useSlidingActivePill<T extends HTMLElement = HTMLDivElement>(
   activeKey: string | null | undefined,
   remeasureDeps: unknown[] = EMPTY_REMEASURE_DEPS
 ) {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<T>(null);
   const itemRefs = useRef<Record<string, HTMLElement | null>>({});
   const activeKeyRef = useRef(activeKey);
   activeKeyRef.current = activeKey;

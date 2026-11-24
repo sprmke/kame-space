@@ -76,7 +76,7 @@ export function BottomTabBar({
 }: Props) {
   const dense = items.length > 5;
   const keyboardOpen = useVirtualKeyboardOpen();
-  const { containerRef, setItemRef, bounds } = useSlidingActivePill(activeKey, [
+  const { containerRef, setItemRef, bounds } = useSlidingActivePill<HTMLUListElement>(activeKey, [
     items.map((i) => i.key).join('\0'),
   ]);
 

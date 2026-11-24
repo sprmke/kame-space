@@ -71,12 +71,17 @@ test.describe('@ci super admin module tour', () => {
       timeout: 20_000,
     });
     await expect(page.getByText('Team members').first()).toBeVisible();
-    await page.waitForTimeout(600);
+
+    // Below-the-fold sections render a deferred placeholder instead of mounting, so
+    // their queries are never issued until the operator scrolls near them.
+    const activitySection = page.locator('#section-activity');
+    await expect(activitySection.locator('[data-section-deferred]')).toBeVisible();
 
     const activityCalls = () => calls.filter((url) => url.includes('list-super-admin-audit'));
     expect(activityCalls()).toHaveLength(0);
 
-    await page.locator('#section-activity').scrollIntoViewIfNeeded();
+    await activitySection.scrollIntoViewIfNeeded();
+    await expect(activitySection.locator('[data-section-deferred]')).toHaveCount(0);
     await expect.poll(activityCalls, { timeout: 10_000 }).not.toHaveLength(0);
   });
 

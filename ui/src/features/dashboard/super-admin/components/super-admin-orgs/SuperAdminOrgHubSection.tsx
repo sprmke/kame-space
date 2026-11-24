@@ -88,7 +88,7 @@ function HubSectionBody({
       ) : near ? (
         children
       ) : (
-        <Card className="space-y-2 p-4" aria-hidden>
+        <Card data-section-deferred className="space-y-2 p-4" aria-hidden>
           <Skeleton className="h-4 w-32" />
           <Skeleton className="h-3 w-2/3" />
           <Skeleton className="h-3 w-1/2" />
