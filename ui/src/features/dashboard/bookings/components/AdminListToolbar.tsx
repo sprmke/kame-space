@@ -141,7 +141,7 @@ export function AdminListPagination({
           item === 'ellipsis' ? (
             <span
               key={`dots-${idx}`}
-              className="text-caption flex size-10 shrink-0 select-none items-center justify-center lg:size-8"
+              className="text-caption flex size-11 shrink-0 select-none items-center justify-center lg:size-8"
             >
               …
             </span>
@@ -153,7 +153,7 @@ export function AdminListPagination({
               aria-label={`Go to page ${item}`}
               aria-current={item === page ? 'page' : undefined}
               className={cn(
-                'text-ui flex size-10 shrink-0 items-center justify-center rounded-lg font-semibold transition-all duration-100 lg:size-8',
+                'text-ui flex size-11 shrink-0 items-center justify-center rounded-lg font-semibold transition-all duration-100 lg:size-8',
                 item === page
                   ? 'segment-item-active'
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -268,6 +268,8 @@ type DesktopToolbarProps = {
   /** Far-right action (e.g. Export) — separate from sort/view chrome. */
   trailing?: ReactNode;
   className?: string;
+  /** Floor for the search field so it never collapses when the row is tight. */
+  searchWrapperClassName?: string;
   'aria-label'?: string;
 };
 
@@ -284,6 +286,7 @@ export function AdminListDesktopToolbar({
   view,
   trailing,
   className,
+  searchWrapperClassName,
   'aria-label': ariaLabel = 'List filters',
 }: DesktopToolbarProps) {
   const hasFilters = Boolean(leading || refine);
@@ -304,7 +307,7 @@ export function AdminListDesktopToolbar({
           </div>
         ) : null}
 
-        <div className="min-w-0 flex-1">{search}</div>
+        <div className={cn('min-w-0 flex-1', searchWrapperClassName)}>{search}</div>
 
         {hasChrome ? (
           <div role="group" aria-label="Sort and view" className="flex shrink-0 items-center gap-2">

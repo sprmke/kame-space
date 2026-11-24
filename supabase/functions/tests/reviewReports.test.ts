@@ -13,7 +13,10 @@ const FULL_ACCESS = allTeamPermissions() as readonly string[];
 Deno.test('report-review caps 2 pending host reports and requires 30+ chars', async () => {
   const source = await Deno.readTextFile(new URL('../report-review/index.ts', import.meta.url));
   assert(source.includes("'reviews.responses:edit'"));
-  assert(source.includes('>= 2'));
+  // Cap is enforced after the insert so two concurrent submissions cannot both pass a
+  // pre-check; the racer that pushes the side over two deletes its own row.
+  assert(source.includes("if ((count ?? 0) > 2)"));
+  assert(source.includes(".delete().eq('id', inserted.id as string)"));
   assert(source.includes('30 characters'));
   assert(source.includes("status !== 'published'"));
   assert(source.includes("reporterSide: 'guest'"));

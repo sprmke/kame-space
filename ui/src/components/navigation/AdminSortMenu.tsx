@@ -47,6 +47,8 @@ export function AdminSortMenu<T extends string>({
     <button
       type="button"
       onClick={() => setOpen((v) => !v)}
+      /* Without this the control is announced only by its current value ("Listing A-Z"). */
+      aria-label={`${ariaLabel}: ${label}`}
       aria-expanded={open}
       aria-haspopup={isMobileLayout ? 'dialog' : 'listbox'}
       className={cn(

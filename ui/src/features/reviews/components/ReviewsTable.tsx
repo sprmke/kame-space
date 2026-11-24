@@ -52,8 +52,10 @@ function GuestCell({ name, secondary }: { name: string; secondary?: string | nul
       <ReviewAvatar name={name} className="size-8 shrink-0" />
       <div className="min-w-0 space-y-0.5">
         <p className={cn('truncate font-bold', adminTableBodyText.primary)}>{name}</p>
+        {/* Shown until the dedicated Stay / Submitted column appears at xl, so a laptop
+            between 1024 and 1279 never loses the date. */}
         {secondary ? (
-          <p className={cn('truncate md:hidden', adminTableBodyText.secondary)}>{secondary}</p>
+          <p className={cn('truncate xl:hidden', adminTableBodyText.secondary)}>{secondary}</p>
         ) : null}
       </div>
     </div>
@@ -67,17 +69,18 @@ function PropertyCell({ name }: { name: string }) {
 }
 
 function RatingCell({ value }: { value: number }) {
-  return (
-    <div className="flex items-center gap-1.5">
-      <RatingStars value={value} className="shrink-0" />
-      <span className="text-foreground text-xs font-semibold tabular-nums">{value}</span>
-    </div>
-  );
+  // The stars already encode the number and announce it; printing the digit again was noise.
+  return <RatingStars value={value} className="shrink-0" />;
 }
 
 function ExcerptCell({ text }: { text: string | null }) {
   if (!text?.trim()) return <span className={adminTableBodyText.secondary}>-</span>;
-  return <p className={cn('line-clamp-2 max-w-[340px]', adminTableBodyText.secondary)}>{text}</p>;
+  // The review is the reason the page exists; muted grey read as disabled text.
+  return (
+    <p className="text-foreground/80 line-clamp-2 max-w-[340px] text-xs font-normal leading-snug sm:text-[13px]">
+      {text}
+    </p>
+  );
 }
 
 function Row({
@@ -133,7 +136,7 @@ export function ReceivedReviewsTable({
         ) : null}
         <AdminTableTh className="px-3 sm:px-4">Rating</AdminTableTh>
         <AdminTableTh className="hidden px-3 sm:px-4 md:table-cell">Review</AdminTableTh>
-        <AdminTableTh className="hidden px-3 sm:px-4 lg:table-cell">Response</AdminTableTh>
+        <AdminTableTh className="hidden px-3 sm:px-4 xl:table-cell">Response</AdminTableTh>
         <AdminTableTh className="hidden px-3 sm:px-4 xl:table-cell">Stay</AdminTableTh>
         <AdminTableActionsTh />
       </AdminTableHeadRow>
@@ -158,7 +161,7 @@ export function ReceivedReviewsTable({
                   }}
                   className="focus-visible:ring-ring rounded text-left focus-visible:outline-none focus-visible:ring-2"
                 >
-                  <GuestCell name={guestName} secondary={propertyName || stayRange} />
+                  <GuestCell name={guestName} secondary={stayRange} />
                 </button>
               </td>
               {showProperty ? (
@@ -172,7 +175,7 @@ export function ReceivedReviewsTable({
               <td className={cn('hidden md:table-cell', adminTableCell.body)}>
                 <ExcerptCell text={review.reviewText} />
               </td>
-              <td className={cn('hidden lg:table-cell', adminTableCell.body)}>
+              <td className={cn('hidden xl:table-cell', adminTableCell.body)}>
                 {review.responseText ? (
                   <Badge variant="success" className="font-medium">
                     Responded
@@ -183,7 +186,7 @@ export function ReceivedReviewsTable({
               </td>
               <td
                 className={cn(
-                  'hidden xl:table-cell',
+                  'hidden whitespace-nowrap xl:table-cell',
                   adminTableBodyText.secondary,
                   adminTableCell.body
                 )}
@@ -273,7 +276,7 @@ export function WrittenReviewsTable({
           return (
             <Row key={review.id} index={index} onOpen={() => onOpen(review)}>
               <td className={adminTableCell.status}>
-                <GuestCell name={guestName} secondary={propertyName || submitted || null} />
+                <GuestCell name={guestName} secondary={submitted || null} />
               </td>
               {showProperty ? (
                 <td className={cn('hidden sm:table-cell', adminTableCell.body)}>
@@ -308,7 +311,7 @@ export function WrittenReviewsTable({
               </td>
               <td
                 className={cn(
-                  'hidden xl:table-cell',
+                  'hidden whitespace-nowrap xl:table-cell',
                   adminTableBodyText.secondary,
                   adminTableCell.body
                 )}
@@ -380,7 +383,7 @@ export function ToWriteReviewsTable({
                   }}
                   className="focus-visible:ring-ring rounded text-left focus-visible:outline-none focus-visible:ring-2"
                 >
-                  <GuestCell name={guestName} secondary={propertyName || stayRange} />
+                  <GuestCell name={guestName} secondary={stayRange} />
                 </button>
               </td>
               {showProperty ? (
@@ -390,7 +393,7 @@ export function ToWriteReviewsTable({
               ) : null}
               <td
                 className={cn(
-                  'hidden md:table-cell',
+                  'hidden whitespace-nowrap md:table-cell',
                   adminTableBodyText.secondary,
                   adminTableCell.body
                 )}

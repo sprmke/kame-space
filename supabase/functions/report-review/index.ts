@@ -150,6 +150,12 @@ serveAuthenticated('report-review', async (req, user) => {
   return jsonSuccess(req, { reported: true });
 });
 
+/**
+ * Cap is two open reports per side per review. Counting before inserting let two
+ * concurrent submissions both pass the check and slip a third open report in, so the
+ * insert happens first and the row is rolled back when the cap is exceeded. A racer
+ * deletes only its own row, so the surviving count can land at two or lower, never above.
+ */
 async function insertReport(input: {
   supabase: ReturnType<typeof createServiceClient>;
   reviewKind: 'guest_review' | 'host_guest_review';
@@ -159,6 +165,20 @@ async function insertReport(input: {
   reason: string;
   details: string;
 }): Promise<'ok' | 'cap' | 'error'> {
+  const { data: inserted, error } = await input.supabase
+    .from('review_reports')
+    .insert({
+      review_kind: input.reviewKind,
+      review_id: input.reviewId,
+      reporter_user_id: input.reporterUserId,
+      reporter_side: input.reporterSide,
+      reason: input.reason,
+      details: input.details,
+    })
+    .select('id')
+    .single();
+  if (error || !inserted) return 'error';
+
   const { count } = await input.supabase
     .from('review_reports')
     .select('id', { count: 'exact', head: true })
@@ -166,14 +186,9 @@ async function insertReport(input: {
     .eq('review_id', input.reviewId)
     .eq('reporter_side', input.reporterSide)
     .eq('status', 'pending');
-  if ((count ?? 0) >= 2) return 'cap';
-  const { error } = await input.supabase.from('review_reports').insert({
-    review_kind: input.reviewKind,
-    review_id: input.reviewId,
-    reporter_user_id: input.reporterUserId,
-    reporter_side: input.reporterSide,
-    reason: input.reason,
-    details: input.details,
-  });
-  return error ? 'error' : 'ok';
+  if ((count ?? 0) > 2) {
+    await input.supabase.from('review_reports').delete().eq('id', inserted.id as string);
+    return 'cap';
+  }
+  return 'ok';
 }

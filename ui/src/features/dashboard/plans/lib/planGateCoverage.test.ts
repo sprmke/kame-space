@@ -177,7 +177,7 @@ const GATE_COVERAGE: Record<PlanFeatureKey, Coverage> = {
   },
   reviewAutomation: {
     client: [
-      'reviews/components/ReviewAutomationCard.tsx',
+      'reviews/components/ReviewAutomationSheet.tsx',
       'reviews/components/HostGuestReviewSheet.tsx',
       'reviews/components/ReviewResponseSheet.tsx',
       'reviews/components/ReviewGuestCard.tsx',

@@ -45,6 +45,12 @@ type Props = {
   onOpenBreakdown: () => void;
   onShowToWrite: () => void;
   toWriteActive: boolean;
+  /**
+   * False when the cards describe a subset of listings (org rollup filtered to some
+   * listings). The distribution sheet is org-wide, so opening it from a filtered card
+   * would show numbers that disagree with the card that opened it.
+   */
+  breakdownEnabled?: boolean;
 };
 
 export function ReviewsSummaryCards({
@@ -52,6 +58,7 @@ export function ReviewsSummaryCards({
   onOpenBreakdown,
   onShowToWrite,
   toWriteActive,
+  breakdownEnabled = true,
 }: Props) {
   const count = summary?.count ?? 0;
   const dueCount = summary?.dueCount ?? 0;
@@ -64,7 +71,7 @@ export function ReviewsSummaryCards({
         icon={Star}
         iconClassName="text-amber-500 dark:text-amber-400"
         iconBgClassName="bg-amber-100 dark:bg-amber-500/15"
-        onClick={count > 0 ? onOpenBreakdown : undefined}
+        onClick={breakdownEnabled && count > 0 ? onOpenBreakdown : undefined}
       />
       <StatCard title="Reviews" value={String(count)} icon={Quote} />
       <StatCard
