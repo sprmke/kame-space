@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { NavLink } from 'react-router-dom';
 
@@ -32,14 +32,50 @@ export function SuperAdminSecondaryNav({
   ariaLabel = 'Sections',
 }: SuperAdminSecondaryNavProps) {
   const activeRef = useRef<HTMLSpanElement | null>(null);
+  const scrollerRef = useRef<HTMLDivElement | null>(null);
+  const [edges, setEdges] = useState({ left: false, right: false });
+
+  const updateEdges = useCallback(() => {
+    const node = scrollerRef.current;
+    if (!node) return;
+    setEdges({
+      left: node.scrollLeft > 4,
+      right: node.scrollLeft + node.clientWidth < node.scrollWidth - 4,
+    });
+  }, []);
 
   useEffect(() => {
     activeRef.current?.scrollIntoView({ inline: 'center', block: 'nearest' });
-  }, []);
+    updateEdges();
+    const node = scrollerRef.current;
+    if (!node) return;
+    node.addEventListener('scroll', updateEdges, { passive: true });
+    const observer = new ResizeObserver(updateEdges);
+    observer.observe(node);
+    return () => {
+      node.removeEventListener('scroll', updateEdges);
+      observer.disconnect();
+    };
+  }, [updateEdges]);
 
   return (
-    <nav aria-label={ariaLabel} className={cn('min-w-0 pb-0.5', className)}>
-      <div className="-mx-1 flex min-w-0 snap-x items-center gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0 [&::-webkit-scrollbar]:hidden">
+    <nav aria-label={ariaLabel} className={cn('relative min-w-0 pb-0.5', className)}>
+      {edges.left ? (
+        <div
+          className="from-background pointer-events-none absolute inset-y-0 left-0 z-10 w-5 bg-gradient-to-r to-transparent sm:hidden"
+          aria-hidden
+        />
+      ) : null}
+      {edges.right ? (
+        <div
+          className="from-background pointer-events-none absolute inset-y-0 right-0 z-10 w-5 bg-gradient-to-l to-transparent sm:hidden"
+          aria-hidden
+        />
+      ) : null}
+      <div
+        ref={scrollerRef}
+        className="-mx-1 flex min-w-0 snap-x items-center gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0 [&::-webkit-scrollbar]:hidden"
+      >
         {items.map((item) => {
           const Icon = item.icon;
           const renderPill = (active: boolean) => (
