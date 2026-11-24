@@ -383,6 +383,22 @@ Document requirements are set at the development level by the platform team, und
 
 Ten stay guide sections are available. Welcome, check-in, house rules, emergency and safety, and check-out show by default. Getting here, using the unit, and building amenities start hidden until you review the copy and switch them on. Parking appears only when the booking needs parking, and pets only when the guest brings a pet. Email templates are used for automated messages throughout the booking process.
 
+### Where does a new template go?
+
+- category: Property Settings
+- audience: host
+- source: docs/guides/routes/org/property/templates.md
+
+New templates start in **Custom**. To file one in a section or folder, open that group's menu and choose **Add template**, or use **Move** afterwards. Move always offers Custom, so you can take a template back out of a folder.
+
+### Why can I only preview templates?
+
+- category: Property Settings
+- audience: host
+- source: docs/guides/routes/org/property/templates.md
+
+Your role can view templates but not change them. Ask the owner or a teammate with template edit permission if the copy needs an update. Read-only members see Preview with no Save button.
+
 ### How do I get a shareable link for the stay guide?
 
 - category: Property Settings

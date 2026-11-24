@@ -15,7 +15,9 @@ Route: `/org/:orgSlug/property/:propertySlug/templates`
 
 Each template card shows a **title**, **subtitle** (built-in description from the server registry; custom templates use a generic fallback), a single **Edit / Preview** switch, and one action row with Placeholders, Send test (emails), Reset (built-ins), Save, and a `More` menu for custom-template actions. On phone the view switch is icon-only and Save stays labelled; Placeholders is icon-only until `xl`.
 
-**Custom templates → Send to guest (shipped):** Custom template cards show **Send to guest** in the More menu once the saved content has no unsaved edits. It opens a dialog to search/pick a booking (guest name, date, or status). While bookings load, the list is row skeletons. The send button keeps a spinner only while the email is sending. It sends that exact saved content to the booking's guest email immediately — not tied to booking status or an automation toggle, and no cooldown. Uses the same `renderPropertyTemplateSendEmail` shell as every other template send. Requires `bookings.detail.workflow:edit` (same leaf as the booking-detail manual workflow email resends). Skipped (with a toast) if the guest's email is on the suppression list. Emits `booking.custom_template_sent` to the org activity log on success (`booking` category, `metadata.template_key` / `template_name`).
+**New template default group:** The page-header **New template** action opens the create dialog with **Custom** preselected, so a host-owned template lands in the ungrouped Custom list instead of in the middle of the ten built-in guide sections. Opening **Add template** from a group heading or folder still preselects that destination. **Move** always offers **Custom**, so a template filed in a folder can return to the ungrouped list.
+
+**Custom templates → Send to guest (shipped):** Custom template cards show **Send to guest** in the More menu once the saved content has no unsaved edits. It opens a dialog to search/pick a booking (guest name, date, or status). Each result shows the guest's email under the name, and the selected row carries a check plus a screen-reader "Selected" label, so the host can confirm the address before sending. While bookings load, the list is row skeletons. The send button keeps a spinner only while the email is sending. It sends that exact saved content to the booking's guest email immediately — not tied to booking status or an automation toggle, and no cooldown. Uses the same `renderPropertyTemplateSendEmail` shell as every other template send. Requires `bookings.detail.workflow:edit` (same leaf as the booking-detail manual workflow email resends). Skipped (with a toast) if the guest's email is on the suppression list. Emits `booking.custom_template_sent` to the org activity log on success (`booking` category, `metadata.template_key` / `template_name`).
 
 **Chat templates (shipped):** the property's standard and custom templates are also selectable in **Guest Inbox → Insert (`+`) → Templates** and in the **AI Assistant → Pin context → Templates**. Email templates are excluded from both. The Inbox opens the same preview as this page, then sends a snapshot into the thread; web chat renders the snapshot as a rich card, Meta DMs receive flattened text. The AI Assistant receives the template body as context, not a message. No new plan key or permission leaf: standard templates stay free and custom templates inherit `customTemplates`; Inbox listing uses `inbox:view`, sending uses `inbox.messages:edit`, and assistant listing uses `templates:view`.
 
@@ -63,7 +65,7 @@ Template bodies (and section images) are bulk-copyable via org **Properties → 
 
 ### Permissions (Phase 5)
 
-Route/nav: `templates:view`. In-page: `templates.standard:edit`, `templates.email:edit`, `templates.custom:{add,edit,delete}`. Members without an edit leaf see preview-only cards (no Save/Reset/Delete). Add Custom is hidden without `templates.custom:add`.
+Route/nav: `templates:view`. In-page: `templates.standard:edit`, `templates.email:edit`, `templates.custom:{add,edit,delete}`. Members without an edit leaf get a **preview-only** pane: the Edit tab is not rendered, the rich text body is not mounted, and Save/Reset/Delete/New template are absent. Add Custom is hidden without `templates.custom:add`.
 
 Built-in Guest messages use `templates.standard:edit` and save free. A host-created message lives under a `custom-*` key, so it uses `templates.custom:edit` and the Starter+ `customTemplates` gate, like any host-owned template.
 
@@ -184,6 +186,10 @@ picker (`always / before / arrival / stay / checkout / after`). Visible ones ren
 - **Email:** **`renderPropertyTemplatePreview`** calls **`renderPropertyTemplateSendEmail`** with `contentOverride`, sample vars, and **`buildSampleDynamicSections()`** for section placeholders present in the template body (same layout as production sends).
 
 The preview shows the rendered subject above the body. Preview and send are aligned on `fragments/configurable-template-send.html`. The preview pane owns its own scroll; the header and action row stay fixed. When the open template uses a property token that is empty, the editor lists it above the body so the host can fill the missing setting.
+
+**Phone editor chrome:** the back control is an icon button on the title row (it used to be a full-width "All templates" row), and the template description is hidden below `sm`, so the editor body starts roughly one row higher on a phone. The tab strip becomes a single **Preview** pill for read-only members.
+
+**Empty and error states:** an empty library shows **No templates yet** with no Reload prompt, because nothing failed. A failed load shows a centered **Templates did not load** message with **Try again** in the content area, not a full-width empty card.
 
 ## Placeholders
 
@@ -327,12 +333,15 @@ Implementation: **`guestContactInfo.ts`** (contact resolution), **`propertyTempl
 
 ## Testing
 
-| Layer  | Path / spec                                                                                                   | Manual                                                                                  |
-| ------ | ------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| Unit   | `ui/src/features/dashboard/org/lib/templatesSudoToken.test.ts` (15m sudo sessionStorage)                      | —                                                                                       |
-| E2E    | `ui/e2e/features/dashboard/dashboardModulesSmoke.spec.ts` templates shell (`@ci`)                             | WYSIWYG save, email send; asserts no console "duplicate" TipTap extension warnings      |
-| E2E    | `ui/e2e/features/dashboard/dashboardModulesSmoke.spec.ts` "custom template sends to a picked booking" (`@ci`) | Send to guest: picker, POST `send-property-custom-template-email`, success toast        |
-| Manual | —                                                                                                             | First Save → OTP → persists; second Save within 15m skips modal; after expiry OTP again |
+| Layer  | Path / spec                                                                                                   | Manual                                                                                                |
+| ------ | ------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Unit   | `ui/src/features/dashboard/org/lib/templatesSudoToken.test.ts` (15m sudo sessionStorage)                      | —                                                                                                     |
+| E2E    | `ui/e2e/features/dashboard/dashboardModulesSmoke.spec.ts` templates shell (`@ci`)                             | WYSIWYG save, email send; asserts no console "duplicate" TipTap extension warnings                    |
+| E2E    | `ui/e2e/features/dashboard/dashboardModulesSmoke.spec.ts` "custom template sends to a picked booking" (`@ci`) | Send to guest: picker, POST `send-property-custom-template-email`, success toast                      |
+| E2E    | `ui/e2e/features/dashboard/templates/templatesModule.spec.ts` (`@ci`)                                         | Read-only preview-only body, Custom default, Move to Custom, guest email, empty state, dock clearance |
+| E2E    | `ui/e2e/features/dashboard/templates/templatesUxReview.spec.ts` (`@demo`)                                     | Every-width screenshots + layout/contrast/tap-target metrics (review evidence, never CI)              |
+| Unit   | `ui/src/features/dashboard/bookings/lib/templateLibrary.test.ts` (reading order, Custom always a Move target) | —                                                                                                     |
+| Manual | —                                                                                                             | First Save → OTP → persists; second Save within 15m skips modal; after expiry OTP again               |
 
 plans: N/A — reuses existing `customTemplates` + templates.* leaves; OTP is additive safety like payment.
 permissions: N/A — OTP is in addition to existing `templates.*:edit` / `:add` leaves (same pattern as payment OTP + `settings.payment:edit`).
