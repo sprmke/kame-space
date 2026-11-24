@@ -2,7 +2,7 @@
 title: 'Bookings & Booking Detail UX/UI review'
 status: active
 tags: [ux, ui, bookings, workflow, plans, rbac, review, qa, e2e, property]
-updated: 2026-11-24
+updated: 2026-11-25
 ---
 
 # Bookings & Booking Detail — UX/UI review
@@ -81,32 +81,32 @@ Every P1 below is fixed on `feat/bookings-ux-review`, with the two P2s that coul
 without a design decision. Four items were re-checked and found not to be defects; they are
 marked in place so the list stays honest rather than self-congratulatory.
 
-| Item                       | Status               | What changed                                                                                                                           |
-| -------------------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| P1-1 CTA clipped           | **Fixed**            | The return/proceed pair wraps (`basis-[11rem]`) instead of forcing two cells; paired labels wrap instead of `whitespace-nowrap`        |
-| P1-2 768 squeeze           | **Fixed**            | Below `lg` the detail is one column with Progress first; the rail is full width, so header, tabs and CTA all fit                       |
-| P1-3 rail below fold       | **Fixed**            | The container-query stack sets `order: -1` on the rail, matching `<lg`                                                                 |
-| P1-4 door code             | **Fixed**            | `GuestAccessCodeField` renders read-only text without `bookings.detail.stay:edit`; `get-booking` also stops returning the override     |
-| P1-5 review gate           | **Fixed**            | Without `bookings.detail.workflow:edit` the gate is replaced by a "View only" note                                                     |
-| P1-6 table semantics       | **Fixed**            | `<tr>` is a row again, the guest name is the real link, `aria-sort` moved to the `<th>`, flag chips carry `role="img"`                 |
-| P2-1 "No flags"            | **Fixed**            | Removed from card and kanban footers                                                                                                   |
-| P2-2 constant "DIRECT"     | **Fixed**            | Chip renders only when `booking_source` is set (header + mobile summary)                                                               |
-| P2-3 "AUTO" unexplained    | **Not a defect**     | `WorkflowAdvanceModeBadge` already ships a tooltip and an `aria-label` that spells the mode out                                        |
-| P2-4 stage labels          | **Fixed (skeleton)** | The mismatch lived in `BookingsListBodySkeleton`, not the cards; the skeleton now uses the real labels and hints                       |
-| P2-5 sort name             | **Fixed**            | Trigger is `"Sort bookings: Priority"`; the duplicate column sorter keeps its own label                                                |
-| P2-6 popover clip          | **Fixed**            | Scroll shadow marks the clipped row as "more below"                                                                                    |
-| P2-7 "Still open"          | **Fixed**            | Reads "Guest still needs: …"                                                                                                           |
-| P2-8 twin denominators     | **Fixed**            | "2 of 2 sent" / "0 of 1 received"                                                                                                      |
-| P2-9 three heading rows    | **Not a defect**     | The hero `h1` is the page label and the summary card owns the guest `h2` by design; naming the hero after the guest produced two `h1`s |
-| P2-10 FAB overlap          | **Fixed**            | Quick access pill is hidden on booking detail; the same actions stay in the bottom bar's More sheet                                    |
-| P2-11 empty-table axe gap  | **Fixed (coverage)** | The suite now runs axe on a populated list and on detail with **zero exclusions**                                                      |
-| P2-12 payload minimisation | **Fixed**            | `_shared/bookingPayload.ts` nulls bank fields, door code and tokens without the matching leaf (5 Deno tests)                           |
-| P3-1 back link             | **Fixed**            | 44px hit area                                                                                                                          |
-| P3-2 phone card hints      | **Accepted**         | The chips would triple the card height at 375px; the `InfoHint` carries the same meaning                                               |
-| P3-3 date control          | **Not a defect**     | Re-checked at 1440: the control is the same width as the other header actions; the earlier note was an impression, not a measurement   |
-| P3-4 email truncation      | **Fixed**            | Full address on hover/focus (`title`)                                                                                                  |
-| P3-5 masked list error     | **Fixed**            | Only transport failures fall back to PostgREST; a server error surfaces                                                                |
-| P3-6 deprecated import     | **Fixed**            | `BookingsSummaryCards` imports `StatCard` directly                                                                                     |
+| Item                       | Status                     | What changed                                                                                                                                                                                                                                              |
+| -------------------------- | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P1-1 CTA clipped           | **Fixed**                  | The return/proceed pair wraps (`basis-[11rem]`) instead of forcing two cells; paired labels wrap instead of `whitespace-nowrap`                                                                                                                           |
+| P1-2 768 squeeze           | **Fixed**                  | Below `lg` the detail is one column with Progress first; the rail is full width, so header, tabs and CTA all fit                                                                                                                                          |
+| P1-3 rail below fold       | **Fixed**                  | The container-query stack sets `order: -1` on the rail, matching `<lg`                                                                                                                                                                                    |
+| P1-4 door code             | **Fixed**                  | `GuestAccessCodeField` renders read-only text without `bookings.detail.stay:edit`; `get-booking` also stops returning the override                                                                                                                        |
+| P1-5 review gate           | **Fixed**                  | Without `bookings.detail.workflow:edit` the gate is replaced by a "View only" note                                                                                                                                                                        |
+| P1-6 table semantics       | **Fixed**                  | `<tr>` is a row again, the guest name is the real link, `aria-sort` moved to the `<th>`, flag chips carry `role="img"`                                                                                                                                    |
+| P2-1 "No flags"            | **Fixed**                  | Removed from card and kanban footers                                                                                                                                                                                                                      |
+| P2-2 constant "DIRECT"     | **Fixed**                  | Chip renders only when `booking_source` is set (header + mobile summary)                                                                                                                                                                                  |
+| P2-3 "AUTO" unexplained    | **Not a defect**           | `WorkflowAdvanceModeBadge` already ships a tooltip and an `aria-label` that spells the mode out                                                                                                                                                           |
+| P2-4 stage labels          | **Fixed (skeleton)**       | The mismatch lived in `BookingsListBodySkeleton`, not the cards; the skeleton now uses the real labels and hints                                                                                                                                          |
+| P2-5 sort name             | **Fixed**                  | Trigger is `"Sort bookings: Priority"`; the duplicate column sorter keeps its own label                                                                                                                                                                   |
+| P2-6 popover clip          | **Fixed**                  | Scroll shadow marks the clipped row as "more below"                                                                                                                                                                                                       |
+| P2-7 "Still open"          | **Fixed**                  | Reads "Guest still needs: …"                                                                                                                                                                                                                              |
+| P2-8 twin denominators     | **Fixed**                  | "2 of 2 sent" / "0 of 1 received"                                                                                                                                                                                                                         |
+| P2-9 three heading rows    | **Not a defect**           | The hero `h1` is the page label and the summary card owns the guest `h2` by design; naming the hero after the guest produced two `h1`s                                                                                                                    |
+| P2-10 FAB overlap          | **Fixed**                  | Quick access pill is hidden on booking detail; the same actions stay in the bottom bar's More sheet                                                                                                                                                       |
+| P2-11 empty-table axe gap  | **Fixed (coverage)**       | The suite now runs axe on a populated list and on detail with **zero exclusions**                                                                                                                                                                         |
+| P2-12 payload minimisation | **Fixed (property scope)** | `_shared/bookingPayload.ts` nulls bank fields, door code and tokens without the matching leaf (5 Deno tests). Org and parking scopes return the row unchanged; their callers are owner/admin/assigned staff, and that residual is recorded in the finding |
+| P3-1 back link             | **Fixed**                  | 44px hit area                                                                                                                                                                                                                                             |
+| P3-2 phone card hints      | **Accepted**               | The chips would triple the card height at 375px; the `InfoHint` carries the same meaning                                                                                                                                                                  |
+| P3-3 date control          | **Not a defect**           | Re-checked at 1440: the control is the same width as the other header actions; the earlier note was an impression, not a measurement                                                                                                                      |
+| P3-4 email truncation      | **Fixed**                  | Full address on hover/focus (`title`)                                                                                                                                                                                                                     |
+| P3-5 masked list error     | **Fixed**                  | Only transport failures fall back to PostgREST; a server error surfaces                                                                                                                                                                                   |
+| P3-6 deprecated import     | **Fixed**                  | `BookingsSummaryCards` imports `StatCard` directly                                                                                                                                                                                                        |
 
 Before/after stills for every surface: [`COMPARISON.md`](./COMPARISON.md).
 
@@ -281,6 +281,10 @@ out of the click target, and put `aria-sort` on the `<th>` instead of the button
   read. A read-only teammate, a narrowed role, a logging sink or a browser extension all see them.
   Fix direction: return a field allow-list per leaf, and strip tokens and account data when the
   caller lacks `bookings.detail.pricing:edit` / `stay:edit`.
+  **Landed for the property scope** (`_shared/bookingPayload.ts`). Org and parking scopes still
+  return the row unchanged: those callers are owner / org admin / assigned staff resolved through
+  the org context, not a property role-scoped teammate, so narrowing them needs its own decision
+  about which org leaf should reveal a bank account. Left open on purpose rather than guessed.
 
 ### P3 — polish and consistency
 
