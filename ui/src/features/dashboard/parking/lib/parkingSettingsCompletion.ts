@@ -84,7 +84,7 @@ export function computeParkingSettingsCompletion(
   if (features.enabledParkingAmenities.length < MIN_PARKING_AMENITIES) {
     addSectionIssue(
       'features',
-      `Select at least ${MIN_PARKING_AMENITIES} amenity. This helps guests know what this slot offers.`
+      `Select at least ${MIN_PARKING_AMENITIES} amenity. This helps guests know what's included.`
     );
   }
 
@@ -101,9 +101,10 @@ export function computeParkingSettingsCompletion(
   if (!location.country.trim()) {
     addFieldError('parking-country', 'Enter the country', 'location');
   }
-  if (location.latitude == null || location.longitude == null) {
-    addFieldError('property-location-map', 'Pin this parking slot on the map', 'location');
-  }
+  /*
+   * A map pin is optional. The address is what guests use for directions when no
+   * coordinates exist, so an unavailable map must never block saving.
+   */
 
   const firstIssueSectionId = issueSectionIds[0] ?? null;
   const firstFieldError = Object.values(fieldErrors)[0] ?? null;

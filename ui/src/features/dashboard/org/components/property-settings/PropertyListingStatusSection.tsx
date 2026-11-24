@@ -275,7 +275,7 @@ export function PropertyListingStatusSection({
                 onClick={() => setCompareOpen(true)}
               >
                 <Info className="size-3.5" aria-hidden />
-                Compare options
+                See what changes
               </Button>
 
               {allowed.has('pause') ? (

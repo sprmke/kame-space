@@ -378,7 +378,7 @@ export async function selectRevealStyleInModal(page: Page, style: VoucherRevealS
 }
 
 export async function savePropertySettings(page: Page) {
-  const save = page.getByRole('button', { name: 'Save Changes' }).last();
+  const save = page.getByRole('button', { name: 'Save changes' }).last();
   await expect(save).toBeVisible({ timeout: 10_000 });
   await save.click();
   await expect(page.getByText('Settings saved')).toBeVisible({ timeout: 15_000 });

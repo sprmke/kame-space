@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 
 import { addDays, format } from 'date-fns';
-import { CalendarDays, Check, Plus, Shield, Trash2 } from 'lucide-react';
+import { CalendarDays, Check, Info, Plus, Shield, Trash2 } from 'lucide-react';
 
 import { AdminSection } from '@/features/dashboard/bookings/components/AdminSectionNavLayout';
 import {
@@ -103,7 +103,7 @@ function RefundRow({
           <span className="text-sm">{label}</span>
           <span className="text-sm font-semibold tabular-nums">{formatMoney(amount)}</span>
         </div>
-        <p className="text-muted-foreground text-xs">{percent}% of paid</p>
+        <p className="text-foreground/70 text-xs">{percent}% of paid</p>
       </div>
     </div>
   );
@@ -120,7 +120,7 @@ function ExampleCard({ policy }: { policy: CancellationPolicy }) {
   return (
     <div className="border-border/70 bg-muted/30 space-y-4 rounded-2xl border p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Example</p>
+        <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">Example</p>
         <div className="bg-background inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs">
           <CalendarDays className="text-muted-foreground size-3.5" aria-hidden />
           <span className="text-muted-foreground">Check-in</span>
@@ -147,12 +147,7 @@ function ExampleCard({ policy }: { policy: CancellationPolicy }) {
           <p className="text-xs font-medium">What they get back</p>
           <div className="mt-2 space-y-3">
             {rows.length === 0 ? (
-              <RefundRow
-                label="After booking"
-                amount={0}
-                percent={0}
-                tone="muted"
-              />
+              <RefundRow label="After booking" amount={0} percent={0} tone="muted" />
             ) : (
               rows.map((row) => (
                 <RefundRow
@@ -161,11 +156,7 @@ function ExampleCard({ policy }: { policy: CancellationPolicy }) {
                   amount={sampleRefund(row.refundPercent)}
                   percent={row.refundPercent}
                   tone={
-                    row.refundPercent >= 100
-                      ? 'green'
-                      : row.refundPercent > 0
-                        ? 'amber'
-                        : 'muted'
+                    row.refundPercent >= 100 ? 'green' : row.refundPercent > 0 ? 'amber' : 'muted'
                   }
                 />
               ))
@@ -183,8 +174,8 @@ function ExampleCard({ policy }: { policy: CancellationPolicy }) {
       </div>
 
       <p className="text-muted-foreground text-xs">
-        Down payment, pet fee, parking fee and additional fees follow this policy when they
-        are part of the stay payment.
+        Down payment, pet fee, parking fee and additional fees follow this policy when they are part
+        of the stay payment.
       </p>
     </div>
   );
@@ -308,7 +299,9 @@ function PolicyFields({
               key={preset.id}
               className={cn(
                 'flex min-h-[44px] cursor-pointer gap-3 rounded-xl border p-3 transition-colors',
-                selected ? 'border-primary bg-primary/5 shadow-sm' : 'border-border hover:bg-muted/30',
+                selected
+                  ? 'border-primary bg-primary/5 shadow-sm'
+                  : 'border-border hover:bg-muted/30',
                 disabled && 'cursor-not-allowed opacity-60'
               )}
             >
@@ -381,9 +374,18 @@ function PreviewCard({
   return (
     <div className={cn('rounded-lg border p-3 sm:p-4', toneClasses)}>
       <div className="flex items-start gap-2.5">
-        <Check className={cn('mt-0.5 size-4 shrink-0', subtextClasses)} aria-hidden />
+        {display.unset ? (
+          <Info className={cn('mt-0.5 size-4 shrink-0', subtextClasses)} aria-hidden />
+        ) : (
+          <Check className={cn('mt-0.5 size-4 shrink-0', subtextClasses)} aria-hidden />
+        )}
         <div className="min-w-0 flex-1">
-          <p className={cn('text-xs font-semibold leading-snug sm:text-sm sm:font-medium', textClasses)}>
+          <p
+            className={cn(
+              'text-xs font-semibold leading-snug sm:text-sm sm:font-medium',
+              textClasses
+            )}
+          >
             {display.title}
           </p>
           <p className={cn('mt-0.5 text-xs leading-snug', subtextClasses)}>{display.description}</p>

@@ -2,7 +2,7 @@
 title: 'Organization Settings — operator guide'
 status: active
 tags: [guides, routes, org, settings]
-updated: 2026-09-27
+updated: 2026-11-23
 ---
 
 # Organization Settings — operator guide
@@ -28,7 +28,7 @@ Route: `/org/:orgSlug/settings`
 
 **Browser tab title:** `${Org Name} - Settings` (org-scoped); fallback `Kame Space` while loading.
 
-Organization settings uses `AdminSectionNavLayout` with labelled groups **Profile** → **AI** → **Account**. Desktop section nav: idle rows have no fill (main-sidebar style); the active row uses a spring sliding pill. Scroll-spy updates on a short throttle so the pill glides neighbor-to-neighbor. On short laptops the rail scrolls inside its own `max-h` port and keeps the active row in view (vertical keep-in-view); it never calls window `scrollIntoView` on the button. **Save** lives only in the page header (desktop button / phone hero icon) when the form is dirty — no sticky footer bar. Field helpers use a **?** beside the label (`FieldLabel` / `OrgSettingsField` `help`) — not muted text under the control.
+Organization settings uses `AdminSectionNavLayout` with labelled groups **Profile** → **Assistants** → **Account**. Desktop section nav: idle rows have no fill (main-sidebar style); the active row uses a spring sliding pill. Scroll-spy updates on a short throttle so the pill glides neighbor-to-neighbor. On short laptops the rail scrolls inside its own `max-h` port and keeps the active row in view (vertical keep-in-view); it never calls window `scrollIntoView` on the button. Below `lg`, a **Jump to <section>** button opens the same list in a grouped bottom sheet. If some sections save and others do not, the toast says **Saved your other changes** and names the section that still needs attention. **Save changes** lives only in the page header (desktop button / phone hero icon) when the form is dirty — no sticky footer bar. Field helpers use a **?** beside the label (`FieldLabel` / `OrgSettingsField` `help`) — not muted text under the control.
 
 Persistence uses **two APIs**:
 
@@ -355,13 +355,17 @@ Danger zone: slug confirmation + `delete-organization`; blocked when booking his
 
 ## Testing
 
-| Layer | Path / spec                                                              | Manual                           |
-| ----- | ------------------------------------------------------------------------ | -------------------------------- |
-| Unit  | Org settings completion helpers when changed                             | —                                |
-| E2E   | `ui/e2e/features/org/orgSettingsSave.spec.ts` socials PATCH save (`@ci`) | Logo upload, org delete, AI save |
-| N/A   | —                                                                        | —                                |
+| Layer | Path / spec                                                                                                             | Manual                      |
+| ----- | ----------------------------------------------------------------------------------------------------------------------- | --------------------------- |
+| Unit  | Org settings completion helpers when changed                                                                            | —                           |
+| E2E   | `ui/e2e/features/org/orgSettingsSave.spec.ts` socials PATCH save (`@ci`)                                                | Logo upload, real OTP email |
+| E2E   | `ui/e2e/features/dashboard/settings/settingsModule.spec.ts` org scope (`@ci`, rail, save, slug-gated delete, AI toggle) | —                           |
+| Demo  | `ui/e2e/features/dashboard/settings/settingsTour.slowmo.spec.ts` (`@demo`, headed + video)                              | —                           |
+| N/A   | —                                                                                                                       | —                           |
 
 ---
+
+Review: [`docs/workflow/in-progress/settings-ux-review/`](../../../workflow/in-progress/settings-ux-review/README.md)
 
 ## Related docs
 

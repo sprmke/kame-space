@@ -118,23 +118,22 @@ import { friendlyToastError } from '@/lib/feedback/toastMessages';
 import { propertyBrandColorStoredValue } from '@/lib/theme/brandColor';
 
 const SETTINGS_SECTIONS: AdminSectionNavItem[] = [
-  { id: 'basic', label: 'Basic Information', icon: Info },
-  { id: 'details', label: 'Property Details', icon: Home },
-  { id: 'media', label: 'Photos & Videos', icon: ImageIcon },
+  { id: 'basic', label: 'Basic information', icon: Info },
+  { id: 'details', label: 'Property details', icon: Home },
+  { id: 'media', label: 'Photos & videos', icon: ImageIcon },
   { id: 'amenities', label: 'Amenities', icon: Sparkles },
-  { id: 'house-rules', label: 'House Rules', icon: ListChecks },
+  { id: 'house-rules', label: 'House rules', icon: ListChecks },
   { id: 'cancellation', label: 'Cancellation', icon: Shield },
   { id: 'location', label: 'Location', icon: MapPin },
   { id: 'branding', label: 'Socials', icon: Share2 },
   { id: 'search', label: 'Search preview', icon: Search },
-  { id: 'guest-form', label: 'Guest Form', icon: FormInput },
+  { id: 'guest-form', label: 'Guest form', icon: FormInput },
   { id: 'guest-experience', label: 'Guest experience', icon: KeyRound },
   { id: 'guest-rewards', label: 'Reviews & vouchers', icon: Gift },
   { id: 'payment', label: 'Payment', icon: Wallet },
-  { id: 'building-forms', label: 'Building Forms', icon: ClipboardList },
-  { id: 'email-automations', label: 'Email Automations', icon: Mail },
+  { id: 'building-forms', label: 'Building forms', icon: ClipboardList },
+  { id: 'email-automations', label: 'Email automations', icon: Mail },
   { id: 'integrations', label: 'Integrations', icon: Globe },
-  { id: 'guest-experience', label: 'Guest experience', icon: KeyRound },
   { id: 'activity', label: 'Activity', icon: ScrollText },
   { id: 'danger', label: 'Listing status', icon: AlertTriangle },
 ];
@@ -679,10 +678,28 @@ export function usePropertySettingsController() {
       return false;
     }
 
-    if (!plan.hasSavableWork) {
+    /*
+     * Evaluate edit rights before deciding "nothing to save". A restricted member can
+     * have savable work computed for a section they cannot edit; showing a permission
+     * toast there hid the real field error (for example "Enter a property name").
+     */
+    const editableProfileSections = plan.profileSections.filter((sectionId) =>
+      canEditSettingsSection(sectionId)
+    );
+    const editableOperationalSections = plan.operationalSections.filter((sectionId) =>
+      canEditSettingsSection(sectionId)
+    );
+    const hasEditableWork =
+      editableProfileSections.length > 0 || editableOperationalSections.length > 0;
+    const permissionOnlyBlocked =
+      !hasEditableWork && (plan.profileSections.length > 0 || plan.operationalSections.length > 0);
+
+    if (!plan.hasSavableWork || permissionOnlyBlocked) {
       setShowValidationErrors(true);
       if (plan.firstBlockedMessage) {
         toast.error(plan.firstBlockedMessage);
+      } else if (permissionOnlyBlocked) {
+        toast.error('You do not have permission to save these settings');
       } else if (!profileDirty && !operationalDirty) {
         toast.message('No changes to save');
       }
@@ -706,20 +723,8 @@ export function usePropertySettingsController() {
 
     try {
       let savedSomething = false;
-      const savedProfileSections = plan.profileSections.filter((sectionId) =>
-        canEditSettingsSection(sectionId)
-      );
-      const savedOperationalSections = plan.operationalSections.filter((sectionId) =>
-        canEditSettingsSection(sectionId)
-      );
-      if (
-        (plan.profileSections.length > 0 || plan.operationalSections.length > 0) &&
-        savedProfileSections.length === 0 &&
-        savedOperationalSections.length === 0
-      ) {
-        toast.error('You do not have permission to save these settings');
-        return false;
-      }
+      const savedProfileSections = editableProfileSections;
+      const savedOperationalSections = editableOperationalSections;
 
       const profilePayload = buildProfilePatchForSections(
         profileDraft,
@@ -784,7 +789,12 @@ export function usePropertySettingsController() {
         setInteractedFields({});
         resetUserEdited();
         if (plan.blockedSections.length > 0) {
-          toast.success('New changes has been saved.');
+          const blockedLabel =
+            SETTINGS_SECTIONS.find((section) => section.id === plan.blockedSections[0])?.label ??
+            'Another section';
+          toast.success('Saved your other changes', {
+            description: `${blockedLabel} still needs attention.`,
+          });
           scrollToSettingsSection(plan.blockedSections[0]!);
         } else {
           toast.success('Settings saved');
@@ -1089,7 +1099,7 @@ export function PropertySettingsCard() {
                 className="min-h-[44px] gap-1.5"
               >
                 <Save className="size-4" aria-hidden />
-                {busy ? 'Saving...' : 'Save Changes'}
+                {busy ? 'Saving…' : 'Save changes'}
               </Button>
             ) : null}
           </div>
@@ -1121,7 +1131,11 @@ export function PropertySettingsCard() {
           navLabels={SETTINGS_SECTIONS.map((section) => section.label)}
         />
       ) : appSettings && operationalDraft ? (
-        <AdminSectionNavLayout className="min-h-0 flex-1" sectionGroups={navSectionGroups}>
+        <AdminSectionNavLayout
+          className="min-h-0 flex-1"
+          sectionGroups={navSectionGroups}
+          mobileSectionNav
+        >
           <PropertyProfileMainSections
             draft={profileDraft}
             onChange={setProfileField}
@@ -1232,10 +1246,6 @@ export function PropertySettingsCard() {
             markFieldInteracted={markFieldInteracted}
             sectionMessages={settingsCompletion.sectionMessages}
           />
-
-          <AdminSection id="guest-experience" title="Guest experience" icon={KeyRound}>
-            <PropertyGuestExperienceSection propertyId={property.id} disabled={busy} />
-          </AdminSection>
 
           {canViewActivity ? (
             <AdminSection id="activity" title="Activity" icon={ScrollText}>

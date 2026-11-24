@@ -77,7 +77,7 @@ const SETTINGS_SECTIONS: AdminSectionNavItem[] = [
 
 const SETTINGS_SECTION_GROUP_IDS: { label: string; ids: string[] }[] = [
   { label: 'Profile', ids: ['basic', 'branding', 'superhost'] },
-  { label: 'AI', ids: [AI_SETTINGS_SECTION_ID] },
+  { label: 'Assistants', ids: [AI_SETTINGS_SECTION_ID] },
   { label: 'Account', ids: ['activity', 'danger'] },
 ];
 
@@ -283,7 +283,12 @@ export function useOrgSettingsController() {
         setInteractedFields({});
         resetUserEdited();
         if (plan.blockedSections.length > 0) {
-          toast.success('New changes has been saved.');
+          const blockedLabel =
+            SETTINGS_SECTIONS.find((section) => section.id === plan.blockedSections[0])?.label ??
+            'Another section';
+          toast.success('Saved your other changes', {
+            description: `${blockedLabel} still needs attention.`,
+          });
           scrollToOrgSettingsSection(plan.blockedSections[0]!);
         } else {
           toast.success('Settings saved');
@@ -492,7 +497,7 @@ export function OrgSettingsPage() {
     <RequireAdmin>
       <AdminMobilePage
         title="Settings"
-        subtitle="Manage your organization's profile, billing, and preferences."
+        subtitle="Organization profile and preferences."
         titleId="org-settings-heading"
         className="flex min-h-0 flex-1 flex-col"
         heroTrailing={
@@ -515,7 +520,7 @@ export function OrgSettingsPage() {
               className="min-h-[44px] gap-1.5"
             >
               <Save className="size-4" aria-hidden />
-              {busy ? 'Saving…' : 'Save'}
+              {busy ? 'Saving…' : 'Save changes'}
             </Button>
           ) : undefined
         }
@@ -530,7 +535,11 @@ export function OrgSettingsPage() {
         ) : !org || !profileDraft || !operatorDraft || !operatorData ? (
           <p className="text-muted-foreground text-sm">Organization not found.</p>
         ) : (
-          <AdminSectionNavLayout className="min-h-0 flex-1" sectionGroups={navSectionGroups}>
+          <AdminSectionNavLayout
+            className="min-h-0 flex-1"
+            sectionGroups={navSectionGroups}
+            mobileSectionNav
+          >
             {operatorError ? (
               <p className="text-destructive text-sm">
                 {(operatorLoadError as Error)?.message ?? 'Could not load organization settings'}

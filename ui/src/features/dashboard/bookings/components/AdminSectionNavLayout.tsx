@@ -1,11 +1,14 @@
 import * as React from 'react';
 
+import { ChevronDown, List } from 'lucide-react';
+
 import { useAdminLayoutFillMain } from '@/features/dashboard/bookings/lib/adminLayoutFillMain';
 import { findActiveSectionIdInContainer } from '@/features/dashboard/bookings/lib/adminSectionNavScroll';
 import { SectionNavIssueDot } from '@/features/dashboard/org/components/property-settings/PropertySettingsFields';
 
 import { FieldHelpTooltip } from '@/components/forms/FieldLabel';
 import { bottomTabBarOffsetClassName } from '@/components/mobile/BottomTabBar';
+import { MobileChoiceItem, MobileChoiceSheet } from '@/components/mobile/MobileChoiceSheet';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { SlidingActivePill } from '@/components/ui/SlidingActivePill';
 import { useSlidingActivePill } from '@/hooks/useSlidingActivePill';
@@ -244,6 +247,7 @@ const SectionNavButton = React.forwardRef<
       ref={ref}
       type="button"
       onClick={() => onSelect(section.id)}
+      aria-current={active ? 'true' : undefined}
       className={sectionNavItemClass(active)}
     >
       <Icon
@@ -420,8 +424,9 @@ export function AdminSectionNavLayout({
                 data-admin-content-scroll
                 className={cn(
                   'min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain',
-                  /* Scrollable tab clearance — scrollport fills height; last cards clear the dock. */
-                  bottomTabBarOffsetClassName()
+                  /* Scrollable tab + quick-access clearance: last cards clear the dock and FAB. */
+                  bottomTabBarOffsetClassName(),
+                  'max-lg:pb-[calc(var(--mobile-bottom-bar-h)+5rem)]'
                 )}
               >
                 {header ? <div className="pb-3 lg:hidden">{header}</div> : null}
@@ -454,26 +459,67 @@ export function AdminSectionNavLayout({
 /** Phone-only section jumper. The desktop rail is hidden below lg. */
 const MobileSectionJump = React.memo(function MobileSectionJump() {
   const store = useSectionNavStore();
+  const sectionGroups = React.useContext(SectionNavGroupsContext);
   const sections = React.useSyncExternalStore(store.subscribe, store.getSections);
   const activeSection = React.useSyncExternalStore(store.subscribe, store.getActiveSection);
+  const [open, setOpen] = React.useState(false);
 
   if (sections.length < 2) return null;
 
+  const active = sections.find((section) => section.id === activeSection) ?? sections[0];
+
+  const groups: AdminSectionNavGroup[] =
+    sectionGroups && sectionGroups.length > 0 ? sectionGroups : [{ label: 'Sections', sections }];
+
+  const select = (sectionId: string) => {
+    setOpen(false);
+    store.scrollToSection(sectionId);
+  };
+
   return (
-    <label className="block">
-      <span className="sr-only">Jump to section</span>
-      <select
-        value={activeSection}
-        onChange={(event) => store.scrollToSection(event.target.value)}
-        className="border-border bg-card text-foreground h-10 w-full rounded-lg border px-3 text-sm font-medium"
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        className="border-border bg-card text-foreground flex min-h-[44px] w-full items-center gap-2 rounded-lg border px-3 text-left text-sm font-medium"
       >
-        {sections.map((section) => (
-          <option key={section.id} value={section.id}>
-            {section.label}
-          </option>
+        <List className="text-muted-foreground size-4 shrink-0" aria-hidden />
+        <span className="min-w-0 flex-1 truncate">
+          <span className="text-muted-foreground">Jump to </span>
+          {active?.label}
+        </span>
+        <ChevronDown className="text-muted-foreground size-4 shrink-0" aria-hidden />
+      </button>
+
+      <MobileChoiceSheet open={open} onOpenChange={setOpen} title="Jump to section">
+        {groups.map((group) => (
+          <div key={group.label} className="pb-1">
+            <p className="text-muted-foreground px-4 pb-1 pt-2 text-xs font-medium uppercase tracking-wider">
+              {group.label}
+            </p>
+            <div role="listbox" aria-label={group.label} aria-orientation="vertical">
+              {group.sections.map((section) => {
+                const Icon = section.icon;
+                return (
+                  <MobileChoiceItem
+                    key={section.id}
+                    selected={activeSection === section.id}
+                    onSelect={() => select(section.id)}
+                    label={section.label}
+                    icon={<Icon className="size-4" aria-hidden />}
+                    trailing={
+                      section.badge ?? (section.hasIssue ? <SectionNavIssueDot /> : undefined)
+                    }
+                  />
+                );
+              })}
+            </div>
+          </div>
         ))}
-      </select>
-    </label>
+      </MobileChoiceSheet>
+    </>
   );
 });
 

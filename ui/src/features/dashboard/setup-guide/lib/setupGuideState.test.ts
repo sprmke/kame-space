@@ -3,10 +3,12 @@ import { describe, expect, it } from 'vitest';
 import {
   readSetupGuidePersistedState,
   mergeSetupGuidePersistedState,
+  setupGuidePatchFromWriteResult,
   setupGuideSessionSnoozeKey,
   isSetupGuideSessionSnoozed,
   setSetupGuideSessionSnoozed,
 } from '@/features/dashboard/setup-guide/lib/setupGuideState';
+import { EMPTY_SETUP_GUIDE_STATE } from '@/features/dashboard/setup-guide/lib/setupGuideTypes';
 
 describe('readSetupGuidePersistedState', () => {
   it('readSetupGuidePersistedState is exported', () => {
@@ -15,8 +17,25 @@ describe('readSetupGuidePersistedState', () => {
 });
 
 describe('mergeSetupGuidePersistedState', () => {
-  it('mergeSetupGuidePersistedState is exported', () => {
-    expect(typeof mergeSetupGuidePersistedState).toBe('function');
+  it('merges a partial patch over the empty state', () => {
+    expect(
+      mergeSetupGuidePersistedState(EMPTY_SETUP_GUIDE_STATE, { dismissedAt: '2026-01-01' })
+    ).toMatchObject({ dismissedAt: '2026-01-01', completedAt: null });
+  });
+});
+
+describe('setupGuidePatchFromWriteResult', () => {
+  it('returns an empty patch when the response has no setupGuide', () => {
+    expect(setupGuidePatchFromWriteResult(undefined)).toEqual({});
+    expect(setupGuidePatchFromWriteResult(null)).toEqual({});
+    expect(setupGuidePatchFromWriteResult({})).toEqual({});
+    expect(setupGuidePatchFromWriteResult({ setupGuide: [] })).toEqual({});
+  });
+
+  it('returns the setupGuide patch when present', () => {
+    expect(
+      setupGuidePatchFromWriteResult({ setupGuide: { dismissedAt: '2026-01-02T00:00:00.000Z' } })
+    ).toEqual({ dismissedAt: '2026-01-02T00:00:00.000Z' });
   });
 });
 

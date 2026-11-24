@@ -23,7 +23,7 @@ test.describe('@ci org settings', () => {
 
     await page.locator('#section-branding').scrollIntoViewIfNeeded();
     await page.locator('#instagram-url').fill('https://instagram.com/samplestays');
-    await page.getByRole('button', { name: 'Save', exact: true }).first().click();
+    await page.getByRole('button', { name: 'Save changes', exact: true }).first().click();
 
     await patchReady;
     await expect(page.getByText('Settings saved')).toBeVisible({ timeout: 10_000 });

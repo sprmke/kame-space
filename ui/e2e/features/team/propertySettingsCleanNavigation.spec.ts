@@ -24,7 +24,7 @@ test.describe('@ci property settings clean navigation', () => {
   test('load-time sync does not enable Save or prompt on leave', async ({ page }) => {
     await openCleanPropertySettings(page);
 
-    await expect(page.getByRole('button', { name: 'Save Changes' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Save changes' })).toHaveCount(0);
 
     await page.locator(BOOKINGS_LINK).first().click();
 
@@ -36,7 +36,7 @@ test.describe('@ci property settings clean navigation', () => {
     await openCleanPropertySettings(page);
 
     await page.locator('#property-name').fill('Solea Mactan Updated');
-    await expect(page.getByRole('button', { name: 'Save Changes' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Save changes' })).toBeVisible();
 
     await page.locator(BOOKINGS_LINK).first().click();
     const dialog = page.getByRole('alertdialog');

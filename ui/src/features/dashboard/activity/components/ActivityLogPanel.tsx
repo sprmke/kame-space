@@ -184,9 +184,7 @@ export function ActivityLogPanel({ scope, className }: Props) {
             />
           ) : events.length === 0 ? (
             <ActivityEmptyState
-              message={
-                filtersActive ? 'No activity matches these filters.' : 'No activity in this range.'
-              }
+              message={filtersActive ? 'No activity matches these filters.' : 'No activity yet.'}
               onClearFilters={
                 filtersActive ? () => setFilters(clearActivityFilters(filters)) : undefined
               }

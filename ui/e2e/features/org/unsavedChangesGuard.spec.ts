@@ -77,7 +77,7 @@ test.describe('@ci unsaved changes guard', () => {
 
   test('saving normally does not prompt afterwards', async ({ page }) => {
     await openSettingsAndEdit(page);
-    await page.getByRole('button', { name: 'Save', exact: true }).first().click();
+    await page.getByRole('button', { name: 'Save changes', exact: true }).first().click();
     await expect(page.getByText('Settings saved')).toBeVisible({ timeout: 10_000 });
     await page.goBack();
     await expect(page.getByRole('alertdialog')).toHaveCount(0);
@@ -108,7 +108,7 @@ test.describe('@ci unsaved changes guard', () => {
     await openSettingsAndEdit(page);
     expect(await beforeUnloadPrevented()).toBe(true);
 
-    await page.getByRole('button', { name: 'Save', exact: true }).first().click();
+    await page.getByRole('button', { name: 'Save changes', exact: true }).first().click();
     await expect(page.getByText('Settings saved')).toBeVisible({ timeout: 10_000 });
     expect(await beforeUnloadPrevented()).toBe(false);
   });

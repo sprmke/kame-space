@@ -35,15 +35,15 @@ import { Button } from '@/components/ui/button';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 
 const SECTIONS: AdminSectionNavItem[] = [
-  { id: 'basic', label: 'Basic Information', icon: Info },
+  { id: 'basic', label: 'Basic information', icon: Info },
   { id: 'media', label: 'Photos', icon: ImageIcon },
-  { id: 'details', label: 'Parking Details', icon: Home },
+  { id: 'details', label: 'Parking details', icon: Home },
   { id: 'features', label: 'Amenities', icon: Sparkles },
   { id: 'location', label: 'Location', icon: MapPin },
   { id: 'automations', label: 'Automations', icon: Zap },
   { id: 'integrations', label: 'Integrations', icon: Globe },
   { id: 'activity', label: 'Activity', icon: ScrollText },
-  { id: 'danger', label: 'Danger Zone', icon: AlertTriangle },
+  { id: 'danger', label: 'Danger zone', icon: AlertTriangle },
 ];
 
 export function ParkingSettingsCard() {
@@ -107,7 +107,7 @@ export function ParkingSettingsCard() {
               className="min-h-[44px] gap-1.5"
             >
               <Save className="size-4" aria-hidden />
-              {busy ? 'Saving...' : 'Save Changes'}
+              {busy ? 'Saving…' : 'Save changes'}
             </Button>
           ) : undefined
         }
@@ -115,7 +115,11 @@ export function ParkingSettingsCard() {
         {!settingsReady ? (
           <AppSettingsNavLayoutSkeleton navLabels={SECTIONS.map((section) => section.label)} />
         ) : (
-          <AdminSectionNavLayout className="min-h-0 flex-1" sectionGroups={navSectionGroups}>
+          <AdminSectionNavLayout
+            className="min-h-0 flex-1"
+            sectionGroups={navSectionGroups}
+            mobileSectionNav
+          >
             <ParkingBasicInformationSection controller={controller} />
             <ParkingPhotosSection controller={controller} />
             <ParkingDetailsSectionBlock controller={controller} />

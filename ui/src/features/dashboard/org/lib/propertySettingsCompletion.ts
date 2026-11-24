@@ -274,7 +274,7 @@ export function computePropertySettingsCompletion(
   if (amenityCount < MIN_PROPERTY_AMENITIES) {
     addSectionIssue(
       'amenities',
-      `Select at least ${MIN_PROPERTY_AMENITIES} amenities (${amenityCount} selected). This helps guests know what your property offers.`
+      `Select at least ${MIN_PROPERTY_AMENITIES} amenities (${amenityCount} selected). This helps guests know what's included.`
     );
   }
 
@@ -303,9 +303,11 @@ export function computePropertySettingsCompletion(
   if (!profile.country.trim()) {
     addFieldError('property-country', 'Enter the country', 'location');
   }
-  if (profile.latitude == null || profile.longitude == null) {
-    addFieldError('property-location-map', 'Pin your property on the map', 'location');
-  }
+  /*
+   * The map pin is an enhancement, not a gate. The address is the source of truth and
+   * every guest link falls back to it, so a Maps outage or a host who skips the pin must
+   * not block saving the Location section.
+   */
 
   // ── Payment ──
   if (operational) {

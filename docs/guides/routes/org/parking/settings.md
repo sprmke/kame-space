@@ -2,7 +2,7 @@
 title: 'Parking settings — operator guide'
 status: active
 tags: [guides, routes, org, parking]
-updated: 2026-11-11
+updated: 2026-11-23
 ---
 
 # Parking settings — operator guide
@@ -15,15 +15,15 @@ Route: `/org/:orgSlug/parking/:parkingSlug/settings`
 
 | Section           | E2E save  | Validation | Docs | Notes                                                                                                                          |
 | ----------------- | --------- | ---------- | ---- | ------------------------------------------------------------------------------------------------------------------------------ |
-| Basic Information | Done      | Done       | Done | Parking type/residence/tower/level/slot are read-only                                                                          |
+| Basic information | Done      | Done       | Done | Parking type/residence/tower/level/slot are read-only                                                                          |
 | Photos            | Done      | Done       | Done | Up to 3 photos; one starred cover, at least 1 required                                                                         |
-| Parking Details   | Done      | Done       | Done | Check-in/out required; dimensions optional                                                                                     |
+| Parking details   | Done      | Done       | Done | Check-in/out required; dimensions optional                                                                                     |
 | Amenities         | Done      | Done       | Done | At least 1 amenity required; count summary + **Manage** modal                                                                  |
-| Location          | Done      | Done       | Done | Address + map pin required                                                                                                     |
+| Location          | Done      | Done       | Done | Address, city, province and country required; map pin optional                                                                 |
 | Automations       | Done      | N/A        | Done | Email toggles (reservation / confirmed / no host) + auto-accept top match; count summary + **Manage** modal                    |
 | Integrations      | Done      | N/A        | Done | Telegram + AI optional; status/shortcuts only                                                                                  |
 | Activity          | Read-only | n/a        | Done | Summary row + **Manage** → modal with full parking activity feed (`ActivityLogPanel`). Section shown only with `activity:view` |
-| Danger Zone       | Done      | N/A        | Done | Archive, restore, delete with confirmation                                                                                     |
+| Danger zone       | Done      | N/A        | Done | Archive, restore, delete with confirmation                                                                                     |
 
 ## Overview
 
@@ -43,14 +43,16 @@ Parking **Settings** is where you set up a single slot before guests can book it
   A: Basic info, photos, location, and amenities flow to your public parking page. Keep the photos and description accurate before sharing the link. Guests pay through PayMongo at checkout, so there are no payment details to fill in here.
 - Q: How many photos can I add, and which one shows first?
   A: Up to 3. The starred photo is the cover and shows first on your public parking page. Drag the photos to change their order.
+- Q: What happens if the map does not load when I set the location?
+  A: You can still save. Enter the address, city, province or state, and country by hand, then use Retry when the map comes back. The pin is optional: guests get directions from the address.
 - Q: Can I change the tower, level, or slot number after creating the slot?
   A: No. Those, along with parking type and residence, are locked once the slot is created since guests, bookings, and the public link are all tied to them. If one is wrong, delete the slot while it has no bookings, or archive it and create a new one.
 - Q: Why is Delete parking disabled?
   A: A slot with booking history or pending offers can't be deleted. Archive it to hide it from guests. Existing bookings stay, and finance entries are not removed.
 - Q: Do I have to fill out every section before anything saves?
-  A: No. **Save Changes** only saves the sections you've edited that pass validation, so you can finish photos today and automations later. Incomplete required areas still show a warning dot until you get to them.
+  A: No. **Save changes** only saves the sections you've edited that pass validation, so you can finish photos today and automations later. Incomplete required areas still show a warning dot until you get to them.
 - Q: Where do I turn the automatic emails or auto-accept on and off?
-  A: **Parking Settings → Automations → Manage**. The modal lists the automatic emails with who receives them and when they send, plus **Auto-accept top match**. Your changes save with the page **Save Changes**.
+  A: **Parking Settings → Automations → Manage**. The modal lists the automatic emails with who receives them and when they send, plus **Auto-accept top match**. Your changes save with the page **Save changes**.
 - Q: Why is there no Payment section any more?
   A: Guests pay for parking through PayMongo when they book. Payment methods you entered before are kept for history but are no longer used or shown.
 - Q: Where do I connect Telegram for this parking slot?
@@ -64,7 +66,7 @@ Parking **Settings** is where you set up a single slot before guests can book it
 
 ## Setup completeness
 
-**Save Changes** is blocked while any required field is incomplete — the button stays visible but **disabled** (tooltip names the first issue), matching [Property Settings](../property/settings.md#setup-completeness). Incomplete sections show a **red dot** on the in-page section nav (desktop `lg+` sidebar) and on the sidebar **Settings** link, driven by the saved parking snapshot outside the editor and by the live draft while editing. On phone, Save is a hero icon when dirty; on desktop it appears in the page header actions (no separate sticky footer bar).
+**Save changes** is blocked while any required field is incomplete — the button stays visible but **disabled** (tooltip names the first issue), matching [Property Settings](../property/settings.md#setup-completeness). Incomplete sections show a **red dot** on the in-page section nav (desktop `lg+` sidebar) and on the sidebar **Settings** link, driven by the saved parking snapshot outside the editor and by the live draft while editing. On phone, Save is a hero icon when dirty; on desktop it appears in the page header actions (no separate sticky footer bar).
 
 | Rule                                                     | Required? |
 | -------------------------------------------------------- | --------- |
@@ -72,10 +74,11 @@ Parking **Settings** is where you set up a single slot before guests can book it
 | Photos (at least 1)                                      | Yes       |
 | Parking details (check-in / check-out)                   | Yes       |
 | Amenities (at least 1 selected)                          | Yes       |
-| Location (address + map pin)                             | Yes       |
+| Location (address, city, province, country)              | Yes       |
+| Location map pin                                         | No        |
 | Telegram integrations                                    | No        |
 
-Field-level errors appear **as you edit** (on blur/change). After **Save Changes**, all remaining issues are shown at once and the page scrolls to the first incomplete section. Section banners (orange) appear for **Photos** and **Amenities** — not for sections with individual inputs.
+Field-level errors appear **as you edit** (on blur/change). After **Save changes**, all remaining issues are shown at once and the page scrolls to the first incomplete section. Section banners (orange) appear for **Photos** and **Amenities** — not for sections with individual inputs.
 
 Logic: `ui/src/features/dashboard/parking/lib/parkingSettingsCompletion.ts`, `ui/src/features/dashboard/parking/lib/parkingSettingsFieldError.ts`
 
@@ -89,7 +92,7 @@ Logic: `ui/src/features/dashboard/parking/lib/parkingSettingsCompletion.ts`, `ui
 | Photos          | `parkings.settings.media` (order + cover) via **`upload-parking-media`** (3 images max); `settings.images` and `settings.coverImage` / `coverImageStoragePath` stay in sync for the public API                                                                                                                                                                                                                                                                                                          |
 | Parking details | `parkings.settings` — optional `spaceLengthM`, `spaceWidthM`, `heightClearanceM`; `checkInTime`, `checkOutTime` (defaults `14:00`, `12:00`) via **`ParkingDetailsSection`**                                                                                                                                                                                                                                                                                                                             |
 | Amenities       | `parkings.settings.enabledParkingAmenities`, `customParkingAmenities`, resolved `features[]` (public listing) via **`PATCH update-parking`**. Compact count summary + **Manage** modal (`ParkingFeaturesSection`); the Setup Guide step passes `embedded` for the inline editor.                                                                                                                                                                                                                        |
-| Location        | `parkings.settings` — `address`, `city`, `province`, `country`, `zipCode`, `latitude`, `longitude`, `mapsUrl`, `placeId` (same shape as property; **`PropertyLocationPicker`**)                                                                                                                                                                                                                                                                                                                         |
+| Location        | `parkings.settings` — `address`, `city`, `province`, `country`, `zipCode`, `latitude`, `longitude`, `mapsUrl`, `placeId` (same shape as property; **`PropertyLocationPicker`** with editable city/province/country/ZIP and an optional pin)                                                                                                                                                                                                                                                             |
 | Automations     | `parking_settings.automation_toggles` — reservation request, guest confirmed, no-host-available (default **on**), and `autoAcceptTopMatch` (default **off**). Compact `N of 4 on` summary + **Manage** modal (`ParkingAutomationsSection`, bottom sheet below `lg`); Setup Guide step passes `embedded`. Auto-accept claims the top-ranked candidate on the initial dispatch batch; the guest still pays before endorsement fires. Legacy `payment_methods` rows are kept but no longer read or edited. |
 | Integrations    | `PropertyIntegrationsPanel` (`telegramLayout="parking"`) — Google status (flags), single **Parking** Telegram channel → notifications page, AI services (platform env)                                                                                                                                                                                                                                                                                                                                  |
 | Activity        | Read-only summary + **Manage** → modal with full parking-scoped feed (`ActivityLogPanel`) and an in-place sliding detail view (Back / Esc). Legacy `/activity` redirects to `…/settings?open=activity`. See [activity.md](./activity.md). No save path.                                                                                                                                                                                                                                                 |
@@ -107,7 +110,7 @@ Logic: `ui/src/features/dashboard/parking/lib/parkingSettingsCompletion.ts`, `ui
 | Tower / Level / Slot | `parkings.tower`, `level`, `slot_label` — **read-only** in settings (set at creation)                                                                                                                         | **`ListingPlaceMeta`** placement labels           |
 | Description          | `parkings.settings.description` (legacy `notes` migrated on save)                                                                                                                                             | **About this parking** section                    |
 
-Parking type, residence, tower, level, and slot number can only be set when the slot is created (`useCreateParking`). They render read-only in Settings, same as property's type/residence/tower/unit — see [Property Settings § Basic Information](../property/settings.md#basic-information).
+Parking type, residence, tower, level, and slot number can only be set when the slot is created (`useCreateParking`). They render read-only in Settings; a slot's identity stays fixed at creation. (Property identity fields are editable on Property Settings.)
 
 ### Parking details fields
 
@@ -122,7 +125,7 @@ Parking type, residence, tower, level, and slot number can only be set when the 
 
 ## Save paths
 
-**Save Changes** saves only dirty sections that pass validation — the same section-scoped behavior as Property Settings. If required fields are still incomplete, **Save Changes** stays visible but is **disabled** (tooltip names the first issue); clicking while enabled with incomplete fields still scrolls to the first incomplete section and toasts the issue.
+**Save changes** saves only dirty sections that pass validation — the same section-scoped behavior as Property Settings. If required fields are still incomplete, **Save changes** stays visible but is **disabled** (tooltip names the first issue); clicking while enabled with incomplete fields still scrolls to the first incomplete section and toasts the issue.
 
 - Basic (brand color, description only — identity fields are read-only) → `PATCH update-parking`
 - Photos → `POST` / `DELETE` **`upload-parking-media?parking_id=`** (auto-saved on upload/remove); reorder or set the cover via `PATCH update-parking` with the media patch
@@ -139,6 +142,10 @@ Since parking type, residence, tower, level, and slot number can't change in Set
 ---
 
 **Unsaved changes.** Leaving with unsaved edits (another menu item, browser back, F5 / Cmd+Ctrl+R, closing the tab) asks to **Save & leave**, **Discard**, or **Keep editing**. Save & leave runs the same validation as Save and stays on the page if it fails. Shared guard: [`unsaved-changes.md`](../../../../architecture/unsaved-changes.md).
+
+## Phone navigation
+
+Below `lg`, a **Jump to <section>** button opens a grouped bottom sheet (Listing / Automations / Connections / Account) so the nine cards are reachable without scrolling. The Automations modal uses **Done** plus **Applies when you save the page.**, matching the property Manage dialogs.
 
 ## Implementation map
 
@@ -172,8 +179,10 @@ The same sections can be completed inside the post-onboarding [Setup Guide](../s
 
 ## Testing
 
-| Layer | Path / spec                                                                                                                    | Manual        |
-| ----- | ------------------------------------------------------------------------------------------------------------------------------ | ------------- |
-| Unit  | `parkingStatusMachine_test.ts`, `parkingSettingsSavePlan.test.ts`, `parkingSettingsCompletion.test.ts`, `parkingMedia.test.ts` | —             |
-| E2E   | [`parking-playwright.md`](../testing/parking-playwright.md) guest/host specs                                                   | PayMongo live |
-| N/A   | Parking host dashboard shell load                                                                                              | —             |
+| Layer | Path / spec                                                                                                                     | Manual        |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------- | ------------- |
+| Unit  | `parkingStatusMachine_test.ts`, `parkingSettingsSavePlan.test.ts`, `parkingSettingsCompletion.test.ts`, `parkingMedia.test.ts`  | —             |
+| E2E   | [`parking-playwright.md`](../testing/parking-playwright.md) guest/host specs                                                    | PayMongo live |
+| E2E   | `ui/e2e/features/dashboard/settings/settingsModule.spec.ts` parking scope (`@ci`, rail, save, `settings:view` explainer, phone) | —             |
+| Demo  | `ui/e2e/features/dashboard/settings/settingsTour.slowmo.spec.ts` (`@demo`, headed + video)                                      | —             |
+| N/A   | Parking host dashboard shell load                                                                                               | —             |
