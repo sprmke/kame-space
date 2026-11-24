@@ -91,23 +91,24 @@ touched. All of them are fixable in the UI layer.
 
 ## What works (verified end to end)
 
-| Area               | Verified                                                                                                       |
-| ------------------ | -------------------------------------------------------------------------------------------------------------- |
-| URL state          | Every filter, sort, page, view and stage round-trips; back/forward restore the exact list                      |
-| Stage cards        | Four buckets, correct counts (5 / 4 / 1 / 2 against the fixture), click to filter, click to clear              |
-| Default visibility | Completed and cancelled stay out of the default list; History shows exactly those two                          |
-| Search             | Guest name, email, phone, plate and pet name all match; clears back to the full page                           |
-| Status filter      | Grouped Pending Documents with GAF / Parking / Pet children; panel scrolls to reach Imported                   |
-| Views              | Table, card, kanban and calendar all render the same 12 rows; phone forces card and hides kanban               |
-| Calendar           | Month grid, multi-night bars, "+2" overflow, day details rail, month nav patches the URL range                 |
-| Detail header      | Guest, status, source, dates, pax and nights; Edit booking gated on any detail edit leaf                       |
-| Detail tabs        | Stay / Guests / Parking / Pets / Pricing / Files / Activity, data-driven (Parking and Pets only when required) |
-| Workflow rail      | Stage deck, nested doc groups, single primary CTA, Return + Proceed pair, Cancel booking                       |
-| Review gate        | Proceed stays hidden until the acknowledgement is ticked (verified, PENDING_REVIEW)                            |
-| Plan degradation   | Free shows MANUAL SEND, "Not sent", "Send from Automation Triggers", no auto-send claims                       |
-| Team degradation   | Read only loses Edit, Proceed, Cancel, review Write; keeps read-only detail and tabs                           |
-| Empty / error      | Both are real states with distinct copy; the error card names the reason instead of a blank table              |
-| List chrome        | Every visible control has an accessible name (verified with the repo's unnamed-control sweep)                  |
+| Area               | Verified                                                                                                                                                                 |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| URL state          | Every filter, sort, page, view and stage round-trips; back/forward restore the exact list                                                                                |
+| Stage cards        | Four buckets, correct counts (5 / 4 / 1 / 2 against the fixture), click to filter, click to clear                                                                        |
+| Default visibility | Completed and cancelled stay out of the default list; History shows exactly those two                                                                                    |
+| Search             | Guest name, email, phone, plate and pet name all match; clears back to the full page                                                                                     |
+| Status filter      | Grouped Pending Documents with GAF / Parking / Pet children; panel scrolls to reach Imported                                                                             |
+| Views              | Table, card, kanban and calendar all render the same 12 rows; phone forces card and hides kanban                                                                         |
+| Calendar           | Month grid, multi-night bars, "+2" overflow, day details rail, month nav patches the URL range                                                                           |
+| Detail header      | Guest, status, source, dates, pax and nights; Edit booking gated on any detail edit leaf                                                                                 |
+| Detail tabs        | Stay / Guests / Parking / Pets / Pricing / Files / Activity, data-driven (Parking and Pets only when required)                                                           |
+| Workflow rail      | Stage deck, nested doc groups, single primary CTA, Return + Proceed pair, Cancel booking                                                                                 |
+| Review gate        | Proceed stays hidden until the acknowledgement is ticked (verified, PENDING_REVIEW)                                                                                      |
+| Plan degradation   | Free shows MANUAL SEND, "Not sent", "Send from Automation Triggers", no auto-send claims                                                                                 |
+| Team degradation   | Read only loses Edit, Proceed, Cancel, review Write; keeps read-only detail and tabs                                                                                     |
+| Server scoping     | `get-booking` 404s a booking requested through another property, parking or org; `list-bookings` narrows org scope to assigned listings (both edge functions, code-read) |
+| Empty / error      | Both are real states with distinct copy; the error card names the reason instead of a blank table                                                                        |
+| List chrome        | Every visible control has an accessible name (verified with the repo's unnamed-control sweep)                                                                            |
 
 ## Findings
 
