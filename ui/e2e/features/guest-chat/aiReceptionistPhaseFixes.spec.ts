@@ -69,6 +69,9 @@ test.describe('@ci ai receptionist phase 1 and 2', () => {
 
     const panel = page.locator('.voice-panel');
     await expect(panel).toHaveAttribute('aria-modal', 'true');
+    await expect
+      .poll(() => page.evaluate(() => document.getElementById('root')?.hasAttribute('inert')))
+      .toBe(true);
     const box = await panel.boundingBox();
     expect(Math.round(box?.x ?? -1)).toBe(0);
     expect(Math.round(box?.y ?? -1)).toBe(0);
@@ -83,6 +86,9 @@ test.describe('@ci ai receptionist phase 1 and 2', () => {
     await page.getByRole('button', { name: 'End call' }).click();
     await page.getByRole('button', { name: 'Done' }).click();
     await expect(talkButton(page)).toBeVisible();
+    await expect
+      .poll(() => page.evaluate(() => document.getElementById('root')?.hasAttribute('inert')))
+      .toBe(false);
   });
 
   test('asks before deleting the transcript', async ({ page }) => {

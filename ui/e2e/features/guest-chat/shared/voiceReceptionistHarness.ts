@@ -47,6 +47,12 @@ export async function installVoiceReceptionistMocks(
   await seedSupabaseAuthSession(page, 'guest');
   await page.addInitScript(() => {
     window.localStorage.removeItem('guest-voice-receptionist-consent-v1');
+    try {
+      // The shared consent state is pinned to ports 4173/4174; specs may run elsewhere.
+      window.localStorage.setItem('kh-cookie-consent', 'declined');
+    } catch {
+      // private mode
+    }
   });
 
   await page.route('**/auth/v1/user**', async (route) => {

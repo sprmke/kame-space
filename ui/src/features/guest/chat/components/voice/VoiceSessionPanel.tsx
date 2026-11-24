@@ -31,7 +31,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { useIsBelowLg } from '@/hooks/useMediaQuery';
 import { captureAppEvent } from '@/lib/posthog/capture';
 import { cn } from '@/lib/utils';
 
@@ -39,6 +38,8 @@ type Props = {
   propertySlug: string;
   onClose: () => void;
   className?: string;
+  /** True when the panel is portaled full screen outside the app root on phones. */
+  fullscreen?: boolean;
 };
 
 const VOICE_CONSENT_KEY = 'guest-voice-receptionist-consent-v1';
@@ -98,7 +99,7 @@ const roundButtonClass =
  * tokens so light/dark match guest chat. The booth stays mounted from disclosure to call end;
  * only the content under it and the footer change.
  */
-export function VoiceSessionPanel({ propertySlug, onClose, className }: Props) {
+export function VoiceSessionPanel({ propertySlug, onClose, className, fullscreen = false }: Props) {
   const session = useVoiceSession(propertySlug);
   const [callStarted, setCallStarted] = useState(false);
   const [hasConsent] = useState(readConsent);
@@ -110,7 +111,6 @@ export function VoiceSessionPanel({ propertySlug, onClose, className }: Props) {
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [confirmHandoffOpen, setConfirmHandoffOpen] = useState(false);
   const panelRef = useRef<HTMLElement>(null);
-  const isBelowLg = useIsBelowLg();
 
   const rawView = callStarted
     ? deriveVoiceSessionView({
@@ -192,6 +192,16 @@ export function VoiceSessionPanel({ propertySlug, onClose, className }: Props) {
   }, []);
 
   useEffect(() => {
+    if (!fullscreen) return;
+    // The panel is portaled to body, so the app root is safe to make inert. This keeps the tab bar
+    // and the page behind a full-screen call out of the tab order and the accessibility tree.
+    const root = document.getElementById('root');
+    if (!root) return;
+    root.setAttribute('inert', '');
+    return () => root.removeAttribute('inert');
+  }, [fullscreen]);
+
+  useEffect(() => {
     captureAppEvent('voice_entry_shown', { disclosure_required: !hasConsent });
   }, [hasConsent]);
 
@@ -247,8 +257,8 @@ export function VoiceSessionPanel({ propertySlug, onClose, className }: Props) {
   return (
     <section
       ref={panelRef}
-      role={isBelowLg ? 'dialog' : undefined}
-      aria-modal={isBelowLg || undefined}
+      role={fullscreen ? 'dialog' : undefined}
+      aria-modal={fullscreen || undefined}
       tabIndex={-1}
       className={cn(
         'voice-panel bg-card flex min-h-0 flex-1 flex-col overflow-hidden outline-none',

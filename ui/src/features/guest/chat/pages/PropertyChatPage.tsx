@@ -135,10 +135,15 @@ function PropertyChatContent({
     enabled: true,
   });
   const [voiceSessionOpen, setVoiceSessionOpen] = useState(false);
+  /** Frozen when the call opens so a breakpoint change never remounts the live session. */
+  const [fullscreenCall, setFullscreenCall] = useState(false);
   const voiceButtonRef = useRef<HTMLButtonElement>(null);
   const isBelowLg = useIsBelowLg();
 
-  const openVoice = () => setVoiceSessionOpen(true);
+  const openVoice = () => {
+    setFullscreenCall(isBelowLg);
+    setVoiceSessionOpen(true);
+  };
   const closeVoice = () => {
     setVoiceSessionOpen(false);
     window.requestAnimationFrame(() => voiceButtonRef.current?.focus());
@@ -147,7 +152,8 @@ function PropertyChatContent({
     <VoiceSessionPanel
       propertySlug={propertySlug}
       onClose={closeVoice}
-      className={isBelowLg ? 'fixed inset-0 z-[60] h-dvh w-full bg-card' : undefined}
+      className={fullscreenCall ? 'fixed inset-0 z-[60] h-dvh w-full bg-card' : undefined}
+      fullscreen={fullscreenCall}
     />
   );
 
@@ -300,7 +306,7 @@ function PropertyChatContent({
           <Skeleton className="h-[50vh] w-full rounded-2xl" />
         </div>
       ) : voiceSessionOpen ? (
-        isBelowLg ? createPortal(voicePanel, document.body) : voicePanel
+        fullscreenCall ? createPortal(voicePanel, document.body) : voicePanel
       ) : (
         <GuestChatThread
           conversationId={conversationId}
