@@ -106,3 +106,7 @@ list**, so a broken feed is named there too.
 - Architecture: [`docs/architecture/marketing-trends.md`](../../../architecture/marketing-trends.md)
 - Host surface: [`../../org/property/marketing.md`](../../org/property/marketing.md)
 - Health: [`../health.md`](../health.md)
+
+## 2026-11-24 UX pass
+
+Run statuses are capitalized (Published, Failed, Skipped), the trigger reads Scheduled or Manual, and an AI failure shows an operator sentence with the raw error behind “Technical detail”.

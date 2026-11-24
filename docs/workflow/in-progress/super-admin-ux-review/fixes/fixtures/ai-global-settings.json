@@ -1,0 +1,43 @@
+{
+  "success": true,
+  "data": {
+    "enabled": true,
+    "enforceQuotas": true,
+    "allowedFeatures": [],
+    "defaultDailyCallLimit": 200,
+    "defaultMonthlyCallLimit": 5000,
+    "defaultDailyCostUsdLimit": 10,
+    "creditUnitUsd": 0.001,
+    "voiceReceptionistCostPerMinuteUsd": 0.023,
+    "voiceReceptionistRolloutPercentage": 0,
+    "voiceReceptionistRolloutPropertyIds": [],
+    "voiceReceptionistTranscriptRetentionDays": 30,
+    "voiceReceptionistHealthStatus": "unknown",
+    "voiceReceptionistHealthCheckedAt": null,
+    "voiceReceptionistHealthFailureCode": null,
+    "voiceReceptionistHealthTokenMintMs": null,
+    "voiceReceptionistHealthSetupMs": null,
+    "voiceReceptionistHealthModel": null,
+    "voiceReceptionistHealthProtocolVersion": null,
+    "voiceReceptionistMetrics": {
+      "days": 7,
+      "alerts": {
+        "quotaPressureHigh": false,
+        "reconnectRateHigh": false,
+        "abandonmentRateHigh": false,
+        "providerFailureRateHigh": false,
+        "mintFailureRateHigh": false
+      },
+      "toolMs": { "p50": null, "p95": null },
+      "sessions": 0,
+      "startupMs": { "p50": null, "p95": null },
+      "reconnects": { "p50": null, "p95": null },
+      "firstAudioMs": { "p50": null, "p95": null },
+      "sessionSeconds": { "p50": null, "p95": null },
+      "completionRatePct": null
+    },
+    "defaultDailyCreditLimit": 100000,
+    "defaultMonthlyCreditLimit": 1000000,
+    "updatedAt": "2026-11-22T18:21:08.686607+00:00"
+  }
+}

@@ -120,3 +120,7 @@ Filters (search / severity / status), page, and page size live in the URL (`?sea
 ## Testing
 
 Announcement menu labels and the create flow are covered by the admin E2E suite.
+
+## 2026-11-24 UX pass
+
+An announcement with no schedule reads “Always on”; rows use a chevron affordance.

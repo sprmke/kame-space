@@ -1,0 +1,26 @@
+{
+  "success": true,
+  "data": {
+    "organizations": [
+      {
+        "organizationId": "405ea07f-cc21-4bcc-b540-28729be79f0d",
+        "organizationName": "Kame Space",
+        "organizationSlug": "kame-homes",
+        "propertyCount": 1,
+        "subscription": {
+          "id": "f7eb0560-5509-4bdb-8941-87d0f6f68627",
+          "planId": "a0562a5e-df4a-4617-bfcf-c88589bf6046",
+          "planCode": "pro",
+          "planName": "Business",
+          "pricingModel": "subscription",
+          "status": "active",
+          "pricePhpSnapshot": 1799,
+          "updatedAt": "2026-11-19T19:19:29.357893+00:00"
+        }
+      }
+    ],
+    "total": 1,
+    "page": 1,
+    "limit": 25
+  }
+}

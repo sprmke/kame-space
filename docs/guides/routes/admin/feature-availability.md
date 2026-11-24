@@ -58,3 +58,7 @@ Super admins can pause specific product areas (Meta inbox actions, channel sync 
 | ----- | ------------------------------------------------------------ |
 | Unit  | `featureAvailabilityAdmin.test.ts`, client parity/copy tests |
 | E2E   | Not yet (module gating in later phases)                      |
+
+## 2026-11-24 UX pass
+
+Descriptions are operator copy; they no longer name edge functions or internal flags.

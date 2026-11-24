@@ -134,3 +134,7 @@ Standard admin-list pagination (same pattern as `/bookings`): `page`/`limit` are
 ## Pending / follow-ups
 
 - [ ] None known.
+
+## 2026-11-24 UX pass
+
+Numeric columns are width-constrained and right-aligned; the phone meta line pluralizes (1 org, 1 prop).

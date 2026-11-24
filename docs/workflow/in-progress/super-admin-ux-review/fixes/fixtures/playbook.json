@@ -1,0 +1,218 @@
+{
+  "success": true,
+  "data": {
+    "articles": [
+      {
+        "id": "2434fb46-a39b-4e17-a5e6-1275fecc54af",
+        "slug": "audit-blocked-dates",
+        "category": "calendar hygiene",
+        "title": "Audit your blocked dates",
+        "body_md": "Blocked dates that no longer need to be blocked are lost revenue. Review your calendar each month and release anything you're not actually holding for maintenance, personal use, or a pending booking.",
+        "applies_when": { "op": "eq", "value": "underbooked", "metric": "forwardOccupancyState" },
+        "sort_order": 20,
+        "is_active": true,
+        "created_at": "2026-11-08T05:40:56.828428+00:00",
+        "updated_at": "2026-11-18T12:55:55.118967+00:00"
+      },
+      {
+        "id": "4c75da83-bcc0-40e9-9657-78eb4ead0524",
+        "slug": "extend-your-calendar",
+        "category": "calendar hygiene",
+        "title": "Open your calendar further into the future",
+        "body_md": "Guests booking far in advance can't book what isn't open yet. If your calendar closes off after a short window, extending it captures early planners.",
+        "applies_when": { "op": "eq", "value": "fully_booked", "metric": "forwardOccupancyState" },
+        "sort_order": 110,
+        "is_active": true,
+        "created_at": "2026-11-08T05:40:56.828428+00:00",
+        "updated_at": "2026-11-08T05:40:56.828428+00:00"
+      },
+      {
+        "id": "59ba910a-9519-466d-a9f8-dd03189d96ec",
+        "slug": "collect-outstanding-balances",
+        "category": "collections",
+        "title": "Follow up on unpaid balances before check-in",
+        "body_md": "A booking with an outstanding balance close to check-in is a collections risk, not just an accounting note. Send a reminder as soon as a balance is flagged, well before the guest arrives.",
+        "applies_when": {
+          "op": "in",
+          "value": ["attention_needed", "at_risk"],
+          "metric": "balanceCollectionState"
+        },
+        "sort_order": 60,
+        "is_active": true,
+        "created_at": "2026-11-08T05:40:56.828428+00:00",
+        "updated_at": "2026-11-08T05:40:56.828428+00:00"
+      },
+      {
+        "id": "d06ad80a-b3c9-4b73-9ae7-0937e02ef421",
+        "slug": "highlight-amenities-in-title",
+        "category": "listing content",
+        "title": "Lead with your strongest amenity",
+        "body_md": "Your title and first photo do the most work in search results. Make sure they highlight the amenity or feature that matters most to your target guest (pool, parking, view, workspace).",
+        "applies_when": { "op": "eq", "value": "underbooked", "metric": "forwardOccupancyState" },
+        "sort_order": 120,
+        "is_active": true,
+        "created_at": "2026-11-08T05:40:56.828428+00:00",
+        "updated_at": "2026-11-08T05:40:56.828428+00:00"
+      },
+      {
+        "id": "16bf647a-d850-4bf4-97e7-70f4e509f84a",
+        "slug": "publish-public-page-updates",
+        "category": "listing content",
+        "title": "Keep your public page current",
+        "body_md": "An outdated public page (old rates, stale availability messaging) undersells a listing that's actually performing well. Republish after any meaningful change.",
+        "applies_when": { "op": "eq", "value": "strong", "metric": "forwardOccupancyState" },
+        "sort_order": 170,
+        "is_active": true,
+        "created_at": "2026-11-08T05:40:56.828428+00:00",
+        "updated_at": "2026-11-08T05:40:56.828428+00:00"
+      },
+      {
+        "id": "1519ede2-e1e9-4c44-ab46-f56bc89db413",
+        "slug": "channel-mix-diversify",
+        "category": "marketing",
+        "title": "Diversify where your bookings come from",
+        "body_md": "Relying on a single channel is a concentration risk. If one source dominates your bookings, test listing or promoting through another channel to reduce that dependency.",
+        "applies_when": { "op": "gt", "value": 0.8, "metric": "channelConcentration" },
+        "sort_order": 130,
+        "is_active": true,
+        "created_at": "2026-11-08T05:40:56.828428+00:00",
+        "updated_at": "2026-11-08T05:40:56.828428+00:00"
+      },
+      {
+        "id": "af36fb2f-d8f1-455b-9330-39209bd25eac",
+        "slug": "review-cancellation-patterns",
+        "category": "operations",
+        "title": "Look for a pattern in recent cancellations",
+        "body_md": "A cluster of cancellations around the same dates or guest type can point to a listing description mismatch, a pricing issue, or a booking-window problem worth investigating.",
+        "applies_when": { "op": "gt", "value": 0.15, "metric": "cancellationRate" },
+        "sort_order": 160,
+        "is_active": true,
+        "created_at": "2026-11-08T05:40:56.828428+00:00",
+        "updated_at": "2026-11-08T05:40:56.828428+00:00"
+      },
+      {
+        "id": "0f557415-a73e-439d-a3bd-ddfe2d3979c8",
+        "slug": "review-photos-quarterly",
+        "category": "photos",
+        "title": "Refresh your listing photos every season",
+        "body_md": "Listings with outdated or off-season photos underperform. Update your photo set to reflect the current season and any recent improvements to the space.",
+        "applies_when": { "op": "eq", "value": "underbooked", "metric": "forwardOccupancyState" },
+        "sort_order": 70,
+        "is_active": true,
+        "created_at": "2026-11-08T05:40:56.828428+00:00",
+        "updated_at": "2026-11-08T05:40:56.828428+00:00"
+      },
+      {
+        "id": "3efa112e-471e-45a3-8c68-c08dfe6eb01f",
+        "slug": "raise-rates-when-fully-booked",
+        "category": "pricing",
+        "title": "Raise your rates before you sell out",
+        "body_md": "When a stretch of dates is fully booked, that's the market telling you the price was too low. Raise the nightly rate for the next open window before demand drops off, not after.",
+        "applies_when": { "op": "eq", "value": "fully_booked", "metric": "forwardOccupancyState" },
+        "sort_order": 10,
+        "is_active": true,
+        "created_at": "2026-11-08T05:40:56.828428+00:00",
+        "updated_at": "2026-11-08T05:40:56.828428+00:00"
+      },
+      {
+        "id": "5e88ca21-7ba9-48e2-a19d-e4551f963164",
+        "slug": "price-gap-check",
+        "category": "pricing",
+        "title": "Check your rate against your own baseline",
+        "body_md": "Compare your current nightly rate to your trailing 90-day average. A rate that has drifted well below your own baseline without a clear reason (off-season, extended stay discount) is worth revisiting.",
+        "applies_when": { "op": "lt_baseline", "value": 0.85, "metric": "adr" },
+        "sort_order": 30,
+        "is_active": true,
+        "created_at": "2026-11-08T05:40:56.828428+00:00",
+        "updated_at": "2026-11-08T05:40:56.828428+00:00"
+      },
+      {
+        "id": "bf2f8458-d96f-4d81-8cc2-f324e2e7f065",
+        "slug": "enable-smart-pricing",
+        "category": "pricing",
+        "title": "Let Smart Pricing handle the daily adjustments",
+        "body_md": "Smart Pricing adjusts your nightly rate automatically based on demand signals, so you don't have to manually chase occupancy swings. Turn it on from the Pricing page.",
+        "applies_when": { "op": "eq", "value": false, "metric": "smartPricingEnabled" },
+        "sort_order": 40,
+        "is_active": true,
+        "created_at": "2026-11-08T05:40:56.828428+00:00",
+        "updated_at": "2026-11-08T05:40:56.828428+00:00"
+      },
+      {
+        "id": "1d62f5c9-b223-40c1-abb6-c0d5b52b1ef5",
+        "slug": "set-a-minimum-stay-strategically",
+        "category": "pricing",
+        "title": "Use minimum stays to protect high-demand dates",
+        "body_md": "On dates that are likely to book solid (holidays, weekends in peak season), a 2-3 night minimum stay reduces the risk of a single-night booking blocking a more valuable multi-night stay.",
+        "applies_when": { "op": "eq", "value": "strong", "metric": "forwardOccupancyState" },
+        "sort_order": 80,
+        "is_active": true,
+        "created_at": "2026-11-08T05:40:56.828428+00:00",
+        "updated_at": "2026-11-08T05:40:56.828428+00:00"
+      },
+      {
+        "id": "32c8cdc9-6511-4e04-a8d4-d8298f661739",
+        "slug": "shorten-lead-time-gaps",
+        "category": "pricing",
+        "title": "Target your last-minute gap nights",
+        "body_md": "Nights close to today that are still unbooked rarely fill at full price. A modest last-minute discount on genuine gap nights is usually better than an empty night.",
+        "applies_when": { "op": "gt", "value": 0, "metric": "gapNightsNext14d" },
+        "sort_order": 140,
+        "is_active": true,
+        "created_at": "2026-11-08T05:40:56.828428+00:00",
+        "updated_at": "2026-11-08T05:40:56.828428+00:00"
+      },
+      {
+        "id": "147b5f7f-966f-4beb-bb9c-73136f31fd15",
+        "slug": "run-a-limited-promo",
+        "category": "promos",
+        "title": "Use a short, dated promo to fill a gap",
+        "body_md": "A discount that never expires trains guests to wait for a better deal. A short, dated promo on genuinely open dates creates urgency without permanently discounting your rate.",
+        "applies_when": { "op": "eq", "value": "underbooked", "metric": "forwardOccupancyState" },
+        "sort_order": 90,
+        "is_active": true,
+        "created_at": "2026-11-08T05:40:56.828428+00:00",
+        "updated_at": "2026-11-08T05:40:56.828428+00:00"
+      },
+      {
+        "id": "0957932b-b097-492e-8b4d-b9cf57208866",
+        "slug": "respond-faster-improves-conversion",
+        "category": "response time",
+        "title": "Faster replies convert more inquiries",
+        "body_md": "Guests weigh response speed heavily when choosing between listings. Aim to reply within the hour during your active hours, and consider Quick Replies or AI auto-reply for common questions.",
+        "applies_when": { "op": "lt", "value": 0.8, "metric": "responseWithin24hRate" },
+        "sort_order": 50,
+        "is_active": true,
+        "created_at": "2026-11-08T05:40:56.828428+00:00",
+        "updated_at": "2026-11-08T05:40:56.828428+00:00"
+      },
+      {
+        "id": "cb99f94c-c594-4268-9040-ecbb4110f00d",
+        "slug": "keep-response-streak-going",
+        "category": "response time",
+        "title": "Keep up your fast response streak",
+        "body_md": "Your response time is in a strong range right now. Keep the habits that got you there (notifications on, Quick Replies set up for common questions) so it doesn't slip.",
+        "applies_when": { "op": "gte", "value": 0.9, "metric": "responseWithin24hRate" },
+        "sort_order": 150,
+        "is_active": true,
+        "created_at": "2026-11-08T05:40:56.828428+00:00",
+        "updated_at": "2026-11-08T05:40:57.200423+00:00"
+      },
+      {
+        "id": "c4b5f524-5aa9-4cdc-b836-8479955ceab8",
+        "slug": "reply-to-every-review",
+        "category": "reviews",
+        "title": "Reply to every review, good or bad",
+        "body_md": "A thoughtful reply to a review, especially a critical one, signals to future guests that you're an attentive host. It also gives you the last word on the listing page.",
+        "applies_when": { "op": "lt", "value": 0, "metric": "ratingTrend" },
+        "sort_order": 100,
+        "is_active": true,
+        "created_at": "2026-11-08T05:40:56.828428+00:00",
+        "updated_at": "2026-11-08T05:40:57.200423+00:00"
+      }
+    ],
+    "total": 17,
+    "page": 1,
+    "limit": 25
+  }
+}

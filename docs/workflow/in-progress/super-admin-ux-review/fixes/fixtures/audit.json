@@ -1,0 +1,264 @@
+{
+  "success": true,
+  "data": {
+    "events": [
+      {
+        "id": "5eedc200-0000-4000-8000-000000000000",
+        "actorEmail": "sprmke.dev@gmail.com",
+        "action": "pricing_plan_updated",
+        "targetType": "organization",
+        "targetId": "405ea07f-cc21-4bcc-b540-28729be79f0d",
+        "summary": "Changed the org plan to Business",
+        "metadata": { "seed": true, "index": 0 },
+        "createdAt": "2026-11-19T19:21:40.938633+00:00"
+      },
+      {
+        "id": "dba8c226-1b64-4af3-8c7b-100b5e0f4a35",
+        "actorEmail": "seed-owner@example.com",
+        "action": "help_center.faq_updated",
+        "targetType": "help_center_faq",
+        "targetId": "e1639818-1bfd-4fb1-953a-223b9b0e6450",
+        "summary": "Updated Help Center FAQ",
+        "metadata": { "fields": ["is_published"] },
+        "createdAt": "2026-11-18T12:56:03.70725+00:00"
+      },
+      {
+        "id": "bece847d-9013-4119-83da-6d9c6ee89f90",
+        "actorEmail": "seed-owner@example.com",
+        "action": "help_center.faq_updated",
+        "targetType": "help_center_faq",
+        "targetId": "e1639818-1bfd-4fb1-953a-223b9b0e6450",
+        "summary": "Updated Help Center FAQ",
+        "metadata": { "fields": ["is_published"] },
+        "createdAt": "2026-11-18T12:55:59.047086+00:00"
+      },
+      {
+        "id": "67a13f2a-6fc2-4fd2-a83c-a867f917ef97",
+        "actorEmail": "seed-owner@example.com",
+        "action": "host_playbook.article_updated",
+        "targetType": "host_playbook_article",
+        "targetId": "2434fb46-a39b-4e17-a5e6-1275fecc54af",
+        "summary": "Updated host playbook article",
+        "metadata": { "fields": ["is_active"] },
+        "createdAt": "2026-11-18T12:55:55.121372+00:00"
+      },
+      {
+        "id": "09ff06b0-ed37-4680-81d8-03068380e5c6",
+        "actorEmail": "seed-owner@example.com",
+        "action": "host_playbook.article_updated",
+        "targetType": "host_playbook_article",
+        "targetId": "2434fb46-a39b-4e17-a5e6-1275fecc54af",
+        "summary": "Updated host playbook article",
+        "metadata": { "fields": ["is_active"] },
+        "createdAt": "2026-11-18T12:55:50.6861+00:00"
+      },
+      {
+        "id": "374270ff-dba6-4020-a11d-ec73c15631fb",
+        "actorEmail": "seed-owner@example.com",
+        "action": "ops_report.generate",
+        "targetType": "ops_report",
+        "targetId": "00ef5c97-ab41-4d25-9e7a-965a2940dc67",
+        "summary": "Generated operations report for 2026-11-15T16:00:00+00:00 to 2026-11-22T16:00:00+00:00",
+        "metadata": {
+          "counts": { "low": 29, "high": 2, "info": 0, "medium": 14, "critical": 0 },
+          "periodKind": "manual",
+          "overallStatus": "error"
+        },
+        "createdAt": "2026-11-17T22:47:51.615562+00:00"
+      },
+      {
+        "id": "5eedc200-0000-4000-8000-000000000001",
+        "actorEmail": "sprmke.dev@gmail.com",
+        "action": "org_subscription_changed",
+        "targetType": "property",
+        "targetId": "e5555555-5555-4555-8555-555555555501",
+        "summary": "Approved host verification",
+        "metadata": { "seed": true, "index": 1 },
+        "createdAt": "2026-11-17T19:21:40.938633+00:00"
+      },
+      {
+        "id": "5eedc200-0000-4000-8000-000000000002",
+        "actorEmail": "sprmke.dev@gmail.com",
+        "action": "feature_availability_updated",
+        "targetType": "pricing_plan",
+        "targetId": "e5555555-5555-4555-8555-555555555501",
+        "summary": "Updated platform support settings",
+        "metadata": { "seed": true, "index": 2 },
+        "createdAt": "2026-11-15T19:21:40.938633+00:00"
+      },
+      {
+        "id": "5eedc200-0000-4000-8000-000000000003",
+        "actorEmail": "sprmke.dev@gmail.com",
+        "action": "host_verification_approved",
+        "targetType": "support_ticket",
+        "targetId": "e5555555-5555-4555-8555-555555555501",
+        "summary": "Replied to a support ticket",
+        "metadata": { "seed": true, "index": 3 },
+        "createdAt": "2026-11-13T19:21:40.938633+00:00"
+      },
+      {
+        "id": "5eedc200-0000-4000-8000-000000000004",
+        "actorEmail": "sprmke.dev@gmail.com",
+        "action": "listing_authorization_approved",
+        "targetType": "platform",
+        "targetId": "e5555555-5555-4555-8555-555555555501",
+        "summary": "Updated a development announcement",
+        "metadata": { "seed": true, "index": 4 },
+        "createdAt": "2026-11-11T19:21:40.938633+00:00"
+      },
+      {
+        "id": "5eedc200-0000-4000-8000-000000000005",
+        "actorEmail": "sprmke.dev@gmail.com",
+        "action": "support_ticket_replied",
+        "targetType": "organization",
+        "targetId": "405ea07f-cc21-4bcc-b540-28729be79f0d",
+        "summary": "Marked a parking payout as sent",
+        "metadata": { "seed": true, "index": 5 },
+        "createdAt": "2026-11-09T19:21:40.938633+00:00"
+      },
+      {
+        "id": "5eedc200-0000-4000-8000-000000000006",
+        "actorEmail": "sprmke.dev@gmail.com",
+        "action": "platform_settings_updated",
+        "targetType": "property",
+        "targetId": "e5555555-5555-4555-8555-555555555501",
+        "summary": "Changed the org plan to Business",
+        "metadata": { "seed": true, "index": 6 },
+        "createdAt": "2026-11-07T19:21:40.938633+00:00"
+      },
+      {
+        "id": "5eedc200-0000-4000-8000-000000000007",
+        "actorEmail": "sprmke.dev@gmail.com",
+        "action": "ai_limit_profile_assigned",
+        "targetType": "pricing_plan",
+        "targetId": "e5555555-5555-4555-8555-555555555501",
+        "summary": "Approved host verification",
+        "metadata": { "seed": true, "index": 7 },
+        "createdAt": "2026-11-05T19:21:40.938633+00:00"
+      },
+      {
+        "id": "5eedc200-0000-4000-8000-000000000008",
+        "actorEmail": "sprmke.dev@gmail.com",
+        "action": "development_updated",
+        "targetType": "support_ticket",
+        "targetId": "e5555555-5555-4555-8555-555555555501",
+        "summary": "Updated platform support settings",
+        "metadata": { "seed": true, "index": 8 },
+        "createdAt": "2026-11-03T19:21:40.938633+00:00"
+      },
+      {
+        "id": "5eedc200-0000-4000-8000-000000000009",
+        "actorEmail": "sprmke.dev@gmail.com",
+        "action": "payout_marked_sent",
+        "targetType": "platform",
+        "targetId": "e5555555-5555-4555-8555-555555555501",
+        "summary": "Replied to a support ticket",
+        "metadata": { "seed": true, "index": 9 },
+        "createdAt": "2026-11-01T19:21:40.938633+00:00"
+      },
+      {
+        "id": "5eedc200-0000-4000-8000-000000000010",
+        "actorEmail": "sprmke.dev@gmail.com",
+        "action": "pricing_plan_updated",
+        "targetType": "organization",
+        "targetId": "405ea07f-cc21-4bcc-b540-28729be79f0d",
+        "summary": "Updated a development announcement",
+        "metadata": { "seed": true, "index": 10 },
+        "createdAt": "2026-10-30T19:21:40.938633+00:00"
+      },
+      {
+        "id": "5eedc200-0000-4000-8000-000000000011",
+        "actorEmail": "sprmke.dev@gmail.com",
+        "action": "org_subscription_changed",
+        "targetType": "property",
+        "targetId": "e5555555-5555-4555-8555-555555555501",
+        "summary": "Marked a parking payout as sent",
+        "metadata": { "seed": true, "index": 11 },
+        "createdAt": "2026-10-28T19:21:40.938633+00:00"
+      },
+      {
+        "id": "5eedc200-0000-4000-8000-000000000012",
+        "actorEmail": "sprmke.dev@gmail.com",
+        "action": "feature_availability_updated",
+        "targetType": "pricing_plan",
+        "targetId": "e5555555-5555-4555-8555-555555555501",
+        "summary": "Changed the org plan to Business",
+        "metadata": { "seed": true, "index": 12 },
+        "createdAt": "2026-10-26T19:21:40.938633+00:00"
+      },
+      {
+        "id": "5eedc200-0000-4000-8000-000000000013",
+        "actorEmail": "sprmke.dev@gmail.com",
+        "action": "host_verification_approved",
+        "targetType": "support_ticket",
+        "targetId": "e5555555-5555-4555-8555-555555555501",
+        "summary": "Approved host verification",
+        "metadata": { "seed": true, "index": 13 },
+        "createdAt": "2026-10-24T19:21:40.938633+00:00"
+      },
+      {
+        "id": "5eedc200-0000-4000-8000-000000000014",
+        "actorEmail": "sprmke.dev@gmail.com",
+        "action": "listing_authorization_approved",
+        "targetType": "platform",
+        "targetId": "e5555555-5555-4555-8555-555555555501",
+        "summary": "Updated platform support settings",
+        "metadata": { "seed": true, "index": 14 },
+        "createdAt": "2026-10-22T19:21:40.938633+00:00"
+      },
+      {
+        "id": "5eedc200-0000-4000-8000-000000000015",
+        "actorEmail": "sprmke.dev@gmail.com",
+        "action": "support_ticket_replied",
+        "targetType": "organization",
+        "targetId": "405ea07f-cc21-4bcc-b540-28729be79f0d",
+        "summary": "Replied to a support ticket",
+        "metadata": { "seed": true, "index": 15 },
+        "createdAt": "2026-10-20T19:21:40.938633+00:00"
+      },
+      {
+        "id": "5eedc200-0000-4000-8000-000000000016",
+        "actorEmail": "sprmke.dev@gmail.com",
+        "action": "platform_settings_updated",
+        "targetType": "property",
+        "targetId": "e5555555-5555-4555-8555-555555555501",
+        "summary": "Updated a development announcement",
+        "metadata": { "seed": true, "index": 16 },
+        "createdAt": "2026-10-18T19:21:40.938633+00:00"
+      },
+      {
+        "id": "5eedc200-0000-4000-8000-000000000017",
+        "actorEmail": "sprmke.dev@gmail.com",
+        "action": "ai_limit_profile_assigned",
+        "targetType": "pricing_plan",
+        "targetId": "e5555555-5555-4555-8555-555555555501",
+        "summary": "Marked a parking payout as sent",
+        "metadata": { "seed": true, "index": 17 },
+        "createdAt": "2026-10-16T19:21:40.938633+00:00"
+      },
+      {
+        "id": "5eedc200-0000-4000-8000-000000000018",
+        "actorEmail": "sprmke.dev@gmail.com",
+        "action": "development_updated",
+        "targetType": "support_ticket",
+        "targetId": "e5555555-5555-4555-8555-555555555501",
+        "summary": "Changed the org plan to Business",
+        "metadata": { "seed": true, "index": 18 },
+        "createdAt": "2026-10-14T19:21:40.938633+00:00"
+      },
+      {
+        "id": "5eedc200-0000-4000-8000-000000000019",
+        "actorEmail": "sprmke.dev@gmail.com",
+        "action": "payout_marked_sent",
+        "targetType": "platform",
+        "targetId": "e5555555-5555-4555-8555-555555555501",
+        "summary": "Approved host verification",
+        "metadata": { "seed": true, "index": 19 },
+        "createdAt": "2026-10-12T19:21:40.938633+00:00"
+      }
+    ],
+    "total": 25,
+    "page": 1,
+    "limit": 25
+  }
+}

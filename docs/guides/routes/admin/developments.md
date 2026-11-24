@@ -131,3 +131,7 @@ Summary cards (Total/Active/Linked properties/Linked parking) are computed from 
 ## Pending / follow-ups
 
 - [ ] None known.
+
+## 2026-11-24 UX pass
+
+Search debounces 300 ms and has a clear control.

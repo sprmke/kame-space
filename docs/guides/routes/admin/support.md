@@ -146,3 +146,7 @@ First-class Platform nav item and overview card (label **FAQs**). Each row shows
 ## Testing
 
 FAQ search/status filtering and ticket status contrast are covered by the admin E2E suite and the axe sweep.
+
+## 2026-11-24 UX pass
+
+Search debounces 300 ms and has a clear control. Rows use a chevron affordance (in-app dialog), and the rows-per-page select carries a visible “Rows” label. Summary cards are compact on phones and four across from 640px.

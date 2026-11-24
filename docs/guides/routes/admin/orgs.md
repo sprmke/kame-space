@@ -153,3 +153,7 @@ doing it from the dedicated `/admin/pricing/subscriptions` or `/admin/approvals`
 ## Testing
 
 Organizations row navigation and the not-found state are covered by the admin E2E suite (`ui/e2e/features/admin`).
+
+## 2026-11-24 UX pass
+
+Search debounces 300 ms and has a clear control. Phone summary cards are compact (four fit above the list) and counts are pluralized. A loading summary shows a skeleton value, not a dash. Hub sections mount only when they come near the viewport, so opening the hub no longer fires every section's queries.

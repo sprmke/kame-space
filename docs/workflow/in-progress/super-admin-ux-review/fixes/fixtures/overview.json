@@ -1,0 +1,193 @@
+{
+  "success": true,
+  "data": {
+    "range": "30d",
+    "generatedAt": "2026-11-24T05:32:11.688Z",
+    "kpis": {
+      "organizations": 1,
+      "hosts": 1,
+      "properties": 1,
+      "parkings": 1,
+      "developments": 1,
+      "liveSubscriptions": 1,
+      "trialingSubscriptions": 0,
+      "mrrPhp": 1799,
+      "openTickets": 4,
+      "pendingApprovals": 0,
+      "undisbursedParkingPayouts": 3,
+      "aiSpendUsd": 0.95
+    },
+    "growthSeries": [
+      {
+        "label": "Dec",
+        "month": "2025-12",
+        "newOrgs": 0,
+        "newSubscriptions": 0,
+        "cumulativeOrgs": 0,
+        "cumulativeSubscriptions": 0
+      },
+      {
+        "label": "Jan",
+        "month": "2026-01",
+        "newOrgs": 0,
+        "newSubscriptions": 0,
+        "cumulativeOrgs": 0,
+        "cumulativeSubscriptions": 0
+      },
+      {
+        "label": "Feb",
+        "month": "2026-02",
+        "newOrgs": 0,
+        "newSubscriptions": 0,
+        "cumulativeOrgs": 0,
+        "cumulativeSubscriptions": 0
+      },
+      {
+        "label": "Mar",
+        "month": "2026-03",
+        "newOrgs": 0,
+        "newSubscriptions": 0,
+        "cumulativeOrgs": 0,
+        "cumulativeSubscriptions": 0
+      },
+      {
+        "label": "Apr",
+        "month": "2026-04",
+        "newOrgs": 0,
+        "newSubscriptions": 0,
+        "cumulativeOrgs": 0,
+        "cumulativeSubscriptions": 0
+      },
+      {
+        "label": "May",
+        "month": "2026-05",
+        "newOrgs": 0,
+        "newSubscriptions": 0,
+        "cumulativeOrgs": 0,
+        "cumulativeSubscriptions": 0
+      },
+      {
+        "label": "Jun",
+        "month": "2026-06",
+        "newOrgs": 0,
+        "newSubscriptions": 0,
+        "cumulativeOrgs": 0,
+        "cumulativeSubscriptions": 0
+      },
+      {
+        "label": "Jul",
+        "month": "2026-07",
+        "newOrgs": 0,
+        "newSubscriptions": 0,
+        "cumulativeOrgs": 0,
+        "cumulativeSubscriptions": 0
+      },
+      {
+        "label": "Aug",
+        "month": "2026-08",
+        "newOrgs": 0,
+        "newSubscriptions": 0,
+        "cumulativeOrgs": 0,
+        "cumulativeSubscriptions": 0
+      },
+      {
+        "label": "Sep",
+        "month": "2026-09",
+        "newOrgs": 0,
+        "newSubscriptions": 0,
+        "cumulativeOrgs": 0,
+        "cumulativeSubscriptions": 0
+      },
+      {
+        "label": "Oct",
+        "month": "2026-10",
+        "newOrgs": 0,
+        "newSubscriptions": 0,
+        "cumulativeOrgs": 0,
+        "cumulativeSubscriptions": 0
+      },
+      {
+        "label": "Nov",
+        "month": "2026-11",
+        "newOrgs": 1,
+        "newSubscriptions": 1,
+        "cumulativeOrgs": 1,
+        "cumulativeSubscriptions": 1
+      }
+    ],
+    "planMix": [{ "code": "pro", "label": "Business", "count": 1 }],
+    "aiCostByFeature": [
+      { "feature": "host_analytics", "costUsd": 0.0015 },
+      { "feature": "inbox_suggest", "costUsd": 0.0009 },
+      { "feature": "dashboard_assistant_complex", "costUsd": 0 }
+    ],
+    "attention": {
+      "pendingApprovals": 0,
+      "pendingApprovalsBreakdown": {
+        "orgVerification": 0,
+        "listingVerification": 0,
+        "externalReview": 0
+      },
+      "openTickets": 4,
+      "undisbursedParkingPayouts": 3,
+      "unassignedSubscriptions": 0,
+      "heldPayments": 1,
+      "suspendedOverWeek": 0
+    },
+    "recent": {
+      "organizations": [
+        {
+          "id": "405ea07f-cc21-4bcc-b540-28729be79f0d",
+          "name": "Kame Space",
+          "slug": "kame-homes",
+          "createdAt": "2026-11-08T05:40:57.297788+00:00"
+        }
+      ],
+      "subscriptions": [
+        {
+          "planLabel": "Business",
+          "status": "active",
+          "createdAt": "2026-11-08T05:40:57.327803+00:00",
+          "pricePhp": 1799
+        }
+      ],
+      "tickets": [
+        {
+          "id": "5eed8000-0000-4000-8000-000000000001",
+          "subject": "Calendar shows a blocked date twice",
+          "submittedByName": "Demo Host",
+          "status": "open",
+          "createdAt": "2026-11-19T19:21:15.531787+00:00"
+        },
+        {
+          "id": "5eed8000-0000-4000-8000-000000000002",
+          "subject": "Add a weekly maintenance digest",
+          "submittedByName": "Demo Host",
+          "status": "in_progress",
+          "createdAt": "2026-11-19T19:21:15.531787+00:00"
+        },
+        {
+          "id": "5eed8000-0000-4000-8000-000000000003",
+          "subject": "How do I change the plan?",
+          "submittedByName": "Demo Host",
+          "status": "resolved",
+          "createdAt": "2026-11-19T19:21:15.531787+00:00"
+        },
+        {
+          "id": "5eed8000-0000-4000-8000-000000000004",
+          "subject": "Partnership for two more units",
+          "submittedByName": "Demo Host",
+          "status": "closed",
+          "createdAt": "2026-11-19T19:21:15.531787+00:00"
+        },
+        {
+          "id": "5eed8000-0000-4000-8000-000000000005",
+          "subject": "Where do I find my stay guide?",
+          "submittedByName": "Demo Guest",
+          "status": "resolved",
+          "createdAt": "2026-11-19T19:21:15.531787+00:00"
+        }
+      ]
+    }
+  }
+}

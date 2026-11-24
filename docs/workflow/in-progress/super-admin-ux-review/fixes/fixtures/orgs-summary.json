@@ -1,0 +1,6 @@
+{
+  "success": true,
+  "data": {
+    "summary": { "total": 1, "subscribed": 1, "unsubscribed": 0, "properties": 1, "parkings": 1 }
+  }
+}

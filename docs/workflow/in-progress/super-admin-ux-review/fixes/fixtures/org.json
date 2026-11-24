@@ -1,0 +1,22 @@
+{
+  "success": true,
+  "data": {
+    "organization": {
+      "id": "405ea07f-cc21-4bcc-b540-28729be79f0d",
+      "name": "Kame Space",
+      "slug": "kame-homes",
+      "createdAt": "2026-11-08T05:40:57.297788+00:00",
+      "owner": { "name": "seed-owner", "email": "seed-owner@example.com", "avatarUrl": null },
+      "counts": { "properties": 1, "parkings": 1, "members": 5 },
+      "plan": {
+        "code": "pro",
+        "name": "Business",
+        "status": "active",
+        "mrrPhp": 1799,
+        "currentPeriodEnd": "2026-12-18T00:00:00+00:00"
+      },
+      "verification": { "baseStatus": "approved", "enhancedStatus": "approved" },
+      "openWork": { "pendingApprovals": 0, "openTickets": 3 }
+    }
+  }
+}

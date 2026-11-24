@@ -1,0 +1,10 @@
+{
+  "success": true,
+  "data": {
+    "subscription": null,
+    "recentEvents": [],
+    "transactions": [],
+    "ledger": [],
+    "ledgerBalancePhp": 0
+  }
+}

@@ -171,3 +171,7 @@ liveness grade, face match, expiry and flags.
 ## Testing
 
 Approval date rendering (including short `+00` offsets) is covered by `ui/e2e/features/admin/adminConsoleAuditFixes.spec.ts`.
+
+## 2026-11-24 UX pass
+
+The queue state reads “Awaiting review” in the summary card, the status filter and the organization hub. Summary cards are four across from 640px.

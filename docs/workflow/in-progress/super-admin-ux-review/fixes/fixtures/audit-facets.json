@@ -1,0 +1,30 @@
+{
+  "success": true,
+  "data": {
+    "actions": [
+      "ai_limit_profile_assigned",
+      "development_updated",
+      "feature_availability_updated",
+      "help_center.faq_updated",
+      "host_playbook.article_updated",
+      "host_verification_approved",
+      "listing_authorization_approved",
+      "ops_report.generate",
+      "org_subscription_changed",
+      "payout_marked_sent",
+      "platform_settings_updated",
+      "pricing_plan_updated",
+      "support_ticket_replied"
+    ],
+    "targetTypes": [
+      "help_center_faq",
+      "host_playbook_article",
+      "ops_report",
+      "organization",
+      "platform",
+      "pricing_plan",
+      "property",
+      "support_ticket"
+    ]
+  }
+}
