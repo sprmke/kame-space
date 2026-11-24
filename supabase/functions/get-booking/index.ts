@@ -14,6 +14,7 @@
  * activity-log: N/A — read only
  */
 
+import { redactBookingForPermissions } from '../_shared/bookingPayload.ts';
 import { computeTotalGuestBalanceFromBooking } from '../_shared/totalGuestBalance.ts';
 import { jsonError, jsonSuccess } from '../_shared/httpResponse.ts';
 import { createServiceClient, verifyParkingTeamAccess } from '../_shared/orgAuth.ts';
@@ -74,14 +75,17 @@ serveAuthenticated('get-booking', async (req) => {
 
   let booking: LoadedBooking | null = null;
   let propertyIdForMeta: string | null = null;
+  /** Effective leaves for this request; null when the scope cannot state them (org/parking). */
+  let callerPermissions: string[] | null = null;
 
   if (explicitPropertyId) {
-    const { property } = await resolveScopedPropertyAccess(
+    const { property, permissions } = await resolveScopedPropertyAccess(
       req,
       'bookings:view',
       explicitPropertyId
     );
     propertyIdForMeta = property.id;
+    callerPermissions = permissions;
     booking = await loadBookingById(bookingId);
     if (!booking || booking.property_id !== property.id) {
       return jsonError(req, 'Booking not found', 404);
@@ -136,7 +140,11 @@ serveAuthenticated('get-booking', async (req) => {
   }
 
   if (wantFullRow) {
-    return jsonSuccess(req, booking);
+    // Owner / platform admin carry the full catalog, so this is a no-op for them.
+    return jsonSuccess(
+      req,
+      callerPermissions ? redactBookingForPermissions(booking, callerPermissions) : booking
+    );
   }
 
   const metaPropertyId = propertyIdForMeta ?? booking.property_id;

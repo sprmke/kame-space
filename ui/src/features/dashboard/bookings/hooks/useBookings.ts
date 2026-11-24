@@ -86,6 +86,13 @@ const FUNCTIONS_URL = import.meta.env.VITE_SUPABASE_URL as string;
 
 const GENERIC_BOOKINGS_ERROR = 'We could not load bookings. Please try again in a moment.';
 
+/**
+ * The edge function answered and said no. Falling back to a direct PostgREST read would
+ * quietly replace a scoped, filtered, paginated list with an unfiltered one (review P3-5),
+ * so only transport-level failures get the fallback.
+ */
+class BookingsEndpointError extends Error {}
+
 type FetchScope = {
   scope: BookingsListScope;
   propertyId: string | null;
@@ -136,7 +143,7 @@ async function fetchBookingsFromEdgeFunction(
 
   const json = await res.json();
   if (!res.ok || !json.success) {
-    throw new Error(json.error ?? GENERIC_BOOKINGS_ERROR);
+    throw new BookingsEndpointError(json.error ?? GENERIC_BOOKINGS_ERROR);
   }
 
   return { rows: json.data as BookingRow[], total: json.total as number };
@@ -177,6 +184,7 @@ export function useBookings(
       try {
         return await fetchBookingsFromEdgeFunction(query, fetchScope);
       } catch (err) {
+        if (err instanceof BookingsEndpointError) throw err;
         if (scope === 'org' || scope === 'parking') {
           console.error('[useBookings] Edge function failed:', err);
           throw err instanceof Error ? err : new Error(GENERIC_BOOKINGS_ERROR);

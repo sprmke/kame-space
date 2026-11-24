@@ -30,9 +30,24 @@ export const workflowActionLabelGroupClass =
 
 export const workflowActionLabelTextClass = 'min-w-0 text-pretty text-center leading-snug';
 
-/** Paired rail CTAs — keep labels on one line so back/forward heights stay matched. */
-export const workflowActionLabelTextPairedClass =
-  'min-w-0 text-center leading-snug whitespace-nowrap';
+/**
+ * Paired rail CTAs. Labels wrap instead of truncating: the rail is 320px on a tablet and
+ * "Mark GAF as complete" does not fit beside "Return to Review" there, and a clipped CTA
+ * label is worse than a second line. Heights stay matched through `items-stretch`.
+ */
+export const workflowActionLabelTextPairedClass = 'min-w-0 text-pretty text-center leading-snug';
+
+/**
+ * Paired action row. Two controls share a line only when both fit (each needs ~11rem);
+ * otherwise they stack. `flex-wrap` reads the real width, so the same classes work in the
+ * 320px tablet rail and the 432px desktop rail without a container query.
+ */
+export function workflowActionPairLayoutClass(paired: boolean): string {
+  return paired ? 'flex flex-wrap items-stretch gap-2' : 'flex flex-col gap-2';
+}
+
+/** One cell of the paired row: shares the line when it fits, wraps to its own line when not. */
+export const workflowActionPairItemClass = 'min-w-0 flex-1 basis-[11rem]';
 
 const workflowActionWarning =
   'border border-amber-500/25 bg-amber-500/[0.08] text-amber-800 hover:bg-amber-500/[0.12] hover:border-amber-500/35 dark:text-amber-300';

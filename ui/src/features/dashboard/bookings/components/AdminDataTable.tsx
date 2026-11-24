@@ -88,13 +88,16 @@ export function AdminTableHeadRow({
 export function AdminTableTh({
   children,
   className,
+  sort,
 }: {
   children?: React.ReactNode;
   className?: string;
+  /** Sort state belongs on the column header, not on the button inside it (axe `aria-allowed-attr`). */
+  sort?: 'ascending' | 'descending' | 'none';
 }) {
   // `text-left` first so callers can override (e.g. Actions `text-right`).
   return (
-    <th scope="col" className={cn('text-table-head py-3 text-left', className)}>
+    <th scope="col" aria-sort={sort} className={cn('text-table-head py-3 text-left', className)}>
       {children}
     </th>
   );
@@ -231,6 +234,8 @@ type GuestCellProps = {
   valid_id_url?: string | null;
   /** e.g. stay dates when the Stay column is hidden on small screens */
   mobileExtra?: ReactNode;
+  /** Makes the name the row's real link, so keyboard and voice control have a target. */
+  href?: string;
 };
 
 /** Guest column — avatar, name, email (Bookings + Finance stays). */
@@ -240,6 +245,7 @@ export function AdminTableGuestCell({
   guest_email,
   valid_id_url,
   mobileExtra,
+  href,
 }: GuestCellProps) {
   const name = bookingListDisplayName({
     primary_guest_name,
@@ -251,9 +257,27 @@ export function AdminTableGuestCell({
     <div className="flex min-w-[140px] items-center gap-2.5 sm:min-w-[160px] sm:gap-3">
       <GuestAvatar name={name} validIdUrl={valid_id_url} size="md" />
       <div className="min-w-0 space-y-1">
-        <p className={cn('truncate font-bold leading-snug', adminTableBodyText.primary)}>{name}</p>
+        {href ? (
+          <Link
+            to={href}
+            onClick={(event) => event.stopPropagation()}
+            className={cn(
+              'focus-ring block truncate rounded-sm font-bold leading-snug hover:underline',
+              adminTableBodyText.primary
+            )}
+          >
+            {name}
+          </Link>
+        ) : (
+          <p className={cn('truncate font-bold leading-snug', adminTableBodyText.primary)}>{name}</p>
+        )}
         {guest_email ? (
-          <p className={cn('truncate leading-snug', adminTableBodyText.secondary)}>{guest_email}</p>
+          <p
+            title={guest_email}
+            className={cn('truncate leading-snug', adminTableBodyText.secondary)}
+          >
+            {guest_email}
+          </p>
         ) : null}
         {mobileExtra ? <div className="md:hidden">{mobileExtra}</div> : null}
       </div>
@@ -287,6 +311,7 @@ export function AdminTableFlagsCell({
     <div className="inline-flex items-center justify-start gap-1.5">
       {need_parking ? (
         <span
+          role="img"
           title="Needs parking"
           aria-label="Needs parking"
           className={cn('size-7', bookingFlagIconChipClass.parking)}
@@ -296,6 +321,7 @@ export function AdminTableFlagsCell({
       ) : null}
       {has_pets ? (
         <span
+          role="img"
           title="Has pets"
           aria-label="Has pets"
           className={cn('size-7', bookingFlagIconChipClass.pet)}
@@ -305,6 +331,7 @@ export function AdminTableFlagsCell({
       ) : null}
       {decor ? (
         <span
+          role="img"
           title="Surprise decor setup"
           aria-label="Surprise decor setup"
           className={cn('size-7', bookingFlagIconChipClass.decor)}
@@ -314,6 +341,7 @@ export function AdminTableFlagsCell({
       ) : null}
       {has_invalid_receipt_ai ? (
         <span
+          role="img"
           title="AI: Needs review"
           aria-label="AI: Needs review"
           className={cn('size-7', bookingFlagIconChipClass.invalidReceipt)}

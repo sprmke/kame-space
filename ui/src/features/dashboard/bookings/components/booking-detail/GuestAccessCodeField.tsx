@@ -30,7 +30,15 @@ function readDoorCodeOverride(booking: BookingRow): string {
  * overrides it for this booking only. Empty clears the override and the property default
  * applies again. Reveal timing is unchanged: the guest still sees it from the reveal moment.
  */
-export function GuestAccessCodeField({ booking }: { booking: BookingRow }) {
+export function GuestAccessCodeField({
+  booking,
+  canEdit = true,
+}: {
+  booking: BookingRow;
+  /** `bookings.detail.stay:edit`. The server rejects the write without it, so a viewer
+   * must not be offered an input and a Save they cannot use. */
+  canEdit?: boolean;
+}) {
   const propertyId = usePropertyIdParam();
   const queryClient = useQueryClient();
   const [value, setValue] = useState(() => readDoorCodeOverride(booking));
@@ -64,6 +72,15 @@ export function GuestAccessCodeField({ booking }: { booking: BookingRow }) {
       }
     },
   });
+
+  if (!canEdit) {
+    return (
+      <div className="space-y-1.5">
+        <p className="settings-field-label">Door code for this stay</p>
+        <p className="text-foreground text-sm">{saved || 'Uses the property code'}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-1.5">

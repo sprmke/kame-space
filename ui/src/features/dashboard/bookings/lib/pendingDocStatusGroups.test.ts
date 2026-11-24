@@ -29,6 +29,9 @@ describe('buildPendingDocStatusGroups', () => {
     });
     expect(groups[0]?.label).toBe('Sent Docs');
     expect(groups[1]?.label).toBe('Pending Docs');
+    // Each denominator says which direction it counts: "2 of 2" alone was ambiguous.
+    expect(groups[0]?.summary).toMatch(/ sent$/);
+    expect(groups[1]?.summary).toMatch(/ received$/);
   });
 
   it('uses To send / To Receive on Free with ready vs missing rows', () => {

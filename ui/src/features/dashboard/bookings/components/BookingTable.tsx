@@ -19,7 +19,7 @@ import { BookingResourceLabel } from '@/features/dashboard/bookings/components/B
 import { BookingStayDatesCell } from '@/features/dashboard/bookings/components/BookingStayDatesCell';
 import { BookingStaySortControl } from '@/features/dashboard/bookings/components/BookingStaySortControl';
 import { bookingHasInvalidReceiptAi } from '@/features/dashboard/bookings/lib/bookingFlags';
-import { bookingListDisplayName } from '@/features/dashboard/bookings/lib/bookingListDisplay';
+import { isStaySort } from '@/features/dashboard/bookings/lib/bookingsListSort';
 import type { BookingRow, BookingsSort } from '@/features/dashboard/bookings/lib/types';
 
 import { BookingsTableSkeleton } from '@/components/skeletons/AdminSkeletons';
@@ -104,7 +104,16 @@ export function BookingTable({
           <AdminTableTh className="hidden px-3 sm:table-cell sm:px-4">Listing</AdminTableTh>
         ) : null}
         <AdminTableTh className="px-3 sm:px-4">Guest</AdminTableTh>
-        <AdminTableTh className="px-3 sm:px-4">
+        <AdminTableTh
+          className="px-3 sm:px-4"
+          sort={
+            isStaySort(sort)
+              ? sort === 'check_in_date:desc'
+                ? 'descending'
+                : 'ascending'
+              : 'none'
+          }
+        >
           <BookingStaySortControl sort={sort} onChange={onStaySortChange} variant="header" />
         </AdminTableTh>
         <AdminTableTh className="hidden px-3 sm:px-4 md:table-cell">Pax</AdminTableTh>
@@ -120,6 +129,7 @@ export function BookingTable({
             index={i}
             showProperty={showProperty}
             onOpen={() => openRow(row)}
+            href={resolveBookingHref ? resolveBookingHref(row) : `/bookings/${row.id}`}
           />
         ))}
       </tbody>
@@ -132,31 +142,24 @@ function BookingTableRow({
   index,
   showProperty,
   onOpen,
+  href,
 }: {
   row: BookingRow;
   index: number;
   showProperty: boolean;
   onOpen: () => void;
+  href: string;
 }) {
-  const name = bookingListDisplayName(row);
   const pax = (row.number_of_adults ?? 0) + (row.number_of_children ?? 0);
 
-  const handleKey = (e: React.KeyboardEvent<HTMLTableRowElement>) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      onOpen();
-    }
-  };
-
   return (
-    <tr
-      role="button"
-      tabIndex={0}
-      onClick={onOpen}
-      onKeyDown={handleKey}
-      aria-label={`Open booking for ${name}`}
-      className={adminTableRowClass(index)}
-    >
+    /**
+     * A data row stays a row: `role="button"` here replaced the row semantics a screen
+     * reader needs and wrapped the chat/open controls in a second interactive layer
+     * (axe: nested-interactive, label-content-name-mismatch). The guest name is the real
+     * link; the row still opens on click for pointer users.
+     */
+    <tr onClick={onOpen} className={cn(adminTableRowClass(index), 'cursor-pointer')}>
       {/* Status */}
       <td className={adminTableCell.status}>
         <AdminTableStatusBadge
@@ -185,6 +188,7 @@ function BookingTableRow({
           guest_facebook_name={row.guest_facebook_name}
           guest_email={row.guest_email}
           valid_id_url={row.valid_id_url}
+          href={href}
         />
       </td>
 

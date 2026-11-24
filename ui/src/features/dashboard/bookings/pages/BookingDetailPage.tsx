@@ -92,7 +92,7 @@ import { useGuestReputation } from '@/features/reviews/hooks/useGuestReputation'
 import { MobileBrandHero } from '@/components/mobile/MobileBrandHero';
 import { BookingDetailPageSkeleton } from '@/components/skeletons/AdminSkeletons';
 import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible';
-import { useIsBelowMd } from '@/hooks/useMediaQuery';
+import { useIsBelowLg, useIsBelowMd } from '@/hooks/useMediaQuery';
 import { useMobileHeroCollapseProgress } from '@/hooks/useMobileHeroCollapseProgress';
 import { propertyDashboardPageTitle, usePageTitle } from '@/lib/pageTitle';
 import { cn } from '@/lib/utils';
@@ -151,6 +151,7 @@ export function BookingDetailPage() {
   const [viewTab, setViewTab] = useState<BookingViewTab>('overview');
   const [aiSummaryOpen, setAiSummaryOpen] = useState(false);
   const defaultTabAppliedFor = useRef<string | null>(null);
+  const isBelowLg = useIsBelowLg();
   const isBelowMd = useIsBelowMd();
   const heroRef = useRef<HTMLElement | null>(null);
   const heroCollapse = useMobileHeroCollapseProgress(heroRef, isBelowMd);
@@ -221,8 +222,8 @@ export function BookingDetailPage() {
     return () => window.clearInterval(interval);
   }, [bookingId, propertyId, queryClient]);
 
-  /** Collapsed guest cards on mobile so Progress stays above the fold. */
-  const isMobileWorkflowFirst = isBelowMd && booking != null;
+  /** Below `lg` the rail leads and the details collapse: Progress stays above the fold. */
+  const isMobileWorkflowFirst = isBelowLg && booking != null;
 
   const showMobileDetailCards = !isMobileWorkflowFirst || detailsExpanded || editMode;
 
@@ -442,12 +443,12 @@ export function BookingDetailPage() {
       <div
         data-page-brand-hero
         data-booking-detail-page
-        className="!mt-0 space-y-4 max-md:px-4 max-md:pt-3"
+        className="!mt-0 space-y-4 pb-24 max-md:px-4 max-md:pt-3 lg:pb-6"
       >
         {/* Back nav */}
         <Link
           to="/bookings"
-          className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-xs font-medium transition-colors"
+          className="text-muted-foreground hover:text-foreground focus-ring -my-2 inline-flex min-h-[44px] items-center gap-1.5 rounded-md px-1 text-xs font-medium transition-colors"
         >
           <ArrowLeft className="size-3.5" />
           Back to Bookings
@@ -473,11 +474,11 @@ export function BookingDetailPage() {
         {booking && (
           <div
             data-booking-detail-layout
-            className="flex flex-col gap-4 md:flex-row md:items-start md:gap-5 lg:gap-6"
+            className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-6"
           >
             {isMobileWorkflowFirst && (
               <BookingDetailMobileSummary
-                className="order-1 md:hidden"
+                className="order-1 lg:hidden"
                 booking={booking}
                 detailsExpanded={detailsExpanded}
                 onToggleDetails={handleToggleDetails}
@@ -498,8 +499,8 @@ export function BookingDetailPage() {
               }}
               className={cn(
                 'min-w-0 flex-1',
-                isMobileWorkflowFirst && (mobileDetailsBeforeWorkflow ? 'order-2' : 'order-3'),
-                isMobileWorkflowFirst && 'md:order-none'
+                mobileDetailsBeforeWorkflow ? 'order-2' : 'order-3',
+                'lg:order-none'
               )}
             >
               <CollapsibleContent
@@ -528,7 +529,7 @@ export function BookingDetailPage() {
                       onEdit={() => handleStartEdit()}
                       canEdit={canEditBooking}
                       actions={hostActions}
-                      className={cn(isMobileWorkflowFirst && 'hidden md:block')}
+                      className={cn(isMobileWorkflowFirst && 'hidden lg:block')}
                     />
 
                     <BookingDetailShellBody>
@@ -539,7 +540,7 @@ export function BookingDetailPage() {
                       ) : null}
                       {viewTab === 'overview' && (
                         <div className="space-y-4">
-                          <GuestViewCard booking={booking} />
+                          <GuestViewCard booking={booking} canEditDoorCode={canEditStay} />
                           <StayDetailsPanel booking={booking} />
                           <BookingCancellationCard
                             booking={booking as unknown as Record<string, unknown>}
@@ -609,9 +610,9 @@ export function BookingDetailPage() {
             <div
               data-booking-detail-workflow
               className={cn(
-                'w-full md:w-[min(100%,20rem)] md:shrink-0 lg:sticky lg:top-5 lg:max-h-[calc(100dvh-2.5rem)] lg:w-[min(100%,24rem)] lg:self-start xl:w-[27rem]',
-                isMobileWorkflowFirst && (mobileDetailsBeforeWorkflow ? 'order-3' : 'order-2'),
-                isMobileWorkflowFirst && 'md:order-none'
+                'w-full lg:sticky lg:top-5 lg:max-h-[calc(100dvh-2.5rem)] lg:w-[min(100%,24rem)] lg:shrink-0 lg:self-start xl:w-[27rem]',
+                mobileDetailsBeforeWorkflow ? 'order-3' : 'order-2',
+                'lg:order-none'
               )}
             >
               <WorkflowPanel

@@ -142,15 +142,8 @@ function BookingsHeaderActionsSkeleton() {
 function BookingsListBodySkeleton({ view }: { view: string | null }) {
   return (
     <>
-      <BookingsStageSummarySkeleton
-        hideStatusFooter
-        stageLabels={{
-          action_required: 'Needs action',
-          pending_docs: 'Pending',
-          confirmed: 'Active',
-          history: 'Completed',
-        }}
-      />
+      {/* Same labels and hints as BookingsSummaryCards, so nothing rewrites itself on hydrate. */}
+      <BookingsStageSummarySkeleton />
       <AdminListToolbarSkeleton sort />
       {view === 'calendar' ? (
         <FloatingPanel padding="md" className="overflow-hidden">

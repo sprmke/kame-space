@@ -18,7 +18,13 @@ import { Button } from '@/components/ui/button';
  * This mirrors the guest's own words, read-only, so a host can answer "what is my guest
  * waiting on?" without opening the trip link.
  */
-export function GuestViewCard({ booking }: { booking: BookingRow }) {
+export function GuestViewCard({
+  booking,
+  canEditDoorCode = true,
+}: {
+  booking: BookingRow;
+  canEditDoorCode?: boolean;
+}) {
   const tripLink = useBookingTripLink(booking);
   if (booking.parking_id) return null;
 
@@ -48,13 +54,13 @@ export function GuestViewCard({ booking }: { booking: BookingRow }) {
         {snapshot.missing.length > 0 ? (
           <p className="text-muted-foreground flex items-start gap-2 text-sm">
             <Eye className="mt-0.5 size-4 shrink-0" aria-hidden />
-            <span>Still open: {snapshot.missing.join(', ')}</span>
+            <span>Guest still needs: {snapshot.missing.join(', ')}</span>
           </p>
         ) : (
           <p className="text-muted-foreground text-sm">Nothing is outstanding for the guest.</p>
         )}
 
-        <GuestAccessCodeField booking={booking} />
+        <GuestAccessCodeField booking={booking} canEdit={canEditDoorCode} />
       </div>
     </BookingDetailCard>
   );

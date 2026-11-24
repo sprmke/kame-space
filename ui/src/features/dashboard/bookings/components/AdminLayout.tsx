@@ -322,6 +322,12 @@ function PropertyLifecycleBannerSlot() {
 function AdminLayoutShell({ children, fillMain = false }: Props) {
   const brandStyle = useAdminBrandThemeStyle();
   const location = useLocation();
+  /**
+   * Booking detail owns its own action surfaces (Edit + ⋯ + the Progress rail) and the
+   * floating Quick access pill sits exactly over the rail's primary CTA on phone and tablet
+   * (review P2-10). The same actions stay one tap away in the bottom bar's More sheet.
+   */
+  const hideQuickAccessFab = /\/bookings\/[^/]+$/.test(location.pathname);
   const navigate = useNavigate();
   const {
     orgSlug: routeOrgSlug,
@@ -938,7 +944,7 @@ function AdminLayoutShell({ children, fillMain = false }: Props) {
                   }
                   setToolsOpen(open);
                 }}
-                showFab={!aiMode}
+                showFab={!aiMode && !hideQuickAccessFab}
                 unreadCount={unreadNotificationCount}
                 showAssistant={!aiMode && showAssistantFab}
                 messagesHref={quickAccessPaths.messagesHref}
