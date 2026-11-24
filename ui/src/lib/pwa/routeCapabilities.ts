@@ -174,7 +174,7 @@ export const ROUTE_CAPABILITIES: readonly RouteCapability[] = [
   // ── host: auth / onboarding (mid-task, never offered) ─────────────────────
   {
     id: 'host-auth',
-    test: /^\/(?:for-hosts\/(?:login|register)|onboarding|accept-invite|verification-rejected|sign-in)(?:\/|$)/,
+    test: /^\/(?:for-hosts\/(?:login|register)|onboarding|accept-invite|verification-rejected|sign-in|login)(?:\/|$)/,
     audience: 'host',
     installOffer: 'blocked',
     precacheTier: 'shell',
@@ -328,6 +328,7 @@ export const KNOWN_ROUTE_SEGMENTS: ReadonlySet<string> = new Set([
   'form',
   'guest-review',
   'hosts',
+  'login',
   'maintenance',
   'marketing',
   'notifications',

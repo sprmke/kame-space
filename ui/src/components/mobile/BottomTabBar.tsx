@@ -88,14 +88,13 @@ export function BottomTabBar({
       className={cn('fixed inset-x-0 bottom-0 z-40', mobileBottomBarClassName, className)}
       aria-label={ariaLabel}
     >
-      <div
+      <ul
         ref={containerRef}
         className={cn(
           'mobile-bottom-bar-row relative flex items-stretch justify-around',
           mobileBottomBarRowClassName,
           dense ? 'gap-0' : 'gap-0.5'
         )}
-        role="list"
       >
         {bounds ? (
           <SlidingActivePill
@@ -172,7 +171,7 @@ export function BottomTabBar({
 
           if (item.onClick || !item.href) {
             return (
-              <div key={item.key} role="listitem" className="contents">
+              <li key={item.key} aria-label={itemAriaLabel} className="flex min-w-0 flex-1">
                 <button
                   ref={setItemRef(item.key)}
                   type="button"
@@ -186,12 +185,12 @@ export function BottomTabBar({
                 >
                   {content}
                 </button>
-              </div>
+              </li>
             );
           }
 
           return (
-            <div key={item.key} role="listitem" className="contents">
+            <li key={item.key} aria-label={itemAriaLabel} className="flex min-w-0 flex-1">
               <Link
                 ref={setItemRef(item.key)}
                 to={item.href}
@@ -204,10 +203,10 @@ export function BottomTabBar({
               >
                 {content}
               </Link>
-            </div>
+            </li>
           );
         })}
-      </div>
+      </ul>
     </nav>
   );
 }

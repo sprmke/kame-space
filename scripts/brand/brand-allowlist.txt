@@ -132,3 +132,8 @@ AGENTS.md:local seed  # documents the canonical seed slugs
 
 # K-12 audit evidence quotes the canonical local seed slugs in routes and screenshots
 docs/workflow/in-progress/full-app-ux-audit/**  # audit quotes canonical seed slugs (kame-homes / kame-home)
+
+# K-12 super admin UX review quotes the canonical local seed slugs in captures, fixtures and specs
+docs/workflow/in-progress/super-admin-ux-review/**:kame-homes?  # review evidence quotes the canonical seed slugs
+ui/e2e/features/admin/shared/superAdminConsoleHarness.ts:kame-homes?  # canonical seed slug in fixtures
+ui/e2e/features/admin/superAdminModuleTour.spec.ts:kame-homes?  # canonical seed route in the tour
