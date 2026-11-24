@@ -83,7 +83,9 @@ Seeded templates that already had `org.bookings:view` receive `org.reviews:view`
 
 The same four cards as the property page, summed across every visible listing: **Average rating**, **Reviews**, **Responded**, **To write**. Average and Responded show a dash, not `0.0` / `0%`, when there are no published reviews. Average opens the rating breakdown; To write switches to that tab.
 
-The cards always cover **every** visible listing. Only the feed narrows when the listing filter is set, so the filter reads as "which listings am I looking at", not "which listings exist".
+The cards follow the listing filter. With no filter they cover every visible listing; with one or more listings selected they are recomputed from those listings' own rows (weighted by published review count), so the numbers above the feed always describe that feed. While a filter is on, the Average rating card does not open the breakdown sheet, because the distribution and category averages it would show are org-wide.
+
+Archived listings are excluded from the rollup, so their reviews do not count toward the org average or appear in the listing filter.
 
 ## Tabs
 
@@ -105,7 +107,7 @@ Same controls as the property page plus the listing filter. Only one facet sits 
 | **Listings** | Multi-select                             | Multi-select           | Multi-select             |
 | **Filters**  | Ratings · Responded / Awaiting           | —                      | Ratings · Would host     |
 | **Sort**     | Newest · Oldest · Highest · Lowest rated | Closing soonest · last | Newest · Oldest · rated  |
-| **Per page** | 31 · 50 · 100                            | same                   | same                     |
+| **Per page** | 25 · 50 · 100                            | same                   | same                     |
 | **View**     | Table · Card                             | same                   | same                     |
 
 Everything is in the URL (`tab`, `q`, `properties`, `ratings`, `responded`, `hostAgain`, `sort`, `page`, `limit`, `view`), so a filtered portfolio view is shareable. Switching tab keeps the view, page size and listing scope, and resets the tab-specific filters and sort.
@@ -160,7 +162,7 @@ Both Reviews endpoints share `_shared/reviewListParams.ts`, so the two pages acc
 | Layer | Path / spec                                                                     |
 | ----- | ------------------------------------------------------------------------------- |
 | Unit  | `ui/src/features/reviews/lib/reviewsListLoadState.test.ts` (tab skeleton state) |
-| E2E   | `ui/e2e/features/reviews/orgReviewsPage.spec.ts` (`@ci`)                        |
+| E2E   | `ui/e2e/features/reviews/orgReviewsPage.spec.ts`, `reviewsUxReview.spec.ts` (`@ci`) |
 | Edge  | `supabase/functions/tests/propertyReviews.test.ts` (shared param contract)      |
 
 ---

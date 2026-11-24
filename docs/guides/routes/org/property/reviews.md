@@ -99,6 +99,8 @@ Four stat cards, the same row every other property list page opens with: **Avera
 
 Two of them are controls: **Average rating** opens the rating breakdown sheet, and **To write** switches to that tab (and highlights while it is open).
 
+The summary is the same for every tab: the cards describe published reviews of this listing, not the active tab. If the review summary or the feed fails to load the cards are replaced by the error state rather than showing `0` / `–`, so a failed request never looks like an empty portfolio.
+
 ## Rating breakdown
 
 A sheet, not a page band: the 5→1 star distribution with counts and the six guest category averages (Cleanliness, Accuracy, Check-in, Communication, Location, Value). Opened from the Average rating card.
@@ -113,12 +115,14 @@ One toolbar for all three tabs, built from the shared admin list controls.
 | **Ratings**  | Multi-select 1–5 stars                   | —                      | Multi-select 1–5 stars             |
 | **Filters**  | Responded / Awaiting response            | —                      | Would host again / Would not       |
 | **Sort**     | Newest · Oldest · Highest · Lowest rated | Closing soonest · last | Newest · Oldest · Highest · Lowest |
-| **Per page** | 31 · 50 · 100                            | same                   | same                               |
+| **Per page** | 25 · 50 · 100                            | same                   | same                               |
 | **View**     | Table · Card                             | same                   | same                               |
 
 Every control is in the URL (`q`, `ratings`, `responded`, `hostAgain`, `sort`, `page`, `limit`, `view`), so a filtered list is shareable and survives a reload. Switching tab keeps the view and page size and resets the tab-specific filters and sort. Search is debounced 300 ms and resets to page 1, as do all filters.
 
-Phone and tablet get the standard compact chrome: search + a **Refine** sheet holding filters, sort and per page. Card is the only phone view, so no view toggle is drawn there.
+Phone and tablet get the standard compact chrome: search + a **Refine** sheet holding filters, sort and per page. Card is the only phone view, so no view toggle is drawn there. The Refine sheet only draws a **Filters** section when the tab actually has a filter (To write on a single-listing property has none).
+
+At `lg` the toolbar keeps a minimum width for the search field and wraps the sort / per-page / view controls onto a second row instead of squeezing the search to a couple of characters.
 
 ## Table and card views
 
@@ -130,7 +134,9 @@ Desktop defaults to **Table**; phone and tablet always render **Cards**. Both op
 | **To write**     | Guest · Stay · Window · actions                            |
 | **About guests** | Guest · Rating · Review · Host again · Submitted · actions |
 
-Columns drop progressively below `xl` / `lg` / `md`; the guest cell carries the dates on narrow screens. Row actions are Respond (From guests), Write review (To write), and an overflow menu with Open booking, Use in marketing and Report.
+Columns drop progressively: **Response** and **Stay** appear from `xl` (1280), **Review** from `md`. Between `lg` and `xl` the guest cell carries the stay date (or the submitted date on About guests) under the name, so a laptop never loses it. Row actions are Respond (From guests), Write review (To write), and an overflow menu with Open booking, Use in marketing and Report.
+
+Cards carry the same actions inline: **Reply** / **Edit reply** in the card footer for anyone with `reviews.responses:edit`, plus the ⋯ sheet with Open booking, Use in marketing and Report. A reader without the response leaf sees no reply control.
 
 ## Tabs
 
@@ -144,7 +150,7 @@ Tab labels name the subject, not the voice. Query values are unchanged (`receive
 
 ### From guests
 
-Published guest reviews. The row (or card) carries guest, stars, an excerpt and whether it has a response; opening it shows the full review in a sheet: review text (clamped past ~320 characters with **Show more**), the guest's feedback tags, any attached photos or clips (open in a new tab), that stay's category scores, the host-only **Private note** (neutral surface) and the public **Your response** (brand surface, so the two do not read alike). The sheet's actions are **Report**, **Open booking** and **Respond** / **Edit response**; **Use in marketing** stays in the row and card overflow menus.
+Published guest reviews. The row (or card) carries guest, stars, an excerpt and whether it has a response; opening it shows the full review in a sheet, titled with the guest's name: review text (clamped past ~320 characters with **Show more**), the guest's feedback tags, any attached photos or clips (open in a new tab), that stay's category scores, the host-only **Private note** (neutral surface) and the public **Your response** (brand surface, so the two do not read alike). The sheet's actions are **Report**, **Open booking** and **Respond** / **Edit response**; **Use in marketing** stays in the row and card overflow menus.
 
 Unpublished counterpart reviews never appear here.
 
@@ -164,7 +170,7 @@ Loading keeps the page chrome mounted and shows KPI cards plus the active tab's 
 
 ## Save path
 
-1. Respond → `POST respond-to-guest-review` (`bookingId`, `responseText`)
+1. Respond → `POST respond-to-guest-review` (`bookingId`, `responseText`). The sheet shows the review being answered, disables Save until the text changes, and asks for confirmation before removing an existing response.
 2. Report → `POST report-review` (`reviewKind`, `reviewId`, `reason`, `details` ≥ 30 chars)
 3. Write guest review → `POST submit-host-guest-review` (same as booking Stay tab)
 4. Auto-review rules → `PATCH review-automation-settings` `{ action: 'saveRules', ... }`
@@ -218,8 +224,8 @@ Guest names live on the stay, not on the review, so a name search first resolves
 | ------- | ----------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
 | Unit    | `ui/src/features/reviews/lib/reviewsListLoadState.test.ts` (tab skeleton state)                 | —                                                         |
 | Handler | `supabase/functions/tests/propertyReviews.test.ts`, `reviewReports.test.ts`                     | —                                                         |
-| E2E     | `ui/e2e/features/reviews/hostReviewsPage.spec.ts` (`@ci`)                                       | —                                                         |
-| Live    | `bun run test:reviews:live` (local stack: double-blind, publish, report, moderation, org scope) | [`reviews-manual.md`](../../../testing/reviews-manual.md) |
+| E2E     | `ui/e2e/features/reviews/hostReviewsPage.spec.ts`, `reviewsUxReview.spec.ts` (`@ci`)             | —                                                         |
+| Live    | `supabase/functions/tests/reviewsLifecycleLocal.integration_test.ts` (local stack: double-blind, publish, report, moderation) | [`reviews-manual.md`](../../../testing/reviews-manual.md) |
 
 ---
 
