@@ -17,7 +17,27 @@
     },
     {
       "source": "/for-hosts/preview",
-      "destination": "/for-hosts/v2",
+      "destination": "/for-hosts",
+      "permanent": true
+    },
+    {
+      "source": "/for-hosts/v2",
+      "destination": "/for-hosts",
+      "permanent": true
+    },
+    {
+      "source": "/for-hosts/v3",
+      "destination": "/for-hosts",
+      "permanent": true
+    },
+    {
+      "source": "/for-hosts/v4",
+      "destination": "/for-hosts",
+      "permanent": true
+    },
+    {
+      "source": "/for-hosts/v5",
+      "destination": "/for-hosts",
       "permanent": true
     },
     {

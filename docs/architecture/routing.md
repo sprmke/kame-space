@@ -15,7 +15,7 @@ Part of the [`docs/PROJECT.md`](../PROJECT.md) architecture split.
 
 Defined in `ui/src/features/guest/marketing/routes/index.tsx`, `ui/src/features/guest/property/routes/index.tsx` (operational guest flows under `/properties/:propertySlug/...`), and `ui/src/features/dashboard/**` (admin + tenancy). All are merged in `ui/src/routes/index.tsx`.
 
-The live host acquisition page remains `/for-hosts`. Unlinked comparison routes `/for-hosts/v2`, `/for-hosts/v3`, and `/for-hosts/v4` are `noindex` redesign previews; V4 is the current outcome-led candidate. See [`docs/guides/routes/for-hosts.md`](../guides/routes/for-hosts.md).
+The live host acquisition page is `/for-hosts` (mascot hero landing). Legacy preview paths `/for-hosts/preview` and `/for-hosts/v2`–`/v5` redirect to `/for-hosts`. See [`docs/guides/routes/for-hosts.md`](../guides/routes/for-hosts.md).
 
 **Per-route operator guides:** **`docs/guides/routes/`** mirrors these URLs (index: **[[guides/routes/README|Route-based operator guides]]**). Update the matching guide when changing page behavior, save flows, or validation (see **`.cursor/rules/route-guides.mdc`**).
 

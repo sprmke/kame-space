@@ -30,6 +30,8 @@ Super-admin lazy routes use `superAdminRoute(page, skeleton)` in `ui/src/feature
 
 Marketing Trends adds two in-component skeletons rather than route skeletons, because the page chrome is already mounted: `TrendingRail` shows a real `Trending today` LazySkeleton row of three chips while the list loads, and `TrendsSheet` shows five topic-row skeletons inside the sheet. Both keep the labels and the tabs fixed and skeleton only the async rows.
 
+The `/for-hosts` fee calculator (`V5BookingFees`) also uses in-component skeletons: the slider, the night cards and every Airbnb amount render at once, and only the live Pro price and the figures derived from it (the headline, the Kame Pro fee and **You get** amounts, the savings figure, the night card labels) are skeletons on first load. The previous `V5Fees` calculator, kept for switching back, follows the same rule for its plan prices.
+
 `SuperAdminMarketingTrendsRouteSkeleton` covers `/admin/marketing-trends` (real title, run-now action, card list body).
 
 Weekly ops reports use two route-specific skeletons: `SuperAdminOpsReportsRouteSkeleton` (real title + **Generate now**, five report rows) and `SuperAdminOpsReportDetailRouteSkeleton` (real title + back link, four fixed severity labels, finding cards).

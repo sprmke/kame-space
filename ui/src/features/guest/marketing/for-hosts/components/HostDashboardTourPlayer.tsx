@@ -569,10 +569,12 @@ export function HostDashboardTourPlayer({
             </div>
           ) : (
             <>
-              <p className="text-foreground truncate text-sm font-semibold sm:text-base">
+              {/* Below `md`: the title may wrap to two lines and the description hides (the
+                  chapter strip below carries the context), so nothing cuts off mid-word. */}
+              <p className="text-foreground line-clamp-2 text-sm font-semibold leading-snug sm:text-base md:truncate">
                 {activeChapter?.title}
               </p>
-              <p className="text-muted-foreground mt-1 truncate text-xs">
+              <p className="text-muted-foreground mt-1 hidden truncate text-xs md:block">
                 {activeChapter?.description}
               </p>
             </>

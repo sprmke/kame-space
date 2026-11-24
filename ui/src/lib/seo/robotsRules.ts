@@ -27,6 +27,7 @@ export const ROBOTS_DISALLOW = [
   '/for-hosts/preview',
   '/for-hosts/v2',
   '/for-hosts/v3',
+  '/for-hosts/v5',
   '/explore-preview',
   '/v2',
   '/guest-review',

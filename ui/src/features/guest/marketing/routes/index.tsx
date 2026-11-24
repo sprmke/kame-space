@@ -49,21 +49,6 @@ const ForHostsPage = lazy(() =>
     default: m.ForHostsPage,
   }))
 );
-const ForHostsPreviewPage = lazy(() =>
-  import('@/features/guest/marketing/pages/ForHostsPreviewPage').then((m) => ({
-    default: m.ForHostsPreviewPage,
-  }))
-);
-const ForHostsV3Page = lazy(() =>
-  import('@/features/guest/marketing/pages/ForHostsV3Page').then((m) => ({
-    default: m.ForHostsV3Page,
-  }))
-);
-const ForHostsV4Page = lazy(() =>
-  import('@/features/guest/marketing/pages/ForHostsV4Page').then((m) => ({
-    default: m.ForHostsV4Page,
-  }))
-);
 const ForHostsPricingPage = lazy(() =>
   import('@/features/guest/marketing/pages/ForHostsPricingPage').then((m) => ({
     default: m.ForHostsPricingPage,
@@ -163,13 +148,12 @@ export const marketingRoutes = [
     <Route index element={<MarketingHomePage />} />
     <Route path="search" element={<SearchResultsPage />} />
     <Route path="for-hosts/pricing" element={<ForHostsPricingPage />} />
-    {/* v2 redesign - swap into `for-hosts` below once approved. */}
-    <Route path="for-hosts/v2" element={<ForHostsPreviewPage />} />
-    <Route path="for-hosts/preview" element={<Navigate to="/for-hosts/v2" replace />} />
-    {/* Third redesign direction - manual review, not linked from nav. */}
-    <Route path="for-hosts/v3" element={<ForHostsV3Page />} />
-    {/* Outcome-led redesign direction - manual review, not linked from nav. */}
-    <Route path="for-hosts/v4" element={<ForHostsV4Page />} />
+    {/* Old redesign previews redirect to the live landing. */}
+    <Route path="for-hosts/preview" element={<Navigate to="/for-hosts" replace />} />
+    <Route path="for-hosts/v2" element={<Navigate to="/for-hosts" replace />} />
+    <Route path="for-hosts/v3" element={<Navigate to="/for-hosts" replace />} />
+    <Route path="for-hosts/v4" element={<Navigate to="/for-hosts" replace />} />
+    <Route path="for-hosts/v5" element={<Navigate to="/for-hosts" replace />} />
     {/* Guest landing redesign previews - manual review, not linked from nav. */}
     <Route path="explore-preview" element={<ExplorePreviewPage />} />
     <Route path="v2" element={<GuestLandingV2Page />} />
