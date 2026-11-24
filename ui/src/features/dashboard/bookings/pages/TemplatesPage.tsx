@@ -371,17 +371,19 @@ export function TemplatesPage() {
   }, [canAddCustom, openAddTemplate, openNewGroup]);
 
   const templateHeaderActions = canAddCustom ? (
-    <TierBadgeAnchor feature="customTemplates" className="w-full sm:w-auto">
-      <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end sm:gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          className="min-h-[44px] gap-1.5"
-          onClick={openNewGroup}
-        >
-          <FolderPlus className="size-4" aria-hidden />
-          New group
-        </Button>
+    <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end sm:gap-2">
+      <Button
+        type="button"
+        variant="outline"
+        className="min-h-[44px] gap-1.5"
+        onClick={openNewGroup}
+      >
+        <FolderPlus className="size-4" aria-hidden />
+        New group
+      </Button>
+      {/* One pill on the pair: both actions open the same upgrade dialog, and two pills
+       * collided with the page title. */}
+      <TierBadgeAnchor feature="customTemplates">
         <Button
           type="button"
           variant="default"
@@ -391,8 +393,8 @@ export function TemplatesPage() {
           <Plus className="size-4" aria-hidden />
           New template
         </Button>
-      </div>
-    </TierBadgeAnchor>
+      </TierBadgeAnchor>
+    </div>
   ) : null;
 
   const canEditActive = activeEntry
