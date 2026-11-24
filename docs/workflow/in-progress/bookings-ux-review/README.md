@@ -33,8 +33,8 @@ the `list-bookings` / `get-booking` contracts.
 
 **This is a review, not a fix pass.** Nothing under `ui/src/features/dashboard/bookings/**` was
 changed. The deliverable is this document, an 18-test `@ci` suite, a capture spec (25 stills) and a
-5-scenario slow-motion tour. Two defects are pinned with `test.fail()` so the suite stays green and
-flips red the moment they are fixed.
+5-scenario slow-motion tour, then the remediation pass that closes every P1 (see
+[Remediation pass](#remediation-pass-2026-11-24)) with before/after stills.
 
 > Scope note: the request header named **Bookings & Booking Detail** while the body referred to the
 > property **Finance** page. This pass covers Bookings. Finance already has two audits:
@@ -75,6 +75,41 @@ and an **accessibility contract that was never wired to the table**.
 None of these are data-integrity or outage problems, and the booking state machine itself was not
 touched. All of them are fixable in the UI layer.
 
+## Remediation pass (2026-11-24)
+
+Every P1 below is fixed on `feat/bookings-ux-review`, with the two P2s that could be closed
+without a design decision. Four items were re-checked and found not to be defects; they are
+marked in place so the list stays honest rather than self-congratulatory.
+
+| Item                       | Status               | What changed                                                                                                                           |
+| -------------------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| P1-1 CTA clipped           | **Fixed**            | The return/proceed pair wraps (`basis-[11rem]`) instead of forcing two cells; paired labels wrap instead of `whitespace-nowrap`        |
+| P1-2 768 squeeze           | **Fixed**            | Below `lg` the detail is one column with Progress first; the rail is full width, so header, tabs and CTA all fit                       |
+| P1-3 rail below fold       | **Fixed**            | The container-query stack sets `order: -1` on the rail, matching `<lg`                                                                 |
+| P1-4 door code             | **Fixed**            | `GuestAccessCodeField` renders read-only text without `bookings.detail.stay:edit`; `get-booking` also stops returning the override     |
+| P1-5 review gate           | **Fixed**            | Without `bookings.detail.workflow:edit` the gate is replaced by a "View only" note                                                     |
+| P1-6 table semantics       | **Fixed**            | `<tr>` is a row again, the guest name is the real link, `aria-sort` moved to the `<th>`, flag chips carry `role="img"`                 |
+| P2-1 "No flags"            | **Fixed**            | Removed from card and kanban footers                                                                                                   |
+| P2-2 constant "DIRECT"     | **Fixed**            | Chip renders only when `booking_source` is set (header + mobile summary)                                                               |
+| P2-3 "AUTO" unexplained    | **Not a defect**     | `WorkflowAdvanceModeBadge` already ships a tooltip and an `aria-label` that spells the mode out                                        |
+| P2-4 stage labels          | **Fixed (skeleton)** | The mismatch lived in `BookingsListBodySkeleton`, not the cards; the skeleton now uses the real labels and hints                       |
+| P2-5 sort name             | **Fixed**            | Trigger is `"Sort bookings: Priority"`; the duplicate column sorter keeps its own label                                                |
+| P2-6 popover clip          | **Fixed**            | Scroll shadow marks the clipped row as "more below"                                                                                    |
+| P2-7 "Still open"          | **Fixed**            | Reads "Guest still needs: …"                                                                                                           |
+| P2-8 twin denominators     | **Fixed**            | "2 of 2 sent" / "0 of 1 received"                                                                                                      |
+| P2-9 three heading rows    | **Not a defect**     | The hero `h1` is the page label and the summary card owns the guest `h2` by design; naming the hero after the guest produced two `h1`s |
+| P2-10 FAB overlap          | **Fixed**            | Quick access pill is hidden on booking detail; the same actions stay in the bottom bar's More sheet                                    |
+| P2-11 empty-table axe gap  | **Fixed (coverage)** | The suite now runs axe on a populated list and on detail with **zero exclusions**                                                      |
+| P2-12 payload minimisation | **Fixed**            | `_shared/bookingPayload.ts` nulls bank fields, door code and tokens without the matching leaf (5 Deno tests)                           |
+| P3-1 back link             | **Fixed**            | 44px hit area                                                                                                                          |
+| P3-2 phone card hints      | **Accepted**         | The chips would triple the card height at 375px; the `InfoHint` carries the same meaning                                               |
+| P3-3 date control          | **Not a defect**     | Re-checked at 1440: the control is the same width as the other header actions; the earlier note was an impression, not a measurement   |
+| P3-4 email truncation      | **Fixed**            | Full address on hover/focus (`title`)                                                                                                  |
+| P3-5 masked list error     | **Fixed**            | Only transport failures fall back to PostgREST; a server error surfaces                                                                |
+| P3-6 deprecated import     | **Fixed**            | `BookingsSummaryCards` imports `StatCard` directly                                                                                     |
+
+Before/after stills for every surface: [`COMPARISON.md`](./COMPARISON.md).
+
 ## Evidence
 
 | Item        | Value                                                                                                                                     |
@@ -114,7 +149,7 @@ touched. All of them are fixable in the UI layer.
 
 ### P1 — fix before the next release
 
-#### P1-1. The primary workflow CTA clips its own label on phone and tablet
+#### P1-1. The primary workflow CTA clips its own label on phone and tablet — **fixed**
 
 At 390px the rail renders `Return to Review` + `Mark GAF as complete` in a `grid-cols-2` row with
 `whitespace-nowrap`. The right cell is ~150px, the label needs ~180px, so the button paints
@@ -123,12 +158,12 @@ At 390px the rail renders `Return to Review` + `Mark GAF as complete` in a `grid
 naive overflow assertion passes), so only the label is lost.
 
 Evidence: `screenshots/51-phone-detail-workflow.png`, `screenshots/32-tablet-detail.png`.
-Regression pin: `bookingsWorkspace.spec.ts` → _primary workflow CTA label is not clipped_ (`test.fail()`).
+Regression pin: `bookingsWorkspace.spec.ts` → _primary workflow CTA label is not clipped_.
 
 Fix direction: stack the pair below `sm` (or below the container width the label needs), and let the
 primary label wrap instead of `nowrap`. Keep equal-width pairs only where the labels actually fit.
 
-#### P1-2. 768–1023: two columns start too early and squeeze the booking
+#### P1-2. 768–1023: two columns start too early and squeeze the booking — **fixed**
 
 `md:flex-row` + a fixed 320px rail at 768 leaves ~350px for the whole left column. Consequences in
 `screenshots/32-tablet-detail.png`:
@@ -144,7 +179,7 @@ the desktop two-column rule with a tablet viewport.
 Fix direction: start the two-column layout at `lg` (or gate it on the same container query the
 detail page already uses at `lg+`), and make the section tabs show an edge fade or a scroll hint.
 
-#### P1-3. 1024–1239: Progress falls ~1,200px below the fold
+#### P1-3. 1024–1239: Progress falls ~1,200px below the fold — **fixed**
 
 At 1024 / 1100 / 1180 the page is narrower than the container query's 56rem, so the layout stacks.
 Because the stack keeps DOM order, `[data-booking-detail-workflow]` lands at `y = 1234` — below
@@ -160,7 +195,7 @@ Regression pin: `bookingsWorkspace.spec.ts` → _detail puts Progress above the 
 Fix direction: in the container-query `max-width: 55.99rem` branch, set `order` so the workflow
 panel precedes the details column, matching `<md`.
 
-#### P1-4. A read-only teammate can edit the door code
+#### P1-4. A read-only teammate can edit the door code — **fixed**
 
 `GuestAccessCodeField` renders an editable input plus an enabled **Save** for any viewer. The server
 rejects the write (403), so nothing is corrupted, but the UI offers a capability the role does not
@@ -169,12 +204,12 @@ have, and the error arrives only after typing a lock code. This is the same defe
 still open.
 
 Evidence: `screenshots/61-read-only-detail.png`.
-Regression pin: `bookingsWorkspace.spec.ts` → _door code field is read-only for a viewer_ (`test.fail()`).
+Regression pin: `bookingsWorkspace.spec.ts` → _door code field is read-only for a viewer_.
 
 Fix direction: gate the field on `bookings.detail.stay:edit` (read-only: show the saved override as
 text), or disable input + Save with a one-line reason.
 
-#### P1-5. A read-only teammate gets interactive workflow controls
+#### P1-5. A read-only teammate gets interactive workflow controls — **fixed**
 
 On `PENDING_REVIEW` a viewer still sees the **Manual / AI check** segmented control and the
 "I manually reviewed…" checkbox. Ticking it does nothing because Proceed and Cancel are correctly
@@ -184,7 +219,7 @@ the rails gate the actions, not the gate itself.
 Fix direction: hide the review question entirely when `bookings.detail.workflow:edit` is missing, and
 replace it with one line ("View only") so the empty rail has a reason.
 
-#### P1-6. The booking table's row-as-button pattern fails four axe rules
+#### P1-6. The booking table's row-as-button pattern fails four axe rules — **fixed**
 
 On a populated table (`screenshots/01-desktop-list-table.png`), axe reports:
 
@@ -303,12 +338,12 @@ out of the click target, and put `aria-sort` on the `<th>` instead of the button
 
 ## Test coverage added
 
-| File                                                          | Purpose                                                                                                                                                                                                                                                                                                                                                                                              |
-| ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ui/e2e/features/bookings/shared/bookingsWorkspaceHarness.ts` | 12-booking fixture across every status (plus `PENDING_PAYMENT`, imported-via-`external_source`), an emulated `list-bookings` that really filters/sorts/paginates, plan tiers (Free/Starter/Business) and three permission sets, plus a detail row for every id                                                                                                                                       |
-| `ui/e2e/features/bookings/bookingsWorkspace.spec.ts`          | `@ci` — 16 active tests + 2 `test.fail()` pins: stage counts and filtering, search, status filter, completed/cancelled visibility, row → detail, kanban + calendar, unnamed-control sweep, error state, detail header + every panel, workflow rail fit, review gate, door-code pin, read-only gating, axe (serious/critical), phone card view, touch targets, Progress above the fold, CTA label pin |
-| `ui/e2e/features/bookings/bookingsWorkspaceAudit.spec.ts`     | `@demo` — 25 stills at 390 / 768 / 1024 / 1440 + dark, all four list views, popovers, refine and date sheets, plan/permission variants                                                                                                                                                                                                                                                               |
-| `ui/e2e/features/bookings/bookingsTour.slowmo.spec.ts`        | `@demo` — 5 headed slow-motion scenarios (list, detail tabs, workflow proceed, plan + permissions, phone)                                                                                                                                                                                                                                                                                            |
+| File                                                          | Purpose                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ui/e2e/features/bookings/shared/bookingsWorkspaceHarness.ts` | 12-booking fixture across every status (plus `PENDING_PAYMENT`, imported-via-`external_source`), an emulated `list-bookings` that really filters/sorts/paginates, plan tiers (Free/Starter/Business) and three permission sets, plus a detail row for every id                                                                                                                                                                                       |
+| `ui/e2e/features/bookings/bookingsWorkspace.spec.ts`          | `@ci` — 22 tests: stage counts and filtering, search, status filter, completed/cancelled visibility, row → detail, kanban + calendar, unnamed-control sweep, error state, table semantics (row/link/`aria-sort`), axe on the populated list, detail header + every panel, workflow rail fit, review gate, read-only door code + view-only note, quick-access pill, axe on detail, phone card view, touch targets, Progress above the fold, CTA label |
+| `ui/e2e/features/bookings/bookingsWorkspaceAudit.spec.ts`     | `@demo` — 25 stills at 390 / 768 / 1024 / 1440 + dark, all four list views, popovers, refine and date sheets, plan/permission variants                                                                                                                                                                                                                                                                                                               |
+| `ui/e2e/features/bookings/bookingsTour.slowmo.spec.ts`        | `@demo` — 5 headed slow-motion scenarios (list, detail tabs, workflow proceed, plan + permissions, phone)                                                                                                                                                                                                                                                                                                                                            |
 
 Commands:
 
@@ -319,9 +354,9 @@ bun run test:e2e:bookings:tour           # headed slow-motion walkthrough
 bun run test:e2e:bookings:tour:video     # same, plus 1280×800 .webm under test-results/bookings-tour
 ```
 
-The `@ci` suite is green (16 passed, 2 expected failures) in ~2 minutes against a local Vite server.
-The two `test.fail()` tests are deliberate: they document P1-1 and P1-4 and will fail loudly when
-those defects are fixed, which is the signal to delete the annotation.
+The `@ci` suite is green (22 passed) in ~50 seconds against a warm local Vite server. Both axe
+checks run with **no exclusions**: the list and the detail page have zero serious or critical
+violations after this pass.
 
 ### Recorded walkthroughs
 

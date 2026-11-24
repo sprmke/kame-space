@@ -24,7 +24,9 @@ Route: `/org/:orgSlug/property/:propertySlug/bookings/:bookingId` (legacy flat: 
 
 ## Overview
 
-Two-column layout on tablet/desktop: **booking details** (left) and **Progress** (`WorkflowPanel`, right, `lg:sticky`). On `lg+` the layout follows the page's own width, not the viewport (`[data-booking-detail-page]` is a CSS container, rules in `index.css`): under 56rem (AI mode canvas, or a 1024px screen with the sidebar open) Progress stacks under the details card and both fill the width; from 56rem they sit side by side with a 24rem Progress column (27rem from 72rem on `xl`); under 34rem the header stacks the **Edit booking** button under the title. In the AI canvas the sticky Progress card is capped to fit under the pane header. On `lg+`, the Progress card is capped to `max-h-[calc(100dvh-2.5rem)]` (with `min-h-[min(24rem,…)]` so short viewports stay usable) and scrolls its stage body while header/actions stay put. On mobile (`<md`), a compact summary strip (`BookingDetailMobileSummary`) stays above the fold and **Progress** renders before the full detail panel so admins see workflow state without scrolling past the guest form.
+Below `lg` the page is **one column with Progress first**: a compact summary strip (`BookingDetailMobileSummary`), then the `WorkflowPanel`, then the collapsible details. Progress leads because it holds the only actions; a 768px two-column split left ~350px for the booking and clipped the header, the section tabs and the primary CTA.
+
+From `lg` the layout follows the page's own width, not the viewport (`[data-booking-detail-page]` is a CSS container, rules in `index.css`): under 56rem (AI mode canvas, or a 1024px screen with the sidebar open) Progress stacks **above** the details and both fill the width; from 56rem they sit side by side with a 24rem Progress column (27rem from 72rem on `xl`); under 34rem the header stacks the **Edit booking** button under the title. In the AI canvas the sticky Progress card is capped to fit under the pane header. On `lg+`, the Progress card is capped to `max-h-[calc(100dvh-2.5rem)]` (with `min-h-[min(24rem,…)]` so short viewports stay usable) and scrolls its stage body while header/actions stay put.
 
 On phone (`<md`) the page also renders the shared teal brand hero (`MobileBrandHero`, title **Booking**, `md:hidden`, scroll-collapse parallax) so the top of the screen matches every other dashboard page — the `[data-page-brand-hero]` marker drops `AdminLayout`'s fallback white topbar + shell gutter below `md` only. Tablet/desktop keep the plain topbar and the existing `BookingDetailHeader`. `BookingDetailMobileSummary`'s guest-name heading is `h2` (the hero owns the page `h1`).
 
@@ -196,7 +198,7 @@ Non-sensitive edits (e.g. special requests only) do not revert status.
   - Azure GAF/pet approvals arrive via **Resend inbound** (`approval-email-webhook`) — there is no Gmail poll.
 - **Transition actions bar** (`WorkflowActionsBar`) — tiers, top to bottom:
   1. **Save** — only while browsing an earlier stage (or after a failed live autosave), when a progress sub-form is dirty. Persists via `useUpdateBooking` without changing status. On the live stage, drafts autosave instead — Save stays hidden so it does not compete with Proceed. Explicit Save runs the same field validators as Proceed and shows inline errors when required fields are incomplete.
-  2. A **return/proceed pair** on one axis: a bordered **Return to \<status\>** on the left and exactly one primary CTA on the right — **equal 50% width** when both show (`grid-cols-2`); either alone is full width. Primary CTAs stay **enabled** (except while a mutation is in flight). Clicking **Proceed** / **Mark … complete** runs stage validators first (`WorkflowProceedValidationContext`): money fields, uploads, checkboxes, and settlement rules surface inline errors and focus the first invalid control — there is no disabled-button tooltip for missing form fields. Guest-balance settlement (RFCI → Ready for Check-out) also **toasts** the first validation hint (e.g. missing payment-balance receipt) so the block is visible when the receipt field is below the fold. Statuses covered: Pending Review pricing (+ surprise-decor ack when requested), parking settlement (nested or late), guest balance, SD refund (→ Completed). **Mark GAF / pet as complete** opens the same approval upload sheet as the row **Upload** action. **Proceed to Ready for Check-in** stays clickable when nested docs are incomplete; the click shows a toast with the blocked-docs hint instead of disabling the button.
+  2. A **return/proceed pair** on one axis: a bordered **Return to \<status\>** and exactly one primary CTA. They share a line only when both fit — each cell asks for `11rem`, so the pair wraps to two full-width rows in the 320px tablet rail and the 384px desktop rail rather than truncating a label; either alone is full width. Primary CTAs stay **enabled** (except while a mutation is in flight). Clicking **Proceed** / **Mark … complete** runs stage validators first (`WorkflowProceedValidationContext`): money fields, uploads, checkboxes, and settlement rules surface inline errors and focus the first invalid control — there is no disabled-button tooltip for missing form fields. Guest-balance settlement (RFCI → Ready for Check-out) also **toasts** the first validation hint (e.g. missing payment-balance receipt) so the block is visible when the receipt field is below the fold. Statuses covered: Pending Review pricing (+ surprise-decor ack when requested), parking settlement (nested or late), guest balance, SD refund (→ Completed). **Mark GAF / pet as complete** opens the same approval upload sheet as the row **Upload** action. **Proceed to Ready for Check-in** stays clickable when nested docs are incomplete; the click shows a toast with the blocked-docs hint instead of disabling the button.
   3. **Cancel booking** — full-width on a soft rose wash (rose text on a 10% rose fill, deepening on hover) below a hairline, on the **live** step only (hidden while browsing earlier stages). Eligibility is `canCancelBookingAtStatus` (`bookingStatus.ts`): Pending Review through **Ready for Check-in** only. From Ready for Check-out onward the stay has happened, so the booking is settled or refunded rather than cancelled, and the control is gone.
 
   While any of these mutations is in flight the **whole footer** is disabled (`actionsBusy = transitionPending || cancelPending || progressSavePending`), not just the button that was pressed — a cancel racing a transition would land the booking somewhere neither host intended. The running control keeps a spinner and `aria-busy`.
@@ -298,22 +300,24 @@ Results are terse, plain-language notes with no hedging. Long model text is clam
 
 Property-scoped admin session + allow list (`RequireAdmin` / org context). Route needs **`bookings:view`**.
 
-| Action                                         | Permission                                                         |
-| ---------------------------------------------- | ------------------------------------------------------------------ |
-| Edit Stay tab                                  | `bookings.detail.stay:edit`                                        |
-| Edit Guests tab (+ Valid ID uploads)           | `bookings.detail.guests:edit`                                      |
-| Edit / Add parking                             | `bookings.detail.parking:edit`                                     |
-| Edit / Add pets                                | `bookings.detail.pets:edit`                                        |
-| Receipt AI validation / Progress pricing forms | `bookings.detail.pricing:edit`                                     |
-| Progress transitions / automation / Kanban     | `bookings.detail.workflow:edit`                                    |
-| Reject approved GAF / pet file                 | `bookings.detail.workflow:edit`                                    |
-| AI Summary run                                 | `bookings.detail.stay:edit`                                        |
-| Reschedule (`⋯` → Reschedule)                  | `bookings.detail.stay:edit`                                        |
-| Door code override (Stay tab)                  | `bookings.detail.stay:edit` (client gate missing, server enforces) |
+| Action                                         | Permission                      |
+| ---------------------------------------------- | ------------------------------- |
+| Edit Stay tab                                  | `bookings.detail.stay:edit`     |
+| Edit Guests tab (+ Valid ID uploads)           | `bookings.detail.guests:edit`   |
+| Edit / Add parking                             | `bookings.detail.parking:edit`  |
+| Edit / Add pets                                | `bookings.detail.pets:edit`     |
+| Receipt AI validation / Progress pricing forms | `bookings.detail.pricing:edit`  |
+| Progress transitions / automation / Kanban     | `bookings.detail.workflow:edit` |
+| Reject approved GAF / pet file                 | `bookings.detail.workflow:edit` |
+| AI Summary run                                 | `bookings.detail.stay:edit`     |
+| Reschedule (`⋯` → Reschedule)                  | `bookings.detail.stay:edit`     |
+| Door code override (Stay tab)                  | `bookings.detail.stay:edit`     |
+| Review acknowledgement / Manual vs AI check    | `bookings.detail.workflow:edit` |
 
-**Known gap:** the door-code field renders an editable input + Save for any viewer and only fails at
-the server with 403 — tracked as P1-4 in `docs/workflow/in-progress/bookings-ux-review/README.md`.
-The same review records the read-only review gate (P1-5) and the clipped CTA (P1-1).
+A viewer without `bookings.detail.stay:edit` sees the saved door code as text, and a viewer without
+`bookings.detail.workflow:edit` gets a "View only" note where the review gate would be. `get-booking`
+also nulls the door code, the refund bank fields and the guest access tokens for callers missing
+those leaves (`_shared/bookingPayload.ts`), so the payload never carries what the surface hides.
 
 **Edit booking** only appears when at least one Stay/Guests/Parking/Pets leaf is granted; the edit form only shows those tabs. Progress rail **status** mutations require `bookings.detail.workflow:edit`. Progress **pricing / settlement fields** are read-only without `bookings.detail.pricing:edit` (even when workflow edit is granted). Legacy stored ids `bookings:edit` / `bookings:workflow` still expand to the equivalent leaf set.
 

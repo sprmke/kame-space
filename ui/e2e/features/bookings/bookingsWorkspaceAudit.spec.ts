@@ -19,7 +19,7 @@ import {
  * Writes to `docs/workflow/in-progress/bookings-ux-review/screenshots/`.
  */
 
-const SHOTS = 'docs/workflow/in-progress/bookings-ux-review/after';
+const SHOTS = 'docs/workflow/in-progress/bookings-ux-review/screenshots';
 
 async function settle(page: Page) {
   await dismissCookieConsent(page);
