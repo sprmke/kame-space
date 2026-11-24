@@ -7,6 +7,7 @@ import {
   hasUpgradeModalOpener,
   openUpgradeModalFromBridge,
 } from '@/features/dashboard/plans/lib/upgradeModalBridge';
+import { calendarChannel } from '@/features/dashboard/pricing/lib/calendarChannels';
 import {
   addCalendarFeed,
   CALENDAR_PROVIDER_LABELS,
@@ -94,8 +95,18 @@ export function useAddCalendarFeed() {
   const queryClient = useQueryClient();
   const invalidate = useInvalidateCalendarSync();
   return useMutation({
-    mutationFn: (input: { provider: CalendarFeedProvider; label?: string; icsUrl: string }) =>
-      addCalendarFeed(propertyId!, input),
+    mutationFn: (input: {
+      provider: CalendarFeedProvider;
+      label?: string;
+      icsUrl: string;
+      createBookings?: boolean;
+    }) =>
+      addCalendarFeed(propertyId!, {
+        ...input,
+        // Channel default so Airbnb connects with Create bookings on (hosts forget the toggle).
+        createBookings:
+          input.createBookings ?? calendarChannel(input.provider).createBookingsDefault,
+      }),
     onMutate: () => {
       // Cover the race where conflict notifications arrive over realtime before onSuccess.
       suppressCalendarConflictRealtimeToasts();
