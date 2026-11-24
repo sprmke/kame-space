@@ -59,7 +59,7 @@ export function BookingDetailMobileSummary({
 
   return (
     <section
-      /* CSS hides this when the page is wide enough for two columns (see index.css). */
+      /* Layout hook: index.css orders this above the rail when the page stacks at lg+. */
       data-booking-summary
       className={cn(
         'surface-card border-border/80 rounded-2xl border p-3 sm:p-4',

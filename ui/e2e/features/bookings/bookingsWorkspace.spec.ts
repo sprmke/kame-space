@@ -200,11 +200,7 @@ test.describe('booking detail @ci', () => {
     await expect(page.getByRole('heading', { name: 'Maria Santos' })).toBeVisible({
       timeout: 30_000,
     });
-    // The compact summary is in the DOM at every width but hidden when the page is wide
-    // enough for two columns, so assert against the visible header.
-    await expect(
-      page.locator('[data-booking-detail-header]').getByText('Pending Documents')
-    ).toBeVisible();
+    await expect(page.getByText('Pending Documents').first()).toBeVisible();
     await expect(page.getByRole('link', { name: /Back to Bookings/ })).toBeVisible();
 
     const tabs = page.getByRole('tablist', { name: 'Booking detail sections' });

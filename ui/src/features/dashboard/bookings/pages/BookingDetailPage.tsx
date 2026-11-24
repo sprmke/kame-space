@@ -12,7 +12,7 @@
  * surface without a manual refresh — see `.claude/skills/admin-dashboard/SKILL.md`.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 import { useParams, Link } from 'react-router-dom';
 
@@ -153,6 +153,27 @@ export function BookingDetailPage() {
   const defaultTabAppliedFor = useRef<string | null>(null);
   const isBelowLg = useIsBelowLg();
   const isBelowMd = useIsBelowMd();
+  /**
+   * The two-column layout is a function of the page's own width, not the viewport, so the
+   * stacked state has to be known in JS: it decides whether the compact summary or the full
+   * header carries the guest identity. Measuring beats rendering both and hiding one, which
+   * left duplicate headings in the DOM.
+   */
+  const layoutRef = useRef<HTMLDivElement | null>(null);
+  const [layoutWidth, setLayoutWidth] = useState(0);
+  useLayoutEffect(() => {
+    const el = layoutRef.current;
+    if (!el) return;
+    const apply = () => setLayoutWidth(el.getBoundingClientRect().width);
+    apply();
+    const observer = new ResizeObserver(apply);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [booking?.id]);
+  /** `56rem`, the container-query breakpoint in index.css. */
+  const stackedLayout = layoutWidth > 0 && layoutWidth < 896;
+  const showCompactSummary = isBelowLg || stackedLayout;
+  const showFullHeader = !isBelowLg && !stackedLayout;
   const heroRef = useRef<HTMLElement | null>(null);
   const heroCollapse = useMobileHeroCollapseProgress(heroRef, isBelowMd);
   const ensureNeedParking = useEnsureNeedParking();
@@ -473,13 +494,14 @@ export function BookingDetailPage() {
 
         {booking && (
           <div
+            ref={layoutRef}
             data-booking-detail-layout
             className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-6"
           >
-            {(
+            {showCompactSummary && (
               <BookingDetailMobileSummary
                 className="order-1"
-                variant={isMobileWorkflowFirst ? 'collapsible' : 'static'}
+                variant={isBelowLg ? 'collapsible' : 'static'}
                 booking={booking}
                 detailsExpanded={detailsExpanded}
                 onToggleDetails={handleToggleDetails}
@@ -530,7 +552,7 @@ export function BookingDetailPage() {
                       onEdit={() => handleStartEdit()}
                       canEdit={canEditBooking}
                       actions={hostActions}
-                      className={cn(isMobileWorkflowFirst && 'hidden lg:block')}
+                      className={cn(!showFullHeader && 'hidden')}
                     />
 
                     <BookingDetailShellBody>

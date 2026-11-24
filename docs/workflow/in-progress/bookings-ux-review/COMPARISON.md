@@ -2,7 +2,7 @@
 title: 'Bookings UX review — before / after'
 status: active
 tags: [ux, ui, bookings, review, qa, before-after]
-updated: 2026-11-24
+updated: 2026-11-25
 ---
 
 # Before / after
@@ -58,11 +58,14 @@ dark 1440). `compare/` holds labelled side-by-side pairs for the surfaces that c
 | `42-phone-refine-sheet`            | 1.00000 | Phone refine sheet                 |
 | `43-phone-date-sheet`              | 1.00000 | Phone date sheet                   |
 
-### One capture artefact
+### Two capture artefacts, both explained
 
-`60-read-only-list` measures 0.990 and is **not** a UI change: the before frame was taken while the
-sidebar was still painting its loading skeleton, so one row differs by timing. The list and every
-nav item are identical, so the pair is kept out of `compare/`.
+- **`05-desktop-calendar` (0.99882).** The before and after frames were taken either side of
+  midnight, so the only difference in the whole image is the "today" ring moving from 24 to 25. A
+  pixel diff shows nothing else changed. Not kept in `compare/`.
+- **`60-read-only-list` (0.990).** The before frame was taken while the sidebar was still painting
+  its loading skeleton, so one row differs by timing. The list and every nav item are identical.
+  Not kept in `compare/`.
 
 ## Regression proof
 
