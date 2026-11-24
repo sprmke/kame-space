@@ -314,10 +314,17 @@ export function ContactHostSheet({
     (resumeQuery.data?.voiceReceptionistEnabled === true ||
       startQuery.data?.voiceReceptionistEnabled === true);
 
+  const voiceButtonRef = useRef<HTMLButtonElement>(null);
+
   const startVoiceSession = useCallback(() => {
     threadSearch.close();
     setVoiceSessionOpen(true);
   }, [threadSearch.close]);
+
+  const closeVoiceSession = useCallback(() => {
+    setVoiceSessionOpen(false);
+    window.requestAnimationFrame(() => voiceButtonRef.current?.focus());
+  }, []);
 
   const hostAvatarNode = (
     <div className="from-primary to-primary/80 ring-background relative h-10 w-10 shrink-0 overflow-hidden rounded-full bg-gradient-to-br ring-2">
@@ -373,31 +380,31 @@ export function ContactHostSheet({
             if (voiceSessionOpen) event.preventDefault();
           }}
         >
-          <ResponsiveModalHeader className="border-border shrink-0 gap-0 space-y-0 border-b px-4 py-3 text-left">
+          {voiceSessionOpen ? (
             <ResponsiveModalTitle className="sr-only">{hostLabel}</ResponsiveModalTitle>
-            <GuestChatHeaderBar
-              avatar={hostAvatarNode}
-              title={hostLabel}
-              subtitle={dateLabel ? `${propertyName} · ${dateLabel}` : propertyName}
-              replyStatus={showThread ? replyStatus : undefined}
-              threadSearch={threadSearch}
-              searchEnabled={showThread && !messagesLoading && messages.length > 0}
-              onStartVoiceSession={
-                voiceReceptionistEnabled && !voiceSessionOpen ? startVoiceSession : undefined
-              }
-              trailing={headerCloseButton}
-            />
-          </ResponsiveModalHeader>
+          ) : (
+            <ResponsiveModalHeader className="border-border shrink-0 gap-0 space-y-0 border-b px-4 py-3 text-left">
+              <ResponsiveModalTitle className="sr-only">{hostLabel}</ResponsiveModalTitle>
+              <GuestChatHeaderBar
+                avatar={hostAvatarNode}
+                title={hostLabel}
+                subtitle={dateLabel ? `${propertyName} · ${dateLabel}` : propertyName}
+                replyStatus={showThread ? replyStatus : undefined}
+                threadSearch={threadSearch}
+                searchEnabled={showThread && !messagesLoading && messages.length > 0}
+                onStartVoiceSession={voiceReceptionistEnabled ? startVoiceSession : undefined}
+                voiceButtonRef={voiceButtonRef}
+                trailing={headerCloseButton}
+              />
+            </ResponsiveModalHeader>
+          )}
           {showThread && !voiceSessionOpen ? (
             <GuestChatSearchPanelRow threadSearch={threadSearch} className="px-5" />
           ) : null}
 
           <div className="bg-muted/20 flex min-h-0 flex-1 flex-col">
             {voiceSessionOpen && propertySlug ? (
-              <VoiceSessionPanel
-                propertySlug={propertySlug}
-                onClose={() => setVoiceSessionOpen(false)}
-              />
+              <VoiceSessionPanel propertySlug={propertySlug} onClose={closeVoiceSession} />
             ) : loading ? (
               <div className="flex flex-1 items-center justify-center p-4">
                 <Skeleton className="h-24 w-full max-w-xs rounded-2xl" />
@@ -417,6 +424,9 @@ export function ContactHostSheet({
                 loadingOlder={isFetchingNextPage}
                 onLoadOlder={() => void fetchNextPage()}
                 onRetryFailed={retryFailedMessage}
+                onStartVoiceSession={
+                  voiceReceptionistEnabled ? startVoiceSession : undefined
+                }
                 onSend={async (text, opts) => {
                   await send.mutateAsync({
                     text,

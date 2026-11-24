@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom';
 
 import { ChevronLeft } from 'lucide-react';
+import { createPortal } from 'react-dom';
 
 import { useGuestAuth } from '@/features/guest/auth/context/GuestAuthContext';
 import { GuestChatBookingChip } from '@/features/guest/chat/components/GuestChatBookingChip';
@@ -24,6 +25,7 @@ import { GuestStayContextBar } from '@/features/guest/property/components/GuestS
 
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useIsBelowLg } from '@/hooks/useMediaQuery';
 import { useChatThreadSearch } from '@/lib/chat/useChatThreadSearch';
 import { cn } from '@/lib/utils';
 import { parseGuestInquiryDateRange } from '@/utils/format/dates';
@@ -133,6 +135,27 @@ function PropertyChatContent({
     enabled: true,
   });
   const [voiceSessionOpen, setVoiceSessionOpen] = useState(false);
+  /** Frozen when the call opens so a breakpoint change never remounts the live session. */
+  const [fullscreenCall, setFullscreenCall] = useState(false);
+  const voiceButtonRef = useRef<HTMLButtonElement>(null);
+  const isBelowLg = useIsBelowLg();
+
+  const openVoice = () => {
+    setFullscreenCall(isBelowLg);
+    setVoiceSessionOpen(true);
+  };
+  const closeVoice = () => {
+    setVoiceSessionOpen(false);
+    window.requestAnimationFrame(() => voiceButtonRef.current?.focus());
+  };
+  const voicePanel = (
+    <VoiceSessionPanel
+      propertySlug={propertySlug}
+      onClose={closeVoice}
+      className={fullscreenCall ? 'fixed inset-0 z-[60] h-dvh w-full bg-card' : undefined}
+      fullscreen={fullscreenCall}
+    />
+  );
 
   const conversationId = startQuery.data?.conversationId ?? null;
   const {
@@ -209,26 +232,11 @@ function PropertyChatContent({
         'xl:h-[min(52rem,calc(100dvh-12rem))]'
       )}
     >
-      <div className="border-border shrink-0 border-b">
-        <div className="px-3 py-2">
-          {startQuery.isLoading ? (
-            <div className="flex items-center gap-2.5">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="min-h-[44px] min-w-[44px] shrink-0"
-                asChild
-              >
-                <Link to={propertyPath} aria-label="Back to property">
-                  <ChevronLeft className="size-5" />
-                </Link>
-              </Button>
-              <Skeleton className="size-9 rounded-full" />
-              <Skeleton className="h-4 w-32" />
-            </div>
-          ) : (
-            <GuestChatHeaderBar
-              leading={
+      {!voiceSessionOpen ? (
+        <div className="border-border shrink-0 border-b">
+          <div className="px-3 py-2">
+            {startQuery.isLoading ? (
+              <div className="flex items-center gap-2.5">
                 <Button
                   variant="ghost"
                   size="icon"
@@ -239,50 +247,66 @@ function PropertyChatContent({
                     <ChevronLeft className="size-5" />
                   </Link>
                 </Button>
-              }
-              avatar={hostAvatarNode}
-              title={hostLabel}
-              subtitle={propertyName}
-              bookingChip={
-                startQuery.data?.tripPath ? (
-                  <GuestChatBookingChip
-                    tripPath={startQuery.data.tripPath}
-                    checkInDate={startQuery.data.inquiryCheckIn}
-                    checkOutDate={startQuery.data.inquiryCheckOut}
-                    status={startQuery.data.bookingStatus ?? null}
-                  />
-                ) : null
-              }
-              replyStatus={replyStatus}
-              threadSearch={threadSearch}
-              searchEnabled={!!conversationId && !isLoading && messages.length > 0}
-              onStartVoiceSession={
-                startQuery.data?.voiceReceptionistEnabled
-                  ? () => setVoiceSessionOpen(true)
-                  : undefined
-              }
-            />
-          )}
-        </div>
-        {!startQuery.isLoading ? <GuestChatSearchPanelRow threadSearch={threadSearch} /> : null}
-        {!startQuery.isLoading ? (
-          <div className="border-border border-t px-3 py-2">
-            <GuestStayContextBar
-              checkInDate={checkInDate}
-              checkOutDate={checkOutDate}
-              width="full"
-              density="compact"
-            />
+                <Skeleton className="size-9 rounded-full" />
+                <Skeleton className="h-4 w-32" />
+              </div>
+            ) : (
+              <GuestChatHeaderBar
+                leading={
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="min-h-[44px] min-w-[44px] shrink-0"
+                    asChild
+                  >
+                    <Link to={propertyPath} aria-label="Back to property">
+                      <ChevronLeft className="size-5" />
+                    </Link>
+                  </Button>
+                }
+                avatar={hostAvatarNode}
+                title={hostLabel}
+                subtitle={propertyName}
+                bookingChip={
+                  startQuery.data?.tripPath ? (
+                    <GuestChatBookingChip
+                      tripPath={startQuery.data.tripPath}
+                      checkInDate={startQuery.data.inquiryCheckIn}
+                      checkOutDate={startQuery.data.inquiryCheckOut}
+                      status={startQuery.data.bookingStatus ?? null}
+                    />
+                  ) : null
+                }
+                replyStatus={replyStatus}
+                threadSearch={threadSearch}
+                searchEnabled={!!conversationId && !isLoading && messages.length > 0}
+                onStartVoiceSession={
+                  startQuery.data?.voiceReceptionistEnabled ? openVoice : undefined
+                }
+                voiceButtonRef={voiceButtonRef}
+              />
+            )}
           </div>
-        ) : null}
-      </div>
+          {!startQuery.isLoading ? <GuestChatSearchPanelRow threadSearch={threadSearch} /> : null}
+          {!startQuery.isLoading ? (
+            <div className="border-border border-t px-3 py-2">
+              <GuestStayContextBar
+                checkInDate={checkInDate}
+                checkOutDate={checkOutDate}
+                width="full"
+                density="compact"
+              />
+            </div>
+          ) : null}
+        </div>
+      ) : null}
 
       {startQuery.isLoading || !conversationId ? (
         <div className="flex flex-1 items-center justify-center p-4">
           <Skeleton className="h-[50vh] w-full rounded-2xl" />
         </div>
       ) : voiceSessionOpen ? (
-        <VoiceSessionPanel propertySlug={propertySlug} onClose={() => setVoiceSessionOpen(false)} />
+        fullscreenCall ? createPortal(voicePanel, document.body) : voicePanel
       ) : (
         <GuestChatThread
           conversationId={conversationId}
@@ -295,6 +319,9 @@ function PropertyChatContent({
           inquiryCheckOut={checkOutDate}
           stayGuideUrl={startQuery.data?.stayGuideUrl ?? null}
           tripPath={startQuery.data?.tripPath ?? null}
+          onStartVoiceSession={
+            startQuery.data?.voiceReceptionistEnabled ? openVoice : undefined
+          }
           threadSearch={threadSearch}
           searchInHeader
           sending={send.isPending}

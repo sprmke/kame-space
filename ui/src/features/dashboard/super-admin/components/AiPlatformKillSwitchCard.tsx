@@ -39,6 +39,88 @@ const ALL_FEATURE_IDS = AI_FEATURE_TOGGLES.flatMap((toggle) => [...toggle.ids]);
 
 const CARD_CLASS = 'border-border bg-card flex h-full min-w-0 flex-col gap-5 rounded-xl border p-5';
 
+type NumberSettingFieldProps = {
+  id: string;
+  label: string;
+  value: number | null | undefined;
+  min: number;
+  max?: number;
+  step?: number | 'any';
+  integer?: boolean;
+  disabled?: boolean;
+  onCommit: (value: number) => void;
+};
+
+/**
+ * Numbers commit when the operator leaves the field. Saving on every keystroke sent 1, then 10,
+ * then 100 for a single edit. Invalid input reverts and explains the range.
+ */
+function NumberSettingField({
+  id,
+  label,
+  value,
+  min,
+  max,
+  step,
+  integer = false,
+  disabled,
+  onCommit,
+}: NumberSettingFieldProps) {
+  const asText = (next: number | null | undefined) => (next == null ? '' : String(next));
+  const [draft, setDraft] = useState(asText(value));
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setDraft(asText(value));
+    setError(null);
+  }, [value]);
+
+  const commit = () => {
+    const parsed = integer ? Number.parseInt(draft, 10) : Number.parseFloat(draft);
+    const inRange =
+      Number.isFinite(parsed) &&
+      (integer ? Number.isInteger(parsed) : true) &&
+      parsed >= min &&
+      (max === undefined || parsed <= max);
+    if (!inRange) {
+      setError(max !== undefined ? `Enter ${min} to ${max}.` : `Enter ${min} or more.`);
+      setDraft(asText(value));
+      return;
+    }
+    setError(null);
+    if (parsed !== value) onCommit(parsed);
+  };
+
+  return (
+    <label className="flex min-w-0 flex-col gap-1.5 text-sm">
+      <span>{label}</span>
+      <Input
+        id={id}
+        type="number"
+        inputMode={integer ? 'numeric' : 'decimal'}
+        min={min}
+        max={max}
+        step={step}
+        className="h-10"
+        value={draft}
+        disabled={disabled}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? `${id}-error` : undefined}
+        onChange={(event) => setDraft(event.target.value)}
+        onBlur={commit}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') event.currentTarget.blur();
+        }}
+      />
+      {error ? (
+        <span id={`${id}-error`} className="text-xs text-red-700 dark:text-red-300">
+          {error}
+        </span>
+      ) : null}
+    </label>
+  );
+}
+
 export function AiPlatformKillSwitchCard() {
   const { data, isLoading } = useAiPlatformGlobalSettings();
   const update = useUpdateAiPlatformGlobalSettings();
@@ -127,30 +209,6 @@ export function AiPlatformKillSwitchCard() {
         ? []
         : Array.from(next);
     save({ allowedFeatures: nextList });
-  };
-
-  const handleNumberChange = (
-    field:
-      | 'defaultDailyCallLimit'
-      | 'defaultMonthlyCallLimit'
-      | 'defaultDailyCostUsdLimit'
-      | 'creditUnitUsd'
-      | 'voiceReceptionistCostPerMinuteUsd'
-      | 'voiceReceptionistRolloutPercentage'
-      | 'voiceReceptionistTranscriptRetentionDays',
-    value: string
-  ) => {
-    const num =
-      field === 'defaultDailyCallLimit' || field === 'defaultMonthlyCallLimit'
-        ? parseInt(value, 10)
-        : parseFloat(value);
-    const valid =
-      field === 'voiceReceptionistRolloutPercentage'
-        ? Number.isInteger(num) && num >= 0 && num <= 100
-        : Number.isFinite(num) && num > 0;
-    if (valid) {
-      save({ [field]: num });
-    }
   };
 
   return (
@@ -260,94 +318,71 @@ export function AiPlatformKillSwitchCard() {
       </div>
 
       <div className="mt-auto grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <label className="flex min-w-0 flex-col gap-1.5 text-sm">
-          <span>Daily calls</span>
-          <Input
-            type="number"
-            min={1}
-            className="h-10"
-            value={data?.defaultDailyCallLimit ?? ''}
-            disabled={featuresDisabled}
-            onChange={(e) => handleNumberChange('defaultDailyCallLimit', e.target.value)}
-          />
-        </label>
-        <label className="flex min-w-0 flex-col gap-1.5 text-sm">
-          <span>Monthly calls</span>
-          <Input
-            type="number"
-            min={1}
-            className="h-10"
-            value={data?.defaultMonthlyCallLimit ?? ''}
-            disabled={featuresDisabled}
-            onChange={(e) => handleNumberChange('defaultMonthlyCallLimit', e.target.value)}
-          />
-        </label>
-        <label className="flex min-w-0 flex-col gap-1.5 text-sm">
-          <span>Daily cost USD</span>
-          <Input
-            type="number"
-            min={0.01}
-            step={0.01}
-            className="h-10"
-            value={data?.defaultDailyCostUsdLimit ?? ''}
-            disabled={featuresDisabled}
-            onChange={(e) => handleNumberChange('defaultDailyCostUsdLimit', e.target.value)}
-          />
-        </label>
-        <label className="flex min-w-0 flex-col gap-1.5 text-sm">
-          <span>Credit unit (USD)</span>
-          <Input
-            type="number"
-            min={0.0001}
-            step={0.0001}
-            className="h-10"
-            value={data?.creditUnitUsd ?? ''}
-            disabled={featuresDisabled}
-            onChange={(e) => handleNumberChange('creditUnitUsd', e.target.value)}
-          />
-        </label>
-        <label className="flex min-w-0 flex-col gap-1.5 text-sm">
-          <span>Voice cost/min (USD)</span>
-          <Input
-            type="number"
-            min={0.0001}
-            step={0.0001}
-            className="h-10"
-            value={data?.voiceReceptionistCostPerMinuteUsd ?? ''}
-            disabled={featuresDisabled}
-            onChange={(e) =>
-              handleNumberChange('voiceReceptionistCostPerMinuteUsd', e.target.value)
-            }
-          />
-        </label>
-        <label className="flex min-w-0 flex-col gap-1.5 text-sm">
-          <span>Voice rollout (%)</span>
-          <Input
-            type="number"
-            min={0}
-            max={100}
-            className="h-10"
-            value={data?.voiceReceptionistRolloutPercentage ?? ''}
-            disabled={featuresDisabled}
-            onChange={(e) =>
-              handleNumberChange('voiceReceptionistRolloutPercentage', e.target.value)
-            }
-          />
-        </label>
-        <label className="flex min-w-0 flex-col gap-1.5 text-sm">
-          <span>Voice retention (days)</span>
-          <Input
-            type="number"
-            min={1}
-            max={90}
-            className="h-10"
-            value={data?.voiceReceptionistTranscriptRetentionDays ?? ''}
-            disabled={featuresDisabled}
-            onChange={(e) =>
-              handleNumberChange('voiceReceptionistTranscriptRetentionDays', e.target.value)
-            }
-          />
-        </label>
+        <NumberSettingField
+          id="ai-daily-calls"
+          label="Daily calls"
+          value={data?.defaultDailyCallLimit}
+          min={1}
+          integer
+          disabled={featuresDisabled}
+          onCommit={(value) => save({ defaultDailyCallLimit: value })}
+        />
+        <NumberSettingField
+          id="ai-monthly-calls"
+          label="Monthly calls"
+          value={data?.defaultMonthlyCallLimit}
+          min={1}
+          integer
+          disabled={featuresDisabled}
+          onCommit={(value) => save({ defaultMonthlyCallLimit: value })}
+        />
+        <NumberSettingField
+          id="ai-daily-cost"
+          label="Daily cost USD"
+          value={data?.defaultDailyCostUsdLimit}
+          min={0.01}
+          step={0.01}
+          disabled={featuresDisabled}
+          onCommit={(value) => save({ defaultDailyCostUsdLimit: value })}
+        />
+        <NumberSettingField
+          id="ai-credit-unit"
+          label="Credit unit (USD)"
+          value={data?.creditUnitUsd}
+          min={0.0001}
+          step={0.0001}
+          disabled={featuresDisabled}
+          onCommit={(value) => save({ creditUnitUsd: value })}
+        />
+        <NumberSettingField
+          id="ai-voice-cost"
+          label="Voice cost/min (USD)"
+          value={data?.voiceReceptionistCostPerMinuteUsd}
+          min={0.0001}
+          step={0.0001}
+          disabled={featuresDisabled}
+          onCommit={(value) => save({ voiceReceptionistCostPerMinuteUsd: value })}
+        />
+        <NumberSettingField
+          id="ai-voice-rollout"
+          label="Voice rollout (%)"
+          value={data?.voiceReceptionistRolloutPercentage}
+          min={0}
+          max={100}
+          integer
+          disabled={featuresDisabled}
+          onCommit={(value) => save({ voiceReceptionistRolloutPercentage: value })}
+        />
+        <NumberSettingField
+          id="ai-voice-retention"
+          label="Voice retention (days)"
+          value={data?.voiceReceptionistTranscriptRetentionDays}
+          min={1}
+          max={90}
+          integer
+          disabled={featuresDisabled}
+          onCommit={(value) => save({ voiceReceptionistTranscriptRetentionDays: value })}
+        />
       </div>
       <label className="flex min-w-0 flex-col gap-1.5 text-sm">
         <span>Voice property allowlist</span>

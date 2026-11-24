@@ -1,7 +1,8 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 
-import { Loader2, Mic, MicOff, PhoneOff } from 'lucide-react';
+import { Loader2, Mic, MicOff, PhoneOff, X } from 'lucide-react';
 
+import { TURTLE_IDLE_POSTER_SRC } from '@/features/guest/chat/components/voice/receptionistAvatarVideo';
 import { VoiceBoothRing } from '@/features/guest/chat/components/voice/VoiceBoothRing';
 import { VoiceMicWaveform } from '@/features/guest/chat/components/voice/VoiceMicWaveform';
 import { useDwellValue } from '@/features/guest/chat/hooks/useDwellValue';
@@ -13,12 +14,23 @@ import {
   showsVoiceLevel,
   VOICE_VIEW_LABEL,
   VOICE_VIEW_MIN_DWELL_MS,
+  voiceErrorLabel,
   voiceViewAvatarState,
   type VoiceSessionView,
 } from '@/features/guest/chat/lib/voiceSessionView';
 
 import { ChatRichBody } from '@/components/chat/ChatRichBody';
 import { LegalLink } from '@/components/legal/LegalLink';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { captureAppEvent } from '@/lib/posthog/capture';
 import { cn } from '@/lib/utils';
 
@@ -26,6 +38,8 @@ type Props = {
   propertySlug: string;
   onClose: () => void;
   className?: string;
+  /** True when the panel is portaled full screen outside the app root on phones. */
+  fullscreen?: boolean;
 };
 
 const VOICE_CONSENT_KEY = 'guest-voice-receptionist-consent-v1';
@@ -47,8 +61,8 @@ function formatCountdown(seconds: number | null): string {
 }
 
 function statusToneClass(view: VoiceSessionView): string {
-  if (view === 'error') return 'text-destructive';
-  if (isBusyVoiceView(view)) return 'text-warning';
+  if (view === 'error') return 'text-red-700 dark:text-red-300';
+  if (isBusyVoiceView(view)) return 'text-amber-700 dark:text-amber-300';
   if (showsVoiceLevel(view)) return 'text-primary';
   return 'text-muted-foreground';
 }
@@ -85,7 +99,7 @@ const roundButtonClass =
  * tokens so light/dark match guest chat. The booth stays mounted from disclosure to call end;
  * only the content under it and the footer change.
  */
-export function VoiceSessionPanel({ propertySlug, onClose, className }: Props) {
+export function VoiceSessionPanel({ propertySlug, onClose, className, fullscreen = false }: Props) {
   const session = useVoiceSession(propertySlug);
   const [callStarted, setCallStarted] = useState(false);
   const [hasConsent] = useState(readConsent);
@@ -94,6 +108,9 @@ export function VoiceSessionPanel({ propertySlug, onClose, className }: Props) {
   const disclosureOutcomeRef = useRef(false);
   const [deletingTranscript, setDeletingTranscript] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [confirmHandoffOpen, setConfirmHandoffOpen] = useState(false);
+  const panelRef = useRef<HTMLElement>(null);
 
   const rawView = callStarted
     ? deriveVoiceSessionView({
@@ -142,14 +159,26 @@ export function VoiceSessionPanel({ propertySlug, onClose, className }: Props) {
     session.start();
   };
 
-  const handleHandoff = () => {
+  const requestHandoff = () => {
     if (inCall && endingRef.current) return;
+    setConfirmHandoffOpen(true);
+  };
+
+  const confirmHandoff = () => {
+    setConfirmHandoffOpen(false);
+    if (endingRef.current) return;
     endingRef.current = true;
     captureAppEvent('voice_handoff_selected');
     void session.handoffToHost().finally(closePanel);
   };
 
-  const handleDeleteTranscript = () => {
+  const requestDeleteTranscript = () => {
+    setDeleteError(null);
+    setConfirmDeleteOpen(true);
+  };
+
+  const confirmDeleteTranscript = () => {
+    setConfirmDeleteOpen(false);
     setDeleteError(null);
     setDeletingTranscript(true);
     void session
@@ -157,6 +186,20 @@ export function VoiceSessionPanel({ propertySlug, onClose, className }: Props) {
       .catch(() => setDeleteError('Could not delete captions.'))
       .finally(() => setDeletingTranscript(false));
   };
+
+  useEffect(() => {
+    panelRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    if (!fullscreen) return;
+    // The panel is portaled to body, so the app root is safe to make inert. This keeps the tab bar
+    // and the page behind a full-screen call out of the tab order and the accessibility tree.
+    const root = document.getElementById('root');
+    if (!root) return;
+    root.setAttribute('inert', '');
+    return () => root.removeAttribute('inert');
+  }, [fullscreen]);
 
   useEffect(() => {
     captureAppEvent('voice_entry_shown', { disclosure_required: !hasConsent });
@@ -192,9 +235,17 @@ export function VoiceSessionPanel({ propertySlug, onClose, className }: Props) {
     const prior = [...committed].reverse().find((caption) => caption.id !== live.id);
     return prior && prior.role !== live.role ? [prior, live] : [live];
   })();
+  // Screen readers hear the status label but not the bubbles; announce each finished reply once.
+  const lastAssistantCaption = [...session.captions]
+    .reverse()
+    .find((caption) => caption.role !== 'guest' && caption.text.trim());
 
   const isEnding = session.phase === 'ending';
   const controlsDisabled = view === 'connecting' || view === 'reconnecting' || isEnding;
+  const statusLabel =
+    view === 'error' ? voiceErrorLabel(session.errorMessage) : VOICE_VIEW_LABEL[view];
+  const remaining = session.remainingSeconds;
+  const nearCap = inCall && !isEnding && remaining !== null && remaining > 0 && remaining <= 60;
   const footerStage = !callStarted
     ? 'precall'
     : session.phase === 'error'
@@ -205,13 +256,31 @@ export function VoiceSessionPanel({ propertySlug, onClose, className }: Props) {
 
   return (
     <section
-      className={cn('voice-panel bg-card flex min-h-0 flex-1 flex-col overflow-hidden', className)}
+      ref={panelRef}
+      role={fullscreen ? 'dialog' : undefined}
+      aria-modal={fullscreen || undefined}
+      tabIndex={-1}
+      className={cn(
+        'voice-panel bg-card flex min-h-0 flex-1 flex-col overflow-hidden outline-none',
+        className
+      )}
       data-closing={closing}
-      aria-label="Voice receptionist"
+      aria-label="Kame, AI receptionist"
     >
-      <div className="border-border flex shrink-0 items-center justify-between gap-2 border-b px-3 py-2">
-        <span className="text-muted-foreground w-11 shrink-0 text-xs font-medium tabular-nums">
-          {inCall && !isEnding ? formatCountdown(session.remainingSeconds) : ''}
+      <div className="border-border flex shrink-0 items-center justify-between gap-2 border-b px-3 pb-2 pt-[max(env(safe-area-inset-top,0px),0.5rem)]">
+        <span
+          aria-label={inCall && !isEnding ? `${formatCountdown(remaining)} remaining` : undefined}
+          className={cn(
+            'flex w-16 shrink-0 items-baseline gap-1 text-xs font-medium tabular-nums',
+            nearCap ? 'text-amber-700 dark:text-amber-300' : 'text-muted-foreground'
+          )}
+        >
+          {inCall && !isEnding ? (
+            <>
+              <span>{formatCountdown(remaining)}</span>
+              <span className="text-[9px] font-semibold uppercase tracking-[0.08em]">left</span>
+            </>
+          ) : null}
         </span>
         <p
           aria-live="polite"
@@ -221,7 +290,7 @@ export function VoiceSessionPanel({ propertySlug, onClose, className }: Props) {
           )}
         >
           <span key={view} className="voice-fade-up inline-block">
-            {VOICE_VIEW_LABEL[view]}
+            {statusLabel}
           </span>
         </p>
         {inCall ? (
@@ -233,118 +302,150 @@ export function VoiceSessionPanel({ propertySlug, onClose, className }: Props) {
             onClick={handleClose}
             className="text-muted-foreground hover:text-foreground hover:bg-muted/60 inline-flex size-11 min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-full transition-colors"
           >
-            <PhoneOff className="size-5" aria-hidden />
+            <X className="size-5" aria-hidden />
           </button>
         )}
       </div>
 
+      <p className="sr-only" aria-live="polite" aria-atomic="true">
+        {lastAssistantCaption?.text ?? ''}
+      </p>
+
       <div
         ref={session.meterRef}
-        className="flex min-h-0 flex-1 flex-col items-center gap-3 overflow-y-auto overscroll-y-contain px-3 py-5"
+        className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain px-3 py-5"
       >
-        <div className="relative size-40 shrink-0">
-          <div
-            className="voice-booth-glow bg-primary/25 pointer-events-none absolute inset-2 rounded-full blur-2xl"
-            aria-hidden
-          />
-          <VoiceBoothRing state={voiceViewAvatarState(view)} busy={isBusyVoiceView(view)} />
-          <div className="absolute inset-[11px] flex items-center justify-center">
-            <Suspense
-              fallback={<div style={{ width: AVATAR_SIZE, height: AVATAR_SIZE }} aria-hidden />}
-            >
-              <ReceptionistAvatar state={voiceViewAvatarState(view)} size={AVATAR_SIZE} />
-            </Suspense>
-          </div>
-        </div>
-
-        <VoiceMicWaveform active={showsVoiceLevel(view) && !session.muted} />
-
-        {!callStarted ? (
-          <div className="voice-fade-up max-w-sm space-y-2 text-center">
-            <h2 className="text-foreground text-base font-semibold">AI voice receptionist</h2>
-            {!hasConsent ? (
-              <p className="text-muted-foreground text-sm">
-                Uses your microphone and Google Gemini. Audio is not stored. Captions may be stored.
-              </p>
-            ) : null}
-            <LegalLink
-              doc="privacy"
-              section="voice"
-              className="text-primary inline-flex min-h-[44px] items-center text-sm no-underline"
-            >
-              Privacy
-            </LegalLink>
-          </div>
-        ) : null}
-
-        {session.errorMessage ? (
-          <p role="alert" className="voice-fade-up text-destructive max-w-sm text-center text-sm">
-            {session.errorMessage}
-          </p>
-        ) : null}
-        {inCall && session.notice ? (
-          <p
-            key={session.notice}
-            role="status"
-            className="voice-fade-up text-warning max-w-sm text-center text-sm font-medium"
-          >
-            {session.notice === 'offline'
-              ? 'Waiting for your connection…'
-              : 'Still there? The call ends soon if it stays quiet.'}
-          </p>
-        ) : null}
-        {session.audioGuidance ? (
-          <p
-            role="status"
-            className="voice-fade-up text-muted-foreground max-w-sm text-center text-sm"
-          >
-            {session.audioGuidance}
-          </p>
-        ) : null}
-        {deleteError ? (
-          <p role="alert" className="voice-fade-up text-destructive max-w-sm text-center text-sm">
-            {deleteError}
-          </p>
-        ) : null}
-
-        {callStarted && captionLines.length > 0 ? (
-          <div className="flex w-full max-w-md flex-col gap-2">
-            {captionLines.map((line) => {
-              const guest = line.role === 'guest';
-              return (
-                <div
-                  key={line.id}
-                  className={cn(
-                    'voice-fade-up w-fit max-w-[min(100%,28rem)] rounded-2xl px-3 py-2 text-left text-sm leading-snug',
-                    guest
-                      ? 'bg-primary-strong text-primary-foreground self-end'
-                      : 'border-border/60 bg-card text-foreground self-start border'
-                  )}
-                >
-                  {guest ? (
-                    <p className="whitespace-pre-wrap [overflow-wrap:anywhere]">{line.text}</p>
-                  ) : (
-                    <ChatRichBody text={line.text} compactMaps />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        ) : null}
-
-        {callStarted && session.actions.length > 0 ? (
-          <div className="flex w-full max-w-md flex-col gap-2">
-            {session.actions.map((action) => (
-              <a
-                key={`${action.type}-${action.url}`}
-                href={action.url}
-                className="voice-fade-up border-border bg-background text-foreground hover:bg-muted/50 inline-flex min-h-[44px] w-full items-center justify-center rounded-xl border px-3 py-2 text-sm font-semibold transition-colors"
+        <div className="my-auto flex w-full flex-col items-center gap-3">
+          <div className="relative size-40 shrink-0">
+            <div
+              className="voice-booth-glow bg-primary/25 pointer-events-none absolute inset-2 rounded-full blur-2xl"
+              aria-hidden
+            />
+            <VoiceBoothRing state={voiceViewAvatarState(view)} busy={isBusyVoiceView(view)} />
+            <div className="absolute inset-[11px] flex items-center justify-center">
+              <Suspense
+                fallback={
+                  <img
+                    src={TURTLE_IDLE_POSTER_SRC}
+                    alt=""
+                    width={AVATAR_SIZE}
+                    height={AVATAR_SIZE}
+                    className="size-full rounded-full object-cover"
+                  />
+                }
               >
-                {action.label}
-              </a>
-            ))}
+                <ReceptionistAvatar state={voiceViewAvatarState(view)} size={AVATAR_SIZE} />
+              </Suspense>
+            </div>
           </div>
-        ) : null}
+
+          <VoiceMicWaveform active={showsVoiceLevel(view) && !session.muted} />
+
+          {!callStarted ? (
+            <div className="voice-fade-up max-w-sm space-y-2 text-center">
+              <h2 className="text-foreground text-base font-semibold">
+                Kame, your AI receptionist
+              </h2>
+              {!hasConsent ? (
+                <p className="text-muted-foreground text-sm">
+                  Kame answers with Google Gemini. Audio is not stored. Captions are saved with this
+                  call and can be deleted after it. AI can make mistakes.
+                </p>
+              ) : null}
+              <LegalLink
+                doc="privacy"
+                section="voice"
+                className="text-primary inline-flex min-h-[44px] items-center text-sm no-underline"
+              >
+                Privacy
+              </LegalLink>
+            </div>
+          ) : null}
+
+          {session.errorMessage ? (
+            <p
+              role="alert"
+              className="voice-fade-up max-w-sm text-center text-sm text-red-700 dark:text-red-300"
+            >
+              {session.errorMessage}
+            </p>
+          ) : null}
+          {inCall && session.notice ? (
+            <p
+              key={session.notice}
+              role="status"
+              className="voice-fade-up max-w-sm text-center text-sm font-medium text-amber-700 dark:text-amber-300"
+            >
+              {session.notice === 'offline'
+                ? 'Waiting for your connection…'
+                : 'Still there? The call ends soon if it stays quiet.'}
+            </p>
+          ) : null}
+          {nearCap ? (
+            <p
+              role="status"
+              className="voice-fade-up max-w-sm text-center text-sm font-medium text-amber-700 dark:text-amber-300"
+            >
+              About a minute left.
+            </p>
+          ) : null}
+          {session.audioGuidance ? (
+            <p
+              role="status"
+              className="voice-fade-up text-muted-foreground max-w-sm text-center text-sm"
+            >
+              {session.audioGuidance}
+            </p>
+          ) : null}
+          {deleteError ? (
+            <p
+              role="alert"
+              className="voice-fade-up max-w-sm text-center text-sm text-red-700 dark:text-red-300"
+            >
+              {deleteError}
+            </p>
+          ) : null}
+
+          {callStarted && captionLines.length > 0 ? (
+            <div className="flex w-full max-w-md flex-col gap-2">
+              {captionLines.map((line) => {
+                const guest = line.role === 'guest';
+                return (
+                  <div
+                    key={line.id}
+                    data-testid="voice-caption"
+                    className={cn(
+                      'voice-fade-up w-fit max-w-[min(100%,28rem)] rounded-2xl px-3 py-2 text-left text-sm leading-snug',
+                      guest
+                        ? 'bg-primary-strong text-primary-foreground self-end'
+                        : 'border-border/60 bg-card text-foreground self-start border'
+                    )}
+                  >
+                    {guest ? (
+                      <p className="whitespace-pre-wrap [overflow-wrap:anywhere]">{line.text}</p>
+                    ) : (
+                      <ChatRichBody text={line.text} compactMaps />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : null}
+
+          {callStarted && session.actions.length > 0 ? (
+            <div className="flex w-full max-w-md flex-col gap-2">
+              {session.actions.map((action) => (
+                <a
+                  key={`${action.type}-${action.url}`}
+                  href={action.url}
+                  className="voice-fade-up border-border bg-background text-foreground hover:bg-muted/50 inline-flex min-h-[44px] w-full items-center justify-center rounded-xl border px-3 py-2 text-sm font-semibold transition-colors"
+                >
+                  {action.label}
+                </a>
+              ))}
+            </div>
+          ) : null}
+        </div>
       </div>
 
       <div className="border-border bg-card shrink-0 border-t px-3 py-2.5 pb-[max(env(safe-area-inset-bottom,0px),0.625rem)]">
@@ -362,7 +463,7 @@ export function VoiceSessionPanel({ propertySlug, onClose, className }: Props) {
             <div className="flex items-center justify-center gap-3">
               <button
                 type="button"
-                onClick={handleHandoff}
+                onClick={requestHandoff}
                 disabled={controlsDisabled}
                 className="border-border text-foreground hover:bg-muted/50 min-h-[44px] rounded-xl border px-3 text-sm font-semibold transition-colors disabled:opacity-50"
               >
@@ -411,7 +512,7 @@ export function VoiceSessionPanel({ propertySlug, onClose, className }: Props) {
                 <button
                   type="button"
                   disabled={deletingTranscript}
-                  onClick={handleDeleteTranscript}
+                  onClick={requestDeleteTranscript}
                   className={secondaryButtonClass}
                 >
                   Delete captions
@@ -419,7 +520,7 @@ export function VoiceSessionPanel({ propertySlug, onClose, className }: Props) {
               ) : null}
               {footerStage === 'error' ? (
                 <>
-                  <button type="button" onClick={handleHandoff} className={secondaryButtonClass}>
+                  <button type="button" onClick={requestHandoff} className={secondaryButtonClass}>
                     Message host
                   </button>
                   <button type="button" onClick={handleStart} className={primaryButtonClass}>
@@ -435,6 +536,43 @@ export function VoiceSessionPanel({ propertySlug, onClose, className }: Props) {
           )}
         </div>
       </div>
+
+      <AlertDialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete captions?</AlertDialogTitle>
+            <AlertDialogDescription>
+              The transcript for this call will be removed. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="min-h-[44px]">Keep</AlertDialogCancel>
+            <AlertDialogAction
+              className="!bg-destructive [background-image:none] text-destructive-foreground hover:!bg-destructive/90 min-h-[44px]"
+              onClick={confirmDeleteTranscript}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmHandoffOpen} onOpenChange={setConfirmHandoffOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>End the call?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Kame will stop, and you can message the host from the chat.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="min-h-[44px]">Keep talking</AlertDialogCancel>
+            <AlertDialogAction className="min-h-[44px]" onClick={confirmHandoff}>
+              End call and message
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </section>
   );
 }

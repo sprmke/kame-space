@@ -39,7 +39,7 @@ Guests message you from a property listing before they book. They start in a cha
 - Q: Where do I see and answer these messages?
   A: In Guest Inbox under the Web tab, alongside your other guest conversations.
 - Q: Can guests talk to the AI receptionist from the listing chat popup?
-  A: Yes. When the voice receptionist is enabled for the property, **Talk to receptionist** shows up in the chat ⋮ menu on both the Contact host popup and the full messages page.
+  A: Yes. When the voice receptionist is enabled for the property, a **Talk to Kame** mic button appears in the chat header, and an empty thread also shows a **Talk to Kame** card above the starter questions. Both work in the Contact host popup and on the full messages page.
 - Q: What happens if a guest goes quiet or loses signal during a call?
   A: After 30 seconds of silence the guest sees "Still there?", and the call ends at 45 seconds. If their internet drops, the call waits 10 seconds for it to come back, then ends and points them to text chat. Captions from the call are kept either way.
 - Q: How are voice calls turned into captions? Is there an extra charge?
@@ -55,7 +55,7 @@ Guests message you from a property listing before they book. They start in a cha
 2. **First inquiry:** if no prior messages with this host on this property, **`BookingCalendarModal`** is required before the first send.
 3. **Return visit:** existing thread loads via **`guest-web-chat-resume`** — dates optional; chat history shows immediately.
 4. Guest composes message → **Send** → thread stays in modal. If the thread is empty, five phase-aware FAQ starter cards appear above the composer (same card UI as the host AI assistant, questions only — no Actions switcher). Phase is **pre_booking** before dates, **inquiry** after dates are set, **ongoing** once any message exists. Tapping a card sends that question. On a first inquiry without dates, tapping a starter fills the message and opens the date picker; after dates are saved the question sends automatically.
-5. **Voice receptionist** (when enabled): header ⋮ **Talk to receptionist** — same in-modal **`VoiceSessionPanel`** as the full messages page. Available on first inquiry (dates not required) and return visits. Escape / overlay do not close the chat modal mid-call; hang-up returns to the text thread.
+5. **Voice receptionist** (when enabled): the chat header **Talk to Kame** mic button, or the **Talk to Kame** card in an empty thread. Same in-modal **`VoiceSessionPanel`** as the full messages page. Available on first inquiry (dates not required) and return visits. Escape / overlay do not close the chat modal mid-call; hang-up returns to the text thread.
 
 **Reserve** remains separate: dates → **`requireGuestAuth`** when anonymous → **`GuestBookingFormModal`** (`GuestForm` embed) — never chat.
 
@@ -90,13 +90,25 @@ Same interactive cards as the host assistant (`ChatSuggestionList`); no Question
 
 **Realtime:** Supabase channel on **`social_messages`** (guest RLS).
 
-**Voice receptionist:** when enabled (global rollout + property), the header ⋮ menu shows **Talk to
-receptionist** on both **`ContactHostSheet`** (property detail) and this full-screen page. That swaps
-the conversation column for an inline **`VoiceSessionPanel`**. Every call starts from an explicit
-**Start call** action so microphone permission remains tied to a guest gesture. First use identifies
-the assistant as AI and discloses microphone, Gemini processing, and caption storage. Gemini Live
-audio, captions, interruption, one reconnect, countdown, mute, end, and **Message host** handoff use
-the same responsive thread shell.
+**Voice receptionist:** when enabled (global rollout + property), a **Talk to Kame** mic button
+sits in the chat header on both **`ContactHostSheet`** (property detail) and this full-screen page,
+and an empty thread shows a **Talk to Kame** card above the starters. Either opens an inline
+**`VoiceSessionPanel`**. Every call starts from an explicit **Start call** action so microphone
+permission remains tied to a guest gesture. First use identifies the assistant as "Kame, your AI
+receptionist" and discloses Gemini processing, that audio is not stored, that captions are saved
+with the call and can be deleted after it, and that AI can make mistakes. Gemini Live audio,
+captions, interruption, one reconnect, countdown, mute, end, and **Message host** handoff use the
+same responsive thread shell.
+
+**Call takeover (2026-11-23):** while a call is open, the chat header, search row and stay strip are
+not rendered. Below `lg` the panel is portaled to the page root, fills the viewport, and covers the
+app bar and bottom tab bar; it declares `aria-modal` and returns focus to the header button on
+close. On desktop it fills the conversation card and its content is centred when it fits.
+
+**Confirmations and copy (2026-11-23):** **Delete captions** and **Message host** both ask first
+("Delete captions?" / "End the call?"). The header countdown reads `m:ss LEFT`, turns amber under a
+minute, and adds "About a minute left." Failure labels are derived from the error: microphone
+blocked / no microphone / microphone busy / microphone problem / offline / connection issue.
 
 Browser captions are bounded and stored as `client_reported` / `unverified` session evidence. They
 are not copied into `social_messages`, and guest-supplied assistant text can never become a canonical
@@ -134,7 +146,12 @@ resumption handle resumes once, like `GoAway`; mic audio is held until the resum
 Audio level is written to `--voice-*` CSS variables on the booth once per frame (no React renders).
 The status label and avatar state hold each value for at least 320 ms, except **Speaking** and call
 end, so one-frame flips never show. The booth stays in place from the disclosure to the end of the
-call; the panel fades in and out, and captions keep a stable id while they stream.
+call; the panel fades in and out, and captions keep a stable id while they stream. **Avatar fallback
+(2026-11-23):** the 3D rig is wrapped in an error boundary because `three.js` can fail to obtain a GL
+context even when a plain probe succeeds. The booth and the lazy-load fallback both show the shipped
+turtle poster, so a blocked or software renderer never leaves a blank disc. **Screen readers
+(2026-11-23):** each completed receptionist caption is announced once through a visually hidden
+polite region; the pre-call close control is an X (panel close), not a hang-up icon.
 
 **Weak network, silence, and background (2026-10-04):** every receptionist request has a time
 budget (start 15 s, tool 12 s, session 8 s, end 10 s) and fails with a plain message instead of
@@ -207,40 +224,41 @@ Backlog: [GitHub Issue #110 — Epic 10](https://github.com/sprmke/kame-space/is
 
 ## Implementation map
 
-| Area            | Path                                                                                                                                                                                                                                                                         |
-| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Sheet (primary) | `ui/src/features/guest/chat/components/ContactHostSheet.tsx`                                                                                                                                                                                                                 |
-| Full page       | `ui/src/features/guest/chat/pages/PropertyChatPage.tsx`                                                                                                                                                                                                                      |
-| Thread UI       | `ui/src/features/guest/chat/components/GuestChatThread.tsx`, `GuestChatHeaderBar.tsx`, `GuestChatFaqSuggestions.tsx`, `GuestChatInsertMenu.tsx`, `GuestChatResourceHub.tsx`                                                                                                  |
-| Insert / hub    | `ui/src/features/guest/chat/lib/guestChatInsertItems.ts`, `guestChatResourceHubItems.ts`                                                                                                                                                                                     |
-| Shared bubble   | `ui/src/components/chat/ChatMessageBubble.tsx`, `ChatMessageList.tsx`, `ChatDateSeparator.tsx`, `ChatThreadSearch.tsx`, `ChatHighlightedText.tsx`, `ChatSuggestionList.tsx`                                                                                                  |
-| Format helpers  | `ui/src/lib/chat/chatMessageFormat.ts`, `useChatTyping.ts`, `useChatThreadSearch.ts`, `chatThreadSearch.ts`, `chatAttachments.ts`                                                                                                                                            |
-| Hooks / API     | `ui/src/features/guest/chat/hooks/useGuestChat.ts`, `lib/guestChatApi.ts`, `lib/guestChatSuggestions.ts`                                                                                                                                                                     |
-| Voice UI        | `VoiceSessionPanel` inline in conversation column; `ReceptionistAvatar` (looping turtle video under an identical idle poster, crossfaded); `VoiceBoothRing`; `VoiceMicWaveform`; `ReceptionistFacePlate` fallback; `voiceSessionView.ts` + `useDwellValue` for stable status |
-| Voice hooks/API | `ui/src/features/guest/chat/hooks/useVoiceSession.ts`, `lib/voiceReceptionistApi.ts`, `lib/voiceAudioCodec.ts`, `lib/voiceMicrophoneCapture.ts`, `lib/voicePlaybackQueue.ts`, `public/worklets/voice-pcm-recorder.js`                                                        |
-| Avatar asset    | `receptionist-turtle-loop.mp4` (320 px boomerang, 234 KB) + `receptionist-turtle-idle.webp` (its first frame) + `ATTRIBUTION.md`; the host tour film keeps the full 9:16 clip                                                                                                |
-| Voice edge      | `voice-receptionist-start`, `voice-receptionist-session`, `voice-receptionist-tool`, `voice-receptionist-end`, `voice-receptionist-reaper`, `voice-receptionist-canary`                                                                                                      |
-| CTA hook        | `ui/src/features/guest/marketing/properties/hooks/usePropertyContactHost.ts`                                                                                                                                                                                                 |
-| OAuth resume    | `ui/src/features/guest/auth/lib/guestAuthResume.ts` — `contact_host_sheet` → property `?contactHost=open` + dates; draft `kame_contact_host_draft` in `sessionStorage`                                                                                                       |
-| Host card       | `ui/src/features/guest/marketing/shared/components/ListingHostCard.tsx`                                                                                                                                                                                                      |
-| Edge            | `supabase/functions/guest-web-chat-resume/`, `guest-web-chat-start/`, `guest-web-chat-messages/`, `upload-guest-chat-asset/` — resume/start return `stayGuideUrl` when eligible                                                                                              |
-| Lifecycle       | `supabase/functions/_shared/chatMessageLifecycle.ts`, `guestChatAttachments.ts`, `guestChatEmail.ts` — read, edit, reply, attachments, offline notify                                                                                                                        |
-| Auto-reply      | `supabase/functions/_shared/webInboxAutoReply.ts` — when inbox Automation → Send automatically → Chat is on                                                                                                                                                                  |
-| Migration       | `20260719153000_web_guest_chat.sql`, `20260927120000_chat_message_lifecycle.sql`, `20260928120000_chat_phase5.sql`                                                                                                                                                           |
-| Host inbox      | `ui/src/features/dashboard/inbox/**` — **Web** tab                                                                                                                                                                                                                           |
+| Area            | Path                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Sheet (primary) | `ui/src/features/guest/chat/components/ContactHostSheet.tsx`                                                                                                                                                                                                                                                                                                                                                                                 |
+| Full page       | `ui/src/features/guest/chat/pages/PropertyChatPage.tsx`                                                                                                                                                                                                                                                                                                                                                                                      |
+| Thread UI       | `ui/src/features/guest/chat/components/GuestChatThread.tsx`, `GuestChatHeaderBar.tsx`, `GuestChatFaqSuggestions.tsx`, `GuestChatInsertMenu.tsx`, `GuestChatResourceHub.tsx`                                                                                                                                                                                                                                                                  |
+| Insert / hub    | `ui/src/features/guest/chat/lib/guestChatInsertItems.ts`, `guestChatResourceHubItems.ts`                                                                                                                                                                                                                                                                                                                                                     |
+| Shared bubble   | `ui/src/components/chat/ChatMessageBubble.tsx`, `ChatMessageList.tsx`, `ChatDateSeparator.tsx`, `ChatThreadSearch.tsx`, `ChatHighlightedText.tsx`, `ChatSuggestionList.tsx`                                                                                                                                                                                                                                                                  |
+| Format helpers  | `ui/src/lib/chat/chatMessageFormat.ts`, `useChatTyping.ts`, `useChatThreadSearch.ts`, `chatThreadSearch.ts`, `chatAttachments.ts`                                                                                                                                                                                                                                                                                                            |
+| Hooks / API     | `ui/src/features/guest/chat/hooks/useGuestChat.ts`, `lib/guestChatApi.ts`, `lib/guestChatSuggestions.ts`                                                                                                                                                                                                                                                                                                                                     |
+| Voice UI        | `VoiceSessionPanel` inline in conversation column (portaled full-screen below `lg`); header **Talk to Kame** button in `GuestChatHeaderBar`; empty-thread card in `GuestChatFaqSuggestions`; `ReceptionistAvatar` (shared 3D Kame rig when WebGL works, `receptionist-turtle-idle.webp` poster while the chunk loads and whenever GL fails); `VoiceBoothRing`; `VoiceMicWaveform`; `voiceSessionView.ts` + `useDwellValue` for stable status |
+| Voice hooks/API | `ui/src/features/guest/chat/hooks/useVoiceSession.ts`, `lib/voiceReceptionistApi.ts`, `lib/voiceAudioCodec.ts`, `lib/voiceMicrophoneCapture.ts`, `lib/voicePlaybackQueue.ts`, `public/worklets/voice-pcm-recorder.js`                                                                                                                                                                                                                        |
+| Avatar asset    | `receptionist-turtle-loop.mp4` (320 px boomerang, 234 KB) + `receptionist-turtle-idle.webp` (its first frame) + `ATTRIBUTION.md`; the host tour film keeps the full 9:16 clip                                                                                                                                                                                                                                                                |
+| Voice edge      | `voice-receptionist-start`, `voice-receptionist-session`, `voice-receptionist-tool`, `voice-receptionist-end`, `voice-receptionist-reaper`, `voice-receptionist-canary`                                                                                                                                                                                                                                                                      |
+| CTA hook        | `ui/src/features/guest/marketing/properties/hooks/usePropertyContactHost.ts`                                                                                                                                                                                                                                                                                                                                                                 |
+| OAuth resume    | `ui/src/features/guest/auth/lib/guestAuthResume.ts` — `contact_host_sheet` → property `?contactHost=open` + dates; draft `kame_contact_host_draft` in `sessionStorage`                                                                                                                                                                                                                                                                       |
+| Host card       | `ui/src/features/guest/marketing/shared/components/ListingHostCard.tsx`                                                                                                                                                                                                                                                                                                                                                                      |
+| Edge            | `supabase/functions/guest-web-chat-resume/`, `guest-web-chat-start/`, `guest-web-chat-messages/`, `upload-guest-chat-asset/` — resume/start return `stayGuideUrl` when eligible                                                                                                                                                                                                                                                              |
+| Lifecycle       | `supabase/functions/_shared/chatMessageLifecycle.ts`, `guestChatAttachments.ts`, `guestChatEmail.ts` — read, edit, reply, attachments, offline notify                                                                                                                                                                                                                                                                                        |
+| Auto-reply      | `supabase/functions/_shared/webInboxAutoReply.ts` — when inbox Automation → Send automatically → Chat is on                                                                                                                                                                                                                                                                                                                                  |
+| Migration       | `20260719153000_web_guest_chat.sql`, `20260927120000_chat_message_lifecycle.sql`, `20260928120000_chat_phase5.sql`                                                                                                                                                                                                                                                                                                                           |
+| Host inbox      | `ui/src/features/dashboard/inbox/**` — **Web** tab                                                                                                                                                                                                                                                                                                                                                                                           |
 
 ---
 
 ## Testing
 
-| Layer     | Path / spec                                                                                                                                                                      | Manual                               |
-| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
-| UI unit   | `liveVoiceProtocol` (incl. frame decoding), state, view, timing, transcript, codec round trip, playback queue, action, tool-dispatch, and worklet contract tests                 | —                                    |
-| Edge unit | `geminiLiveEphemeral_test.ts`, `voiceReceptionistHardening_test.ts`                                                                                                              | —                                    |
-| Handler   | `voiceReceptionistContracts.test.ts`                                                                                                                                             | —                                    |
-| E2E       | `guest-chat/voiceReceptionistConsent.spec.ts` (375/768/desktop disclosure, denied mic, captions, interruption, actions, reconnect, provider fallback, handoff, max length, idle) | —                                    |
-| Provider  | `voice-receptionist-canary`, `geminiLiveCanary_integration_test.ts`                                                                                                              | Staging only, seven-day launch gate  |
-| Voice UX  | `voice-receptionist-manual.md`                                                                                                                                                   | Chrome, Safari, mobile Safari matrix |
+| Layer     | Path / spec                                                                                                                                                                              | Manual                                             |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| UI unit   | `liveVoiceProtocol` (incl. frame decoding), state, view, timing, transcript, codec round trip, playback queue, action, tool-dispatch, and worklet contract tests                         | —                                                  |
+| Edge unit | `geminiLiveEphemeral_test.ts`, `voiceReceptionistHardening_test.ts`                                                                                                                      | —                                                  |
+| Handler   | `voiceReceptionistContracts.test.ts`                                                                                                                                                     | —                                                  |
+| E2E       | `guest-chat/voiceReceptionistConsent.spec.ts` (375/768/desktop disclosure, denied mic, captions, interruption, actions, reconnect, provider fallback, handoff, max length, idle)         | —                                                  |
+| E2E demo  | `guest-chat/aiReceptionistWalkthrough.spec.ts` (`@demo`) — slow-motion visual walkthrough, 375/768/1024/1440, dark, failure states, org AI + super-admin controls; writes 21 screenshots | `PLAYWRIGHT_RECORD_VIDEO=1 PLAYWRIGHT_SLOW_MO=500` |
+| Provider  | `voice-receptionist-canary`, `geminiLiveCanary_integration_test.ts`                                                                                                                      | Staging only, seven-day launch gate                |
+| Voice UX  | `voice-receptionist-manual.md`                                                                                                                                                           | Chrome, Safari, mobile Safari matrix               |
 
 ## Related
 

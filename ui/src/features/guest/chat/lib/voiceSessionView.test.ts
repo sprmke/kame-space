@@ -4,6 +4,7 @@ import {
   deriveVoiceSessionView,
   isBusyVoiceView,
   isUrgentVoiceView,
+  voiceErrorLabel,
   voiceViewAvatarState,
 } from './voiceSessionView';
 
@@ -50,5 +51,30 @@ describe('voice view presentation', () => {
     expect(voiceViewAvatarState('user_speaking')).toBe('listening');
     expect(isBusyVoiceView('looking_up')).toBe(true);
     expect(isBusyVoiceView('speaking')).toBe(false);
+  });
+});
+
+describe('voiceErrorLabel', () => {
+  it('names the microphone problems instead of calling everything a connection issue', () => {
+    expect(
+      voiceErrorLabel(
+        'Microphone access is blocked. Allow microphone access in your browser settings and try again.'
+      )
+    ).toBe('Microphone blocked');
+    expect(voiceErrorLabel('No microphone was found on this device.')).toBe('No microphone');
+    expect(voiceErrorLabel('Your microphone is in use by another app. Close it and try again.')).toBe(
+      'Microphone busy'
+    );
+    expect(voiceErrorLabel('Microphone disconnected.')).toBe('Microphone problem');
+  });
+
+  it('keeps offline and provider failures distinct', () => {
+    expect(
+      voiceErrorLabel('You went offline. Continue in text chat when you are back.')
+    ).toBe('Offline');
+    expect(voiceErrorLabel('Voice service is unavailable. Continue in text chat.')).toBe(
+      'Connection issue'
+    );
+    expect(voiceErrorLabel(null)).toBe('Connection issue');
   });
 });
