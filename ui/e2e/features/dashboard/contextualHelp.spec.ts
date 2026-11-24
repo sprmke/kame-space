@@ -72,7 +72,7 @@ test.describe('contextual help', () => {
 
     // Make a real edit so the form is in edit mode before touching the hint.
     await page.locator('#property-name').fill('Solea Mactan Updated');
-    const saveButton = page.getByRole('button', { name: 'Save Changes' });
+    const saveButton = page.getByRole('button', { name: 'Save changes' });
     await expect(saveButton).toBeVisible();
 
     await trigger.click();

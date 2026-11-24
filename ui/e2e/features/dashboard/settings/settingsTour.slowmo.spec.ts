@@ -27,21 +27,21 @@ test.describe('settings tour @demo', () => {
 
     const nav = page.locator('[data-section-nav-scroll]').first();
     for (const label of [
-      'Basic Information',
-      'Property Details',
-      'Photos & Videos',
+      'Basic information',
+      'Property details',
+      'Photos & videos',
       'Amenities',
-      'House Rules',
+      'House rules',
       'Cancellation',
       'Location',
       'Socials',
       'Search preview',
-      'Guest Form',
+      'Guest form',
       'Guest experience',
       'Reviews & vouchers',
       'Payment',
-      'Building Forms',
-      'Email Automations',
+      'Building forms',
+      'Email automations',
       'Integrations',
       'Activity',
       'Listing status',
@@ -69,7 +69,7 @@ test.describe('settings tour @demo', () => {
     await page.getByRole('button', { name: 'Keep editing' }).click();
     await demoPause(page, 0.8);
 
-    await page.getByRole('button', { name: 'Save Changes' }).first().click();
+    await page.getByRole('button', { name: 'Save changes' }).first().click();
     await expect(page.getByText('Settings saved')).toBeVisible();
     await demoPause(page, 1.4);
   });
@@ -188,7 +188,7 @@ test.describe('settings tour @demo', () => {
       .getByRole('textbox', { name: 'Organization name', exact: true })
       .fill('Sample Stays PH Group');
     await demoPause(page, 0.8);
-    await page.getByRole('button', { name: 'Save', exact: true }).first().click();
+    await page.getByRole('button', { name: 'Save changes', exact: true }).first().click();
     await demoPause(page, 1.6);
   });
 
@@ -213,7 +213,7 @@ test.describe('settings tour @demo', () => {
     await demoPause(page, 1.2);
 
     const nav = page.locator('[data-section-nav-scroll]').first();
-    for (const label of ['Photos', 'Parking Details', 'Amenities', 'Location', 'Automations']) {
+    for (const label of ['Photos', 'Parking details', 'Amenities', 'Location', 'Automations']) {
       await nav.getByRole('button', { name: label }).click();
       await demoPause(page, 0.9);
     }

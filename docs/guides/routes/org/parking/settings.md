@@ -15,15 +15,15 @@ Route: `/org/:orgSlug/parking/:parkingSlug/settings`
 
 | Section           | E2E save  | Validation | Docs | Notes                                                                                                                          |
 | ----------------- | --------- | ---------- | ---- | ------------------------------------------------------------------------------------------------------------------------------ |
-| Basic Information | Done      | Done       | Done | Parking type/residence/tower/level/slot are read-only                                                                          |
+| Basic information | Done      | Done       | Done | Parking type/residence/tower/level/slot are read-only                                                                          |
 | Photos            | Done      | Done       | Done | Up to 3 photos; one starred cover, at least 1 required                                                                         |
-| Parking Details   | Done      | Done       | Done | Check-in/out required; dimensions optional                                                                                     |
+| Parking details   | Done      | Done       | Done | Check-in/out required; dimensions optional                                                                                     |
 | Amenities         | Done      | Done       | Done | At least 1 amenity required; count summary + **Manage** modal                                                                  |
 | Location          | Done      | Done       | Done | Address, city, province and country required; map pin optional                                                                 |
 | Automations       | Done      | N/A        | Done | Email toggles (reservation / confirmed / no host) + auto-accept top match; count summary + **Manage** modal                    |
 | Integrations      | Done      | N/A        | Done | Telegram + AI optional; status/shortcuts only                                                                                  |
 | Activity          | Read-only | n/a        | Done | Summary row + **Manage** → modal with full parking activity feed (`ActivityLogPanel`). Section shown only with `activity:view` |
-| Danger Zone       | Done      | N/A        | Done | Archive, restore, delete with confirmation                                                                                     |
+| Danger zone       | Done      | N/A        | Done | Archive, restore, delete with confirmation                                                                                     |
 
 ## Overview
 
@@ -50,9 +50,9 @@ Parking **Settings** is where you set up a single slot before guests can book it
 - Q: Why is Delete parking disabled?
   A: A slot with booking history or pending offers can't be deleted. Archive it to hide it from guests. Existing bookings stay, and finance entries are not removed.
 - Q: Do I have to fill out every section before anything saves?
-  A: No. **Save Changes** only saves the sections you've edited that pass validation, so you can finish photos today and automations later. Incomplete required areas still show a warning dot until you get to them.
+  A: No. **Save changes** only saves the sections you've edited that pass validation, so you can finish photos today and automations later. Incomplete required areas still show a warning dot until you get to them.
 - Q: Where do I turn the automatic emails or auto-accept on and off?
-  A: **Parking Settings → Automations → Manage**. The modal lists the automatic emails with who receives them and when they send, plus **Auto-accept top match**. Your changes save with the page **Save Changes**.
+  A: **Parking Settings → Automations → Manage**. The modal lists the automatic emails with who receives them and when they send, plus **Auto-accept top match**. Your changes save with the page **Save changes**.
 - Q: Why is there no Payment section any more?
   A: Guests pay for parking through PayMongo when they book. Payment methods you entered before are kept for history but are no longer used or shown.
 - Q: Where do I connect Telegram for this parking slot?
@@ -66,7 +66,7 @@ Parking **Settings** is where you set up a single slot before guests can book it
 
 ## Setup completeness
 
-**Save Changes** is blocked while any required field is incomplete — the button stays visible but **disabled** (tooltip names the first issue), matching [Property Settings](../property/settings.md#setup-completeness). Incomplete sections show a **red dot** on the in-page section nav (desktop `lg+` sidebar) and on the sidebar **Settings** link, driven by the saved parking snapshot outside the editor and by the live draft while editing. On phone, Save is a hero icon when dirty; on desktop it appears in the page header actions (no separate sticky footer bar).
+**Save changes** is blocked while any required field is incomplete — the button stays visible but **disabled** (tooltip names the first issue), matching [Property Settings](../property/settings.md#setup-completeness). Incomplete sections show a **red dot** on the in-page section nav (desktop `lg+` sidebar) and on the sidebar **Settings** link, driven by the saved parking snapshot outside the editor and by the live draft while editing. On phone, Save is a hero icon when dirty; on desktop it appears in the page header actions (no separate sticky footer bar).
 
 | Rule                                                     | Required? |
 | -------------------------------------------------------- | --------- |
@@ -78,7 +78,7 @@ Parking **Settings** is where you set up a single slot before guests can book it
 | Location map pin                                         | No        |
 | Telegram integrations                                    | No        |
 
-Field-level errors appear **as you edit** (on blur/change). After **Save Changes**, all remaining issues are shown at once and the page scrolls to the first incomplete section. Section banners (orange) appear for **Photos** and **Amenities** — not for sections with individual inputs.
+Field-level errors appear **as you edit** (on blur/change). After **Save changes**, all remaining issues are shown at once and the page scrolls to the first incomplete section. Section banners (orange) appear for **Photos** and **Amenities** — not for sections with individual inputs.
 
 Logic: `ui/src/features/dashboard/parking/lib/parkingSettingsCompletion.ts`, `ui/src/features/dashboard/parking/lib/parkingSettingsFieldError.ts`
 
@@ -110,7 +110,7 @@ Logic: `ui/src/features/dashboard/parking/lib/parkingSettingsCompletion.ts`, `ui
 | Tower / Level / Slot | `parkings.tower`, `level`, `slot_label` — **read-only** in settings (set at creation)                                                                                                                         | **`ListingPlaceMeta`** placement labels           |
 | Description          | `parkings.settings.description` (legacy `notes` migrated on save)                                                                                                                                             | **About this parking** section                    |
 
-Parking type, residence, tower, level, and slot number can only be set when the slot is created (`useCreateParking`). They render read-only in Settings, same as property's type/residence/tower/unit — see [Property Settings § Basic Information](../property/settings.md#basic-information).
+Parking type, residence, tower, level, and slot number can only be set when the slot is created (`useCreateParking`). They render read-only in Settings; a slot's identity stays fixed at creation. (Property identity fields are editable on Property Settings.)
 
 ### Parking details fields
 
@@ -125,7 +125,7 @@ Parking type, residence, tower, level, and slot number can only be set when the 
 
 ## Save paths
 
-**Save Changes** saves only dirty sections that pass validation — the same section-scoped behavior as Property Settings. If required fields are still incomplete, **Save Changes** stays visible but is **disabled** (tooltip names the first issue); clicking while enabled with incomplete fields still scrolls to the first incomplete section and toasts the issue.
+**Save changes** saves only dirty sections that pass validation — the same section-scoped behavior as Property Settings. If required fields are still incomplete, **Save changes** stays visible but is **disabled** (tooltip names the first issue); clicking while enabled with incomplete fields still scrolls to the first incomplete section and toasts the issue.
 
 - Basic (brand color, description only — identity fields are read-only) → `PATCH update-parking`
 - Photos → `POST` / `DELETE` **`upload-parking-media?parking_id=`** (auto-saved on upload/remove); reorder or set the cover via `PATCH update-parking` with the media patch

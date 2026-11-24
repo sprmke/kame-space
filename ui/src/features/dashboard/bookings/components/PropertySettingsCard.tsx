@@ -118,21 +118,21 @@ import { friendlyToastError } from '@/lib/feedback/toastMessages';
 import { propertyBrandColorStoredValue } from '@/lib/theme/brandColor';
 
 const SETTINGS_SECTIONS: AdminSectionNavItem[] = [
-  { id: 'basic', label: 'Basic Information', icon: Info },
-  { id: 'details', label: 'Property Details', icon: Home },
-  { id: 'media', label: 'Photos & Videos', icon: ImageIcon },
+  { id: 'basic', label: 'Basic information', icon: Info },
+  { id: 'details', label: 'Property details', icon: Home },
+  { id: 'media', label: 'Photos & videos', icon: ImageIcon },
   { id: 'amenities', label: 'Amenities', icon: Sparkles },
-  { id: 'house-rules', label: 'House Rules', icon: ListChecks },
+  { id: 'house-rules', label: 'House rules', icon: ListChecks },
   { id: 'cancellation', label: 'Cancellation', icon: Shield },
   { id: 'location', label: 'Location', icon: MapPin },
   { id: 'branding', label: 'Socials', icon: Share2 },
   { id: 'search', label: 'Search preview', icon: Search },
-  { id: 'guest-form', label: 'Guest Form', icon: FormInput },
+  { id: 'guest-form', label: 'Guest form', icon: FormInput },
   { id: 'guest-experience', label: 'Guest experience', icon: KeyRound },
   { id: 'guest-rewards', label: 'Reviews & vouchers', icon: Gift },
   { id: 'payment', label: 'Payment', icon: Wallet },
-  { id: 'building-forms', label: 'Building Forms', icon: ClipboardList },
-  { id: 'email-automations', label: 'Email Automations', icon: Mail },
+  { id: 'building-forms', label: 'Building forms', icon: ClipboardList },
+  { id: 'email-automations', label: 'Email automations', icon: Mail },
   { id: 'integrations', label: 'Integrations', icon: Globe },
   { id: 'activity', label: 'Activity', icon: ScrollText },
   { id: 'danger', label: 'Listing status', icon: AlertTriangle },
@@ -1099,7 +1099,7 @@ export function PropertySettingsCard() {
                 className="min-h-[44px] gap-1.5"
               >
                 <Save className="size-4" aria-hidden />
-                {busy ? 'Saving...' : 'Save Changes'}
+                {busy ? 'Saving…' : 'Save changes'}
               </Button>
             ) : null}
           </div>

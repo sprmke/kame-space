@@ -424,8 +424,9 @@ export function AdminSectionNavLayout({
                 data-admin-content-scroll
                 className={cn(
                   'min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain',
-                  /* Scrollable tab clearance — scrollport fills height; last cards clear the dock. */
-                  bottomTabBarOffsetClassName()
+                  /* Scrollable tab + quick-access clearance: last cards clear the dock and FAB. */
+                  bottomTabBarOffsetClassName(),
+                  'max-lg:pb-[calc(var(--mobile-bottom-bar-h)+5rem)]'
                 )}
               >
                 {header ? <div className="pb-3 lg:hidden">{header}</div> : null}

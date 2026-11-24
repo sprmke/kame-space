@@ -7,6 +7,7 @@ import { callEdgeFunction } from '@/features/dashboard/org/lib/edgeClient';
 import type { Organization } from '@/features/dashboard/org/types';
 import {
   mergeSetupGuidePersistedState,
+  setupGuidePatchFromWriteResult,
   type SetupGuideStatePatch,
 } from '@/features/dashboard/setup-guide/lib/setupGuideState';
 import {
@@ -99,7 +100,7 @@ export function useSetupGuideStateWrite(orgId: string | null | undefined) {
     onSuccess: (data, { orgId: id }) => {
       const setupGuide = mergeSetupGuidePersistedState(
         EMPTY_SETUP_GUIDE_STATE,
-        data.setupGuide as SetupGuideStatePatch
+        setupGuidePatchFromWriteResult(data)
       );
       queryClient.setQueryData(ORGANIZATIONS_QUERY_KEY, (old) =>
         applySetupGuideToOrganizationsCache(

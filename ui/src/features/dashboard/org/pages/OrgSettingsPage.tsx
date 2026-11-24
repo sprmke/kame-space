@@ -77,7 +77,7 @@ const SETTINGS_SECTIONS: AdminSectionNavItem[] = [
 
 const SETTINGS_SECTION_GROUP_IDS: { label: string; ids: string[] }[] = [
   { label: 'Profile', ids: ['basic', 'branding', 'superhost'] },
-  { label: 'AI', ids: [AI_SETTINGS_SECTION_ID] },
+  { label: 'Assistants', ids: [AI_SETTINGS_SECTION_ID] },
   { label: 'Account', ids: ['activity', 'danger'] },
 ];
 
@@ -520,7 +520,7 @@ export function OrgSettingsPage() {
               className="min-h-[44px] gap-1.5"
             >
               <Save className="size-4" aria-hidden />
-              {busy ? 'Saving…' : 'Save'}
+              {busy ? 'Saving…' : 'Save changes'}
             </Button>
           ) : undefined
         }

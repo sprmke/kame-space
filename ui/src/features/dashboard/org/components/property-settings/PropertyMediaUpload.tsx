@@ -468,7 +468,6 @@ function EmptyMediaDropzone({
             />
             <Button
               type="button"
-              variant="outline"
               size="sm"
               disabled={!imagePickerEnabled}
               className="pointer-events-none min-h-[44px] w-full sm:w-auto"

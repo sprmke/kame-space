@@ -103,7 +103,7 @@ function RefundRow({
           <span className="text-sm">{label}</span>
           <span className="text-sm font-semibold tabular-nums">{formatMoney(amount)}</span>
         </div>
-        <p className="text-muted-foreground text-xs">{percent}% of paid</p>
+        <p className="text-foreground/70 text-xs">{percent}% of paid</p>
       </div>
     </div>
   );

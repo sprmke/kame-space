@@ -176,7 +176,7 @@ export function OrgAiSettingsSection() {
                     value={`${usage.monthCallCount} / ${usage.monthlyCallLimit}`}
                   />
                   <AiSettingsUsageStat
-                    label="Est. cost today"
+                    label="Est. cost today (USD)"
                     value={`$${usage.todayCostUsd.toFixed(2)} / $${usage.dailyCostUsdLimit}`}
                   />
                   <AiSettingsUsageStat
@@ -240,7 +240,9 @@ export function OrgAiSettingsSection() {
                       />
                       <AiSettingsUsageStat
                         label="Credits used"
-                        value={`~${Math.round(assistantSettings.usage.monthCreditsConsumed).toLocaleString()}`}
+                        value={Math.round(
+                          assistantSettings.usage.monthCreditsConsumed
+                        ).toLocaleString()}
                       />
                     </div>
                   ) : null}

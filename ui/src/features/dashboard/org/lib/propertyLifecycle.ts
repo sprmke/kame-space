@@ -160,7 +160,7 @@ export function stateHasPublicPage(state: PropertyLifecycleState): boolean {
 }
 
 /**
- * Paused vs archived vs delete, in plain words. Used by the "Compare options" dialog.
+ * Paused vs archived vs delete, in plain words. Used by the "See what changes" dialog.
  */
 export const PROPERTY_LIFECYCLE_OPTIONS: Array<{
   key: 'pause' | 'archive' | 'delete';

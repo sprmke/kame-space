@@ -32,8 +32,8 @@ test.describe('property settings @ci', () => {
 
     const nav = page.locator('[data-section-nav-scroll]').first();
     await expect(nav).toBeVisible();
-    await expect(nav.getByRole('button', { name: 'Basic Information' })).toBeVisible();
-    await expect(nav.getByRole('button', { name: 'Guest Form' })).toBeVisible();
+    await expect(nav.getByRole('button', { name: 'Basic information' })).toBeVisible();
+    await expect(nav.getByRole('button', { name: 'Guest form' })).toBeVisible();
     await expect(nav.getByRole('button', { name: 'Integrations' })).toBeVisible();
     await expect(nav.getByRole('button', { name: 'Listing status' })).toBeVisible();
 
@@ -90,7 +90,7 @@ test.describe('property settings @ci', () => {
       (request) =>
         request.url().includes('/functions/v1/update-property') && request.method() === 'PATCH'
     );
-    await page.getByRole('button', { name: 'Save Changes' }).first().click();
+    await page.getByRole('button', { name: 'Save changes' }).first().click();
     await patch;
     await expect(page.getByText('Settings saved')).toBeVisible();
   });
@@ -163,7 +163,7 @@ test.describe('property settings @ci', () => {
 
     await tower.click();
     await page.getByRole('option', { name: 'Bali', exact: true }).click();
-    await expect(page.getByRole('button', { name: 'Save Changes' })).toBeEnabled();
+    await expect(page.getByRole('button', { name: 'Save changes' })).toBeEnabled();
   });
 
   test('a partial save names the section that still needs attention', async ({ page }) => {
@@ -171,10 +171,10 @@ test.describe('property settings @ci', () => {
     await expect(page.locator('#section-basic')).toBeVisible({ timeout: 30_000 });
 
     await page.getByRole('textbox', { name: 'Property Name', exact: true }).fill('');
-    await page.getByRole('button', { name: 'Save Changes' }).click();
+    await page.getByRole('button', { name: 'Save changes' }).click();
 
     await expect(page.getByText('Saved your other changes')).toBeVisible();
-    await expect(page.getByText('Basic Information still needs attention.')).toBeVisible();
+    await expect(page.getByText('Basic information still needs attention.')).toBeVisible();
     await expect(page.getByText('New changes has been saved.')).toHaveCount(0);
   });
 
@@ -191,7 +191,7 @@ test.describe('property settings @ci', () => {
     await expect(
       page
         .locator('[data-section-nav-scroll]')
-        .getByRole('button', { name: 'Basic Information' })
+        .getByRole('button', { name: 'Basic information' })
         .locator('[aria-hidden="true"], span')
     ).not.toHaveCount(0);
   });
@@ -212,6 +212,10 @@ test.describe('property settings @ci', () => {
     await page.goto(settingsPaths.property);
     await expect(page.locator('#section-basic')).toBeVisible({ timeout: 30_000 });
 
+    await expect(
+      page.locator('#section-danger').getByRole('button', { name: 'See what changes' })
+    ).toBeVisible();
+
     await page.locator('#section-danger').getByRole('button', { name: 'Pause' }).click();
     const dialog = page.getByRole('dialog');
     await expect(dialog.getByText('Pause new bookings?')).toBeVisible();
@@ -226,6 +230,8 @@ test.describe('property settings @ci', () => {
     await expect(page.locator('#section-basic')).toBeVisible({ timeout: 30_000 });
 
     await expectNoPageHorizontalOverflow(page);
+    await expect(page.getByRole('group', { name: 'Brand color presets' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Reset brand color to default' })).toBeVisible();
 
     for (const section of propertySettingsSections) {
       const card = page.locator(`#${section.id}`).first();
@@ -255,6 +261,23 @@ test.describe('org settings @ci', () => {
     await expect(page.getByRole('button', { name: 'Delete organization' })).toBeVisible();
   });
 
+  test('survives a setup-guide response without state', async ({ page }) => {
+    const pageErrors: string[] = [];
+    page.on('pageerror', (error) => pageErrors.push(error.message));
+    await page.route('**/functions/v1/setup-guide-state*', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, data: {} }),
+      });
+    });
+
+    await page.goto(settingsPaths.org);
+    await expect(page.locator('#section-basic')).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByText('Something went wrong')).toHaveCount(0);
+    expect(pageErrors).toEqual([]);
+  });
+
   test('saves the organization profile', async ({ page }) => {
     await page.goto(settingsPaths.org);
     await expect(page.locator('#section-basic')).toBeVisible({ timeout: 30_000 });
@@ -267,7 +290,7 @@ test.describe('org settings @ci', () => {
       (request) =>
         request.url().includes('/functions/v1/update-organization') && request.method() === 'PATCH'
     );
-    await page.getByRole('button', { name: 'Save', exact: true }).first().click();
+    await page.getByRole('button', { name: 'Save changes', exact: true }).first().click();
     await patch;
     await expect(page.getByText('Settings saved')).toBeVisible();
   });
@@ -323,7 +346,7 @@ test.describe('parking settings @ci', () => {
       (request) =>
         request.url().includes('/functions/v1/update-parking') && request.method() === 'PATCH'
     );
-    await page.getByRole('button', { name: 'Save Changes' }).first().click();
+    await page.getByRole('button', { name: 'Save changes' }).first().click();
     await patch;
   });
 
@@ -349,7 +372,7 @@ test.describe('parking settings @ci', () => {
       '12A'
     );
     await page.locator('#parking-description').fill('Level 2, beside the lift lobby');
-    await expect(page.getByRole('button', { name: 'Save Changes' })).toBeEnabled();
+    await expect(page.getByRole('button', { name: 'Save changes' })).toBeEnabled();
     await expect(page.getByText('Enter a valid slot number')).toHaveCount(0);
   });
 
@@ -368,7 +391,7 @@ test.describe('parking settings @ci', () => {
     await page.locator('#property-location-country').fill('Philippines');
     await page.keyboard.press('Tab');
 
-    const save = page.getByRole('button', { name: 'Save Changes' }).first();
+    const save = page.getByRole('button', { name: 'Save changes' }).first();
     await expect(save).toBeEnabled();
     const patch = page.waitForRequest(
       (request) =>

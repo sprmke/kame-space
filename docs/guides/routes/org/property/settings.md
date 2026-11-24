@@ -41,11 +41,11 @@ Route: `/org/:orgSlug/property/:propertySlug/settings`
 
 ## Overview
 
-Living operator spec for property settings: what each section does, how data is saved, and setup completeness. **Save Changes** persists only dirty sections that pass validation — incomplete required areas still show a red dot for setup tracking. Field helpers use a **?** beside the label (`FieldLabel` `help` / `SettingsField` `help`) — not muted text under the control.
+Living operator spec for property settings: what each section does, how data is saved, and setup completeness. **Save changes** persists only dirty sections that pass validation — incomplete required areas still show a red dot for setup tracking. Field helpers use a **?** beside the label (`FieldLabel` `help` / `SettingsField` `help`) — not muted text under the control.
 
 Many section values can also be **seeded from another property** via org **Properties → Copy settings** (4-step wizard). Payment methods are not included.
 
-**Listing status** is the last section in the page and section nav (after Activity when visible). It is not the first item. Destructive actions stay at the bottom with setup and operational sections above.
+**Listing status** is the last section in the page and section nav (after Activity when visible), so rail order matches page order and destructive actions stay at the bottom.
 
 Desktop section nav (`AdminSectionNavLayout`): labelled groups **Listing** → **Guest setup** → **Connections** → **Account** (scroll order matches). Scroll-spy highlights the section in view; on short laptops the rail scrolls inside its own `max-h` port and keeps the active row visible (same keep-in-view as horizontal tab strips).
 
@@ -62,7 +62,7 @@ Property Settings is where you complete operational setup: basic info, capacity,
 **Common host questions**
 
 - Q: Do I have to fill out every section before anything saves?
-  A: No. **Save Changes** only saves the sections you've edited that pass validation, so you can finish contact details today and payment later. Incomplete required areas still show a warning dot until you get to them.
+  A: No. **Save changes** only saves the sections you've edited that pass validation, so you can finish contact details today and payment later. Incomplete required areas still show a warning dot until you get to them.
 - Q: Can I change the residence, tower, or unit after creating the property?
   A: Yes. Open **Basic Information** and pick a new residence or tower. Changing the residence clears the tower, so choose the new tower (and unit if it changed) before you save.
 - Q: What happens if the map does not load when I set the location?
@@ -76,7 +76,7 @@ Property Settings is where you complete operational setup: basic info, capacity,
 - Q: Can guests still book a property I paused or archived?
   A: No. A paused listing keeps its public page but shows "Not taking new bookings". An archived, suspended, or unapproved listing is hidden and its direct booking link shows the same closed message. Guests who already have a booking keep their form, trip page, and stay guide.
 - Q: What do I see when I pause or archive?
-  A: A confirm sheet with a short description under the title, not just the property name. Archive may list open bookings that block the action, or a short bullet list of what changes when archive is allowed. Compare options uses the same split sheet with one line per choice.
+  A: A confirm sheet with a short description under the title, not just the property name. Archive may list open bookings that block the action, or a short bullet list of what changes when archive is allowed. **See what changes** uses the same split sheet with one line per choice.
 - Q: What turns off when I archive?
   A: New bookings, calendar imports, the calendar export link, scheduled social posts, Smart Pricing, Telegram digests, inbox AI replies, and the voice receptionist. Refunds, cancellation refunds, and review requests keep running.
 - Q: Does deleting a property refund my current billing period?
@@ -90,11 +90,11 @@ Property Settings is where you complete operational setup: basic info, capacity,
 - Q: Where is the PMO / documents-approver email set?
   A: On the development in Super Admin (**Developments → Email automations → PMO email**). Property Settings shows it read-only as **Building admin email** so you can see where GAF and pet requests go. The team ops email there handles alerts and Reply-To.
 - Q: Where do I turn automated emails on or off?
-  A: **Property Settings → Email automations → Automated sends → Manage**. The modal lists every automatic email, who receives it, and when it sends. Switch the ones you want. Your changes save with the page **Save Changes** at the top of Settings.
+  A: **Property Settings → Email automations → Automated sends → Manage**. The modal lists every automatic email, who receives it, and when it sends. Switch the ones you want. Your changes save with the page **Save changes** at the top of Settings.
 - Q: Where do I edit amenities, house rules, or cancellation?
   A: In **Property Settings** - Amenities, House Rules, and Cancellation use **Manage** for the full editor - or in **Public Pages → Property → Edit** if you want a live preview. Both save the same data. The Amenities and House Rules cards show your first few picks with a **+N** badge for the rest, so you can see what is on without opening the editor.
 - Q: Where do I fill Building Forms (GAF owner and signature)?
-  A: **Property Settings → Building Forms → Manage**. Enter owner and contact details, add the signature, and check the live PDF preview. Save in the modal, then use page **Save Changes** for the text fields.
+  A: **Property Settings → Building Forms → Manage**. Enter owner and contact details, add the signature, and check the live PDF preview. Save in the modal, then use page **Save changes** for the text fields.
 - Q: Where do I set Wi-Fi and the door code for guests?
   A: **Property Settings → Guest experience → Manage**. Add Wi-Fi, the door code, contacts, and when codes appear before check-in. Unit and floor come from Basic Info when that is already filled. Check-in and check-out steps are under Templates. Quiet hours are under House rules.
 - Q: Where do I change what Google shows for my listing?
@@ -126,9 +126,9 @@ Property Settings is where you complete operational setup: basic info, capacity,
 
 ## Setup completeness
 
-**Save Changes** saves **only dirty sections that pass validation** — you do not need every section complete first. Within a section, only **changed fields** are validated for that save (e.g. contact information can save even when other basic fields are still incomplete). Valid filled sections persist; invalid dirty sections are skipped and highlighted. **Exception — Payment:** if payment methods are edited, Save is disabled until the whole Payment section’s required fields are valid (it does not partially save other sections alongside an incomplete payment draft). If **no** dirty section is savable, the button stays visible but **disabled**. If some sections save and others do not, you get a toast: **Saved your other changes**, with the blocking section named underneath (for example _Basic Information still needs attention._) and the page scrolled to it.
+**Save changes** saves **only dirty sections that pass validation** — you do not need every section complete first. Within a section, only **changed fields** are validated for that save (e.g. contact information can save even when other basic fields are still incomplete). Valid filled sections persist; invalid dirty sections are skipped and highlighted. **Exception — Payment:** if payment methods are edited, Save is disabled until the whole Payment section’s required fields are valid (it does not partially save other sections alongside an incomplete payment draft). If **no** dirty section is savable, the button stays visible but **disabled**. If some sections save and others do not, you get a toast: **Saved your other changes**, with the blocking section named underneath (for example _Basic Information still needs attention._) and the page scrolled to it.
 
-Incomplete sections still show a **red dot** on the in-page section nav and on the sidebar **Settings** link (for setup tracking). Below `lg`, the rail is replaced by a **Jump to <section>** button at the top of the content that opens a grouped bottom sheet (Listing / Guest setup / Connections / Account), so a host can reach any of the 18 cards without scrolling. On phone/tablet, Settings uses the same **brand hero** shell as other admin pages (`AdminMobilePage`); Save appears as a hero icon when there are unsaved changes. On desktop, **Save Changes** appears in the page header actions when the form is dirty (no separate sticky footer bar).
+Incomplete sections still show a **red dot** on the in-page section nav and on the sidebar **Settings** link (for setup tracking). Below `lg`, the rail is replaced by a **Jump to <section>** button at the top of the content that opens a grouped bottom sheet (Listing / Guest setup / Connections / Account), so a host can reach any of the 18 cards without scrolling. On phone/tablet, Settings uses the same **brand hero** shell as other admin pages (`AdminMobilePage`); Save appears as a hero icon when there are unsaved changes. On desktop, **Save changes** appears in the page header actions when the form is dirty (no separate sticky footer bar).
 
 | Rule                                                           | Required? |
 | -------------------------------------------------------------- | --------- |
@@ -142,7 +142,7 @@ Incomplete sections still show a **red dot** on the in-page section nav and on t
 | Email automations (Team email, timing, toggles)                | Yes       |
 | Telegram integrations                                          | No        |
 
-Field-level errors appear **as you edit** a field (on change). After **Save Changes**, all remaining issues are shown at once. Section banners (orange) appear for **Integrations** when needed — not for sections with individual inputs.
+Field-level errors appear **as you edit** a field (on change). After **Save changes**, all remaining issues are shown at once. Section banners (orange) appear for **Integrations** when needed — not for sections with individual inputs.
 
 Logic: `ui/src/features/dashboard/org/lib/propertySettingsCompletion.ts`, `ui/src/features/dashboard/org/lib/propertySettingsFieldError.ts`, `ui/src/features/dashboard/org/lib/propertySettingsSave.ts`
 
@@ -190,11 +190,11 @@ property except for the listing-status leaf, so they can restore but not edit ot
 | Contact role  | `properties.settings.contactRole`  | Required                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | Phone         | `properties.settings.contactPhone` | Required; PH mobile `09XXXXXXXXX`                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | Email         | `properties.settings.contactEmail` | Required; valid email                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| Brand color   | `app_settings.brand_color`         | Optional override; empty = inherit org. Preset swatches, **From photos** (enabled after gallery images are uploaded — extracts accent from property photos), custom picker, Reset. Changing it marks Settings dirty and shows **Save Changes** (saved with operational basic section via `PATCH app-settings`)                                                                                                                                       |
+| Brand color   | `app_settings.brand_color`         | Optional override; empty = inherit org. Preset swatches in a horizontal strip on phone (all reachable without wrapping), **From photos** (enabled after gallery images are uploaded — extracts accent from property photos), custom picker, Reset. Changing it marks Settings dirty and shows **Save changes** (saved with operational basic section via `PATCH app-settings`)                                                                       |
 
 ### Save path
 
-1. UI draft → **Save Changes** → `update-property` (PATCH) for profile fields; brand color → `PATCH app-settings?property_id=`
+1. UI draft → **Save changes** → `update-property` (PATCH) for profile fields; brand color → `PATCH app-settings?property_id=`
 2. DB columns + merged `properties.settings` JSONB; brand color on `app_settings`
 
 ### Residence defaults (Azure North Residences)
@@ -344,7 +344,7 @@ The Guest Form sheet groups **Allow Pets** and **Allow Surprise Decor** as stand
 
 Section nav: **Guest Form** (after House Rules). UI: `PropertyGuestFormSettingsSection.tsx`.
 
-Save path: **Save Changes** → dirty `guest-form` section → `update-property` settings merge (`propertyProfileSettingsPatch`).
+Save path: **Save changes** → dirty `guest-form` section → `update-property` settings merge (`propertyProfileSettingsPatch`).
 
 Public exposure: resolved via **`get-guest-payment-info`** (same request as payment/GAF defaults) → `useGuestPaymentInfo()` on the guest form. Missing/invalid keys default to **`true`** (preserves legacy always-on behavior).
 
@@ -370,7 +370,7 @@ Page Editor (`embedded`) shows the same controls inline. Closing the Manage shee
 
 ## Staged Manage dialogs
 
-Amenities, House Rules, Payment and Building Forms open a Manage dialog that edits the page draft. Their primary button is **Done**, with the line **Applies when you save the page.**, because the settings PATCH (and the payment OTP) runs from the page-level **Save Changes**. Closing with unsaved dialog edits prompts to discard them.
+Amenities, House Rules, Payment and Building Forms open a Manage dialog that edits the page draft. Their primary button is **Done**, with the line **Applies when you save the page.**, because the settings PATCH (and the payment OTP) runs from the page-level **Save changes**. Closing with unsaved dialog edits prompts to discard them.
 
 ## Location
 
@@ -429,7 +429,7 @@ Hosts can seed up to **5** Airbnb/Facebook reviews (**Reviewer**, **Review**, an
 
 Platform defaults (all presets on): 5%→25, 10%→34, 15%→20, 20%→12, 25%→5, 50%→3, 100% / free stay→1.
 
-Host UI: compact summary (`Next-stay vouchers · {prize summary|Off}` · optional style label when not Reel) + **Manage** modal — an info callout that explains how vouchers work (claim one discount after checkout, host picks prizes/odds/reveal style, codes are applied manually, turning it off skips new stays while claimed codes keep working), enable toggle, and, when off, a one-line note to turn vouchers on to choose prizes. When on: **Style** picker with **animated preview thumbnails** (**Reel** / **Wheel** / **Flip**), full preset catalog (checkbox per discount), **Weight** steppers + live **Odds**, rate select, **Reset defaults**. Previews loop subtly in the modal (static when OS reduce motion is on). Save with page **Save Changes** (header actions when dirty) → `app-settings` PATCH (`vouchersEnabled`, `voucherPrizes`, `voucherRevealStyle`). Style-only edits in this section count as savable changes (not “No changes to save”). Guest `/sd-form` and guest-review animate with the chosen style (reel / wheel / flip). Claim rolls via `claim-sd-voucher`; awarded `next_stay_voucher_amount` stores the **percent** (1–100). Legacy peso `KAME-*` awards still display as ₱.
+Host UI: compact summary (`Next-stay vouchers · {prize summary|Off}` · optional style label when not Reel) + **Manage** modal — an info callout that explains how vouchers work (claim one discount after checkout, host picks prizes/odds/reveal style, codes are applied manually, turning it off skips new stays while claimed codes keep working), enable toggle, and, when off, a one-line note to turn vouchers on to choose prizes. When on: **Style** picker with **animated preview thumbnails** (**Reel** / **Wheel** / **Flip**), full preset catalog (checkbox per discount), **Weight** steppers + live **Odds**, rate select, **Reset defaults**. Previews loop subtly in the modal (static when OS reduce motion is on). Save with page **Save changes** (header actions when dirty) → `app-settings` PATCH (`vouchersEnabled`, `voucherPrizes`, `voucherRevealStyle`). Style-only edits in this section count as savable changes (not “No changes to save”). Guest `/sd-form` and guest-review animate with the chosen style (reel / wheel / flip). Claim rolls via `claim-sd-voucher`; awarded `next_stay_voucher_amount` stores the **percent** (1–100). Legacy peso `KAME-*` awards still display as ₱.
 
 **Superhost** is not configured per property — hosts earn it automatically org-wide (see [`docs/workflow/planned/superhost-program.md`](../../../../workflow/for-testing/superhost-program.md); progress lives under **Org settings → Trust**).
 
@@ -450,11 +450,11 @@ Compact card on Property Settings: collapsed rows show each method’s **provide
 
 ### Save path
 
-**Save Changes** → `app-settings` PATCH (admin JWT + `property_id` scope).
+**Save changes** → `app-settings` PATCH (admin JWT + `property_id` scope).
 
-When payment methods change since last save (account fields **or** any method QR), **Save Changes** opens a verification modal (no header close control — use **Discard changes**). OTP is **not** sent automatically: the host taps **Send OTP** first; only then does the 6-digit input and **Verify and save** appear. A code is emailed to the **org owner only** (branded property email shell; subject **`Payment verification code — {listing}`**; OTP digits use the listing brand color darkened as needed for readable contrast on white). Copy differs by actor: owner → “You, **Name** (Owner), are saving **Payment settings**…” with a self-review caution; team member → “Your team member, **Name** (Role), is saving…” with “contact that person before approving.” Any team member with `settings.payment:edit` can enter the code once the owner shares it. The server rejects payment PATCHes without a valid `settingsVerificationToken`. After a successful save, org + property team members receive a deduplicated notice email (listing name, actor name + role, timestamp Asia/Manila). Short liability copy remains in the modal footer.
+When payment methods change since last save (account fields **or** any method QR), **Save changes** opens a verification modal (no header close control — use **Discard changes**). OTP is **not** sent automatically: the host taps **Send OTP** first; only then does the 6-digit input and **Verify and save** appear. A code is emailed to the **org owner only** (branded property email shell; subject **`Payment verification code — {listing}`**; OTP digits use the listing brand color darkened as needed for readable contrast on white). Copy differs by actor: owner → “You, **Name** (Owner), are saving **Payment settings**…” with a self-review caution; team member → “Your team member, **Name** (Role), is saving…” with “contact that person before approving.” Any team member with `settings.payment:edit` can enter the code once the owner shares it. The server rejects payment PATCHes without a valid `settingsVerificationToken`. After a successful save, org + property team members receive a deduplicated notice email (listing name, actor name + role, timestamp Asia/Manila). Short liability copy remains in the modal footer.
 
-**Account name** uses the same full-name rules as property contact name (first + last, min 2 characters each). **QR code** is optional on every payment method (each method has its own uploader). When **Payment** is dirty, **Save Changes** stays visible but is **disabled** until required payment fields are valid (provider, account name, account number) — QR absence does not block save. Guest payment step and `{{gcash_payment_section}}` (ready-for-check-in) render account details always and QR images only when uploaded.
+**Account name** uses the same full-name rules as property contact name (first + last, min 2 characters each). **QR code** is optional on every payment method (each method has its own uploader). When **Payment** is dirty, **Save changes** stays visible but is **disabled** until required payment fields are valid (provider, account name, account number) — QR absence does not block save. Guest payment step and `{{gcash_payment_section}}` (ready-for-check-in) render account details always and QR images only when uploaded.
 
 Choosing a new QR image **stages** the file in Storage and updates the payment draft only — it does **not** write `app_settings` until OTP succeeds and Save completes. Closing the OTP modal without verifying (or a failed verified save) **reverts** the entire Payment section (methods, fields, and QR preview) to the last saved values. Discarding the Manage session likewise restores the draft to the snapshot from when Manage opened.
 
@@ -501,7 +501,7 @@ Per-property operational settings in `app_settings` (below Building Forms in the
 
 ### Automated sends
 
-Compact summary row on the Email automations card (`N of 12 on`) with **Manage**. **Manage** opens a `ResponsiveModal` (bottom sheet below `lg`) with the grouped list (`PropertyEmailAutomationTogglePanel`): **Your team**, **Building admin**, **Guest**, **Guest reviews**. Each row shows the recipient, a one-line **When** trigger, and an **Edit template** link straight to that email in Templates. Toggles edit the page draft live; the modal footer is **Done**, so the save still happens through the page **Save Changes**. Master switches in `app_settings.automation_toggles` (JSONB). Missing keys default to **enabled**, and a stored retired key (`emailParkingBroadcast`) is ignored. Saved via **`app-settings` PATCH**.
+Compact summary row on the Email automations card (`N of 12 on`) with **Manage**. **Manage** opens a `ResponsiveModal` (bottom sheet below `lg`) with the grouped list (`PropertyEmailAutomationTogglePanel`): **Your team**, **Building admin**, **Guest**, **Guest reviews**. Each row shows the recipient, a one-line **When** trigger, and an **Edit template** link straight to that email in Templates. Toggles edit the page draft live; the modal footer is **Done**, so the save still happens through the page **Save changes**. Master switches in `app_settings.automation_toggles` (JSONB). Missing keys default to **enabled**, and a stored retired key (`emailParkingBroadcast`) is ignored. Saved via **`app-settings` PATCH**.
 
 Seven rows are plan-gated (`emailGafRequest`, `emailBookingAcknowledgement`, `emailPetRequest`, `emailReadyForCheckin`, `emailSdRefundCheckout`, `emailPreArrivalReminder`, `emailBuildingAdminCancellation`): they show a plan pill and a disabled switch that opens the upgrade modal. **New booking alert**, **Review request**, **Review reminder** and **Parking reminder** stay free.
 
@@ -518,7 +518,7 @@ Own nav section above **Integrations** (`PropertySearchSettingsSection`). Stacke
 
 - Placeholders show the exact generated title and description from name, unit type, city, guests, bedrooms, and amenities.
 - Preview updates as you type (result line, title, description). Pasted markup is stripped.
-- Saves with the normal Settings save as section `search` (`settings.basicInfo:edit`). Dirty Search preview alone is enough to enable **Save Changes**.
+- Saves with the normal Settings save as section `search` (`settings.basicInfo:edit`). Dirty Search preview alone is enough to enable **Save changes**.
 - Unsaved leave prompts Save / Discard / Keep editing.
 - Parking still shows the same card under Basic Information (`SearchPreviewFields`).
 
@@ -620,7 +620,7 @@ Keep UI and edge copies in sync when changing rules.
 
 ---
 
-**Unsaved changes.** Leaving with unsaved edits (another menu item, browser back, F5 / Cmd+Ctrl+R, closing the tab) asks to **Save & leave**, **Discard**, or **Keep editing** only after you change a field on this visit. Load-time sync never prompts or enables **Save Changes**: GAF tower/unit from the profile, unit-type defaults (bedrooms, bathrooms, max adults/children), a stale preferred owner parking healed to the first active listing, and the initial map auto-locate for an address with no pin. Save & leave runs the same validation as Save and stays on the page if it fails. Shared guard: [`unsaved-changes.md`](../../../../architecture/unsaved-changes.md).
+**Unsaved changes.** Leaving with unsaved edits (another menu item, browser back, F5 / Cmd+Ctrl+R, closing the tab) asks to **Save & leave**, **Discard**, or **Keep editing** only after you change a field on this visit. Load-time sync never prompts or enables **Save changes**: GAF tower/unit from the profile, unit-type defaults (bedrooms, bathrooms, max adults/children), a stale preferred owner parking healed to the first active listing, and the initial map auto-locate for an address with no pin. Save & leave runs the same validation as Save and stays on the page if it fails. Shared guard: [`unsaved-changes.md`](../../../../architecture/unsaved-changes.md).
 
 ## Testing
 

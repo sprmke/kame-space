@@ -58,21 +58,21 @@ export const settingsPaths = {
 } as const;
 
 export const propertySettingsSections = [
-  { id: 'section-basic', label: 'Basic Information' },
-  { id: 'section-details', label: 'Property Details' },
-  { id: 'section-media', label: 'Photos & Videos' },
+  { id: 'section-basic', label: 'Basic information' },
+  { id: 'section-details', label: 'Property details' },
+  { id: 'section-media', label: 'Photos & videos' },
   { id: 'section-amenities', label: 'Amenities' },
-  { id: 'section-house-rules', label: 'House Rules' },
+  { id: 'section-house-rules', label: 'House rules' },
   { id: 'section-cancellation', label: 'Cancellation' },
   { id: 'section-location', label: 'Location' },
   { id: 'section-branding', label: 'Socials' },
   { id: 'section-search', label: 'Search preview' },
-  { id: 'section-guest-form', label: 'Guest Form' },
+  { id: 'section-guest-form', label: 'Guest form' },
   { id: 'section-guest-experience', label: 'Guest experience' },
   { id: 'section-guest-rewards', label: 'Reviews & vouchers' },
   { id: 'section-payment', label: 'Payment' },
-  { id: 'section-building-forms', label: 'Building Forms' },
-  { id: 'section-email-automations', label: 'Email Automations' },
+  { id: 'section-building-forms', label: 'Building forms' },
+  { id: 'section-email-automations', label: 'Email automations' },
   { id: 'section-integrations', label: 'Integrations' },
   { id: 'section-activity', label: 'Activity' },
   { id: 'section-danger', label: 'Listing status' },
@@ -88,15 +88,15 @@ export const orgSettingsSections = [
 ] as const;
 
 export const parkingSettingsSections = [
-  { id: 'section-basic', label: 'Basic Information' },
+  { id: 'section-basic', label: 'Basic information' },
   { id: 'section-media', label: 'Photos' },
-  { id: 'section-details', label: 'Parking Details' },
+  { id: 'section-details', label: 'Parking details' },
   { id: 'section-features', label: 'Amenities' },
   { id: 'section-location', label: 'Location' },
   { id: 'section-automations', label: 'Automations' },
   { id: 'section-integrations', label: 'Integrations' },
   { id: 'section-activity', label: 'Activity' },
-  { id: 'section-danger', label: 'Danger Zone' },
+  { id: 'section-danger', label: 'Danger zone' },
 ] as const;
 
 export type SettingsScope = 'org' | 'property' | 'parking';
@@ -116,6 +116,16 @@ export async function installSettingsMocks(
     permissions?: 'full_access' | 'operations' | 'read_only';
   }
 ): Promise<void> {
+  // Port-independent consent: the shared storage state is keyed to :4173, so a local
+  // run on a sticky port would otherwise show the consent bar over form controls.
+  await page.addInitScript(() => {
+    try {
+      window.localStorage.setItem('kh-cookie-consent', 'declined');
+    } catch {
+      /* ignore */
+    }
+  });
+
   if (scope === 'parking') {
     await installParkingFlowMocks(page, createParkingFlowState());
     await page.route('**/functions/v1/update-parking*', async (route) => {
@@ -185,7 +195,42 @@ async function installSettingsSaveMocks(page: Page): Promise<void> {
   });
 
   await page.route('**/functions/v1/list-activity-log*', async (route) => {
-    await fulfillJson(route, { success: true, data: { entries: [], nextCursor: null } });
+    // ActivityLogResponse is `{ events, nextCursor }`; a wrong shape crashes the dialog.
+    await fulfillJson(route, { success: true, data: { events: [], nextCursor: null } });
+  });
+
+  await page.route('**/functions/v1/get-residence-unit-types*', async (route) => {
+    await fulfillJson(route, {
+      success: true,
+      data: {
+        unitTypes: [
+          {
+            id: 'studio',
+            label: 'Studio',
+            bedrooms: 1,
+            bathrooms: 1,
+            maxAdults: 4,
+            maxChildren: 1,
+          },
+          {
+            id: '1br',
+            label: '1 bedroom',
+            bedrooms: 1,
+            bathrooms: 1,
+            maxAdults: 6,
+            maxChildren: 2,
+          },
+          {
+            id: '2br',
+            label: '2 bedroom',
+            bedrooms: 2,
+            bathrooms: 1,
+            maxAdults: 8,
+            maxChildren: 3,
+          },
+        ],
+      },
+    });
   });
 
   await page.route('**/functions/v1/update-organization*', async (route) => {

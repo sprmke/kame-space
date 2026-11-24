@@ -77,7 +77,7 @@ export function AiSettingsCreditsBar({
       <div className="flex items-center justify-between gap-3 text-sm">
         <span className="text-muted-foreground font-medium">Credits used this month</span>
         <span className="text-foreground font-semibold tabular-nums">
-          ~{Math.round(consumed).toLocaleString()} / {limit.toLocaleString()}
+          {Math.round(consumed).toLocaleString()} / {limit.toLocaleString()}
         </span>
       </div>
       <Progress

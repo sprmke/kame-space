@@ -171,64 +171,71 @@ function BrandColorControls({
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      {BRAND_COLOR_PRESETS.map((preset) => {
-        const isSelected = pickerValue.toLowerCase() === preset.hex.toLowerCase();
-        return (
-          <button
-            key={preset.hex}
-            type="button"
-            disabled={disabled}
-            onClick={() => applyPresetOrReset(preset.hex)}
-            className={cn(
-              'border-border flex size-11 shrink-0 items-center justify-center rounded-full border shadow-sm transition-transform',
-              'disabled:pointer-events-none disabled:opacity-50',
-              isSelected && 'ring-foreground ring-offset-background ring-2 ring-offset-2'
-            )}
-            style={{ backgroundColor: preset.hex }}
-            aria-label={`Use ${preset.label} brand color`}
-            aria-pressed={isSelected}
-          >
-            {isSelected && <Check className="size-4 text-white drop-shadow-sm" aria-hidden />}
-          </button>
-        );
-      })}
-      {photoUrls ? (
-        <PhotoBrandColorSwatch
-          disabled={disabled}
-          photoUrls={photoUrls}
-          pickerValue={pickerValue}
-          extractedHex={extractedHex}
-          onExtractedHexChange={setExtractedHex}
-          onChange={applyPhotoExtract}
-        />
-      ) : null}
-      <label
-        htmlFor={`${id}-picker`}
-        className={cn(
-          'border-border relative flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full border shadow-sm',
-          disabled && 'pointer-events-none opacity-50',
-          isCustomSelected && 'ring-foreground ring-offset-background ring-2 ring-offset-2'
-        )}
-        style={{ background: RAINBOW_SWATCH_BACKGROUND }}
+    <div className="flex items-center gap-2">
+      {/* One horizontal strip on phone keeps all swatches reachable without three rows. */}
+      <div
+        className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto overscroll-x-contain pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        role="group"
+        aria-label="Brand color presets"
       >
-        {isCustomSelected && <Check className="size-4 text-white drop-shadow-sm" aria-hidden />}
-        <input
-          id={`${id}-picker`}
-          type="color"
-          value={pickerValue}
-          onChange={(event) => applyCustomPicker(event.target.value)}
-          disabled={disabled}
-          className="absolute inset-0 size-full cursor-pointer opacity-0"
-          aria-label="Pick a custom brand color"
-        />
-      </label>
+        {BRAND_COLOR_PRESETS.map((preset) => {
+          const isSelected = pickerValue.toLowerCase() === preset.hex.toLowerCase();
+          return (
+            <button
+              key={preset.hex}
+              type="button"
+              disabled={disabled}
+              onClick={() => applyPresetOrReset(preset.hex)}
+              className={cn(
+                'border-border flex size-11 shrink-0 items-center justify-center rounded-full border shadow-sm transition-transform',
+                'disabled:pointer-events-none disabled:opacity-50',
+                isSelected && 'ring-foreground ring-offset-background ring-2 ring-offset-2'
+              )}
+              style={{ backgroundColor: preset.hex }}
+              aria-label={`Use ${preset.label} brand color`}
+              aria-pressed={isSelected}
+            >
+              {isSelected && <Check className="size-4 text-white drop-shadow-sm" aria-hidden />}
+            </button>
+          );
+        })}
+        {photoUrls ? (
+          <PhotoBrandColorSwatch
+            disabled={disabled}
+            photoUrls={photoUrls}
+            pickerValue={pickerValue}
+            extractedHex={extractedHex}
+            onExtractedHexChange={setExtractedHex}
+            onChange={applyPhotoExtract}
+          />
+        ) : null}
+        <label
+          htmlFor={`${id}-picker`}
+          className={cn(
+            'border-border relative flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full border shadow-sm',
+            disabled && 'pointer-events-none opacity-50',
+            isCustomSelected && 'ring-foreground ring-offset-background ring-2 ring-offset-2'
+          )}
+          style={{ background: RAINBOW_SWATCH_BACKGROUND }}
+        >
+          {isCustomSelected && <Check className="size-4 text-white drop-shadow-sm" aria-hidden />}
+          <input
+            id={`${id}-picker`}
+            type="color"
+            value={pickerValue}
+            onChange={(event) => applyCustomPicker(event.target.value)}
+            disabled={disabled}
+            className="absolute inset-0 size-full cursor-pointer opacity-0"
+            aria-label="Pick a custom brand color"
+          />
+        </label>
+      </div>
       <Button
         type="button"
         variant="outline"
         size="sm"
         disabled={disabled || isAtResetValue}
-        className="settings-action"
+        className="settings-action shrink-0"
         onClick={() => applyPresetOrReset(resetValue)}
         aria-label="Reset brand color to default"
       >

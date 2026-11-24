@@ -36,6 +36,18 @@ export function readSetupGuidePersistedState(
   };
 }
 
+/**
+ * Normalizes the `setup-guide-state` PATCH response into a patch.
+ * A missing or malformed `setupGuide` must not crash the page: an older function
+ * version or a transient empty response returns `{ success: true, data: {} }`.
+ */
+export function setupGuidePatchFromWriteResult(result: unknown): SetupGuideStatePatch {
+  if (!result || typeof result !== 'object') return {};
+  const setupGuide = (result as { setupGuide?: unknown }).setupGuide;
+  if (!setupGuide || typeof setupGuide !== 'object' || Array.isArray(setupGuide)) return {};
+  return setupGuide as SetupGuideStatePatch;
+}
+
 /** Patch shape accepted by the future `setup-guide-state` edge function. */
 export type SetupGuideStatePatch = Partial<{
   dismissedAt: string | null;

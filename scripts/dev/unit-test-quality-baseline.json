@@ -207,7 +207,6 @@
     "ui/src/features/dashboard/property/lib/dashboardPeriod.ts",
     "ui/src/features/dashboard/property/lib/resolvePropertyDashboardHref.ts",
     "ui/src/features/dashboard/setup-guide/lib/setupGuideIssuesStore.ts",
-    "ui/src/features/dashboard/setup-guide/lib/setupGuideState.ts",
     "ui/src/features/dashboard/super-admin/lib/approvalReviewTier.ts",
     "ui/src/features/dashboard/super-admin/lib/developmentGuestInfo.ts",
     "ui/src/features/dashboard/super-admin/lib/developmentLocation.ts",

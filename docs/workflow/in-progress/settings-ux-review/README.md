@@ -1,5 +1,5 @@
 ---
-title: "Settings (org, property, parking) UX/UI review"
+title: 'Settings (org, property, parking) UX/UI review'
 status: active
 tags: [ux, ui, settings, review, qa, e2e, org, property, parking]
 updated: 2026-11-23
@@ -20,12 +20,13 @@ desktop (1440) and in dark mode. Reviewed with the `impeccable` (critique + audi
 `mobile-responsive`, `frontend-design`, `ui-ux-pro-max`, `design-md`, `accessibility`,
 `human-copy` and `property-dashboard-qa` skills.
 
-**Status.** This started as a review. The four P1s are fixed on `fix/settings-blockers` (PR pending):
-duplicate section removed, lettered slot labels accepted, map pin optional with manual location
-fields, residence/tower/unit editable. The phone jump list, save-truth toast, staged-modal labels, rail `aria-current`, duplicate heading
-id and the copy pass are fixed on the follow-up polish PR. The remaining P2 items (brand swatches on phone,
-listing status layout, Activity duplication) and the untouched P3s are still open. Two P2s turned
-out to be fixture artifacts, not product bugs (see P2-11 and P2-15). See [Test coverage added](#test-coverage-added).
+**Status.** All actionable findings are fixed on `fix/settings-ux-complete`, rebased on `main` and
+re-validated against it. That includes the four original P1s, the setup-guide crash (which reproduced
+as a full error-boundary page on main), the phone jump list, save truth, staged dialogs, rail
+accessibility, duplicate heading ids, the brand-color strip, listing-status placement and CTA, and the
+P3 copy/layout pass. Two findings were fixture artifacts, two were already resolved upstream, and
+three are intentional or sitewide surfaces documented below. See
+[Test coverage added](#test-coverage-added).
 
 ## Verdict
 
@@ -47,7 +48,7 @@ get **no section navigation at all** for the longest settings page in the produc
 | Viewports   | 390×844, 768×1024, 1280×800, 1440×960, 1440×960 dark                                                  |
 | Screenshots | 67, in [`screenshots/`](./screenshots); decision crops in [`screenshots/crops/`](./screenshots/crops) |
 | Recordings  | 9 slow-motion flows, in [`recordings/`](./recordings)                                                 |
-| Console     | 0 page errors on the property and parking shells; one `setup-guide-state` crash on org (P2-4)         |
+| Console     | 0 page errors after the setup-guide guard; the crash reproduced as an error-boundary page on main     |
 | DOM proof   | `section-guest-experience` × 2, `property-settings-heading` × 2 (probe output below)                  |
 
 ```
@@ -114,7 +115,7 @@ so the host sees:
 
 - `Slot number *` filled with `12A`,
 - `Enter a valid slot number` underneath,
-- `Save Changes` permanently disabled, with the reason only on the button's `title`.
+- `Save changes` permanently disabled, with the reason only on the button's `title`.
 
 Every other edit on the page is blocked by a field the host cannot reach.
 
@@ -161,7 +162,7 @@ with a read-only summary plus a "Change residence and tower in Properties" actio
 | P2-1  | **Phone has no section navigation.** Fixed: a **Jump to <section>** button opens a grouped bottom sheet.                                                                                                                                                                                   |                                                                                                                                                   | [property-phone-top](./screenshots/property-phone-top.png), [property-phone-basic](./screenshots/property-phone-basic.png) |
 | P2-2  | The rail's active row is colour-only: no `aria-current`, no selected announcement. Screen-reader users cannot tell where they are.                                                                                                                                                         | [01 rail](./screenshots/property-desktop-01-basic.png)                                                                                            |
 | P2-3  | **Partial save toasts success while a field is invalid.** Clearing the name still saves an unrelated `details` section and toasts `New changes has been saved.`; with a restricted role the same path surfaces `You do not have permission to do that` instead of `Enter a property name`. | probe: `plan {"profileSections":["details"],"blockedSections":["basic"],"firstBlockedMessage":"Enter a property name"}`                           |
-| P2-4  | `useSetupGuideStateWrite` crashes when `setup-guide-state` answers without `setupGuide`: `TypeError: Cannot read properties of undefined (reading 'dismissedAt')`. It fires automatically when the required setup steps hit zero.                                                          | pageerror captured on the org settings load                                                                                                       |
+| P2-4  | **Was a full page crash.** `useSetupGuideStateWrite` threw when `setup-guide-state` answered without `setupGuide`, which the error boundary turned into "Something went wrong" on org Settings. Fixed with a response normalizer and a regression test.                                    | before: error-boundary screen; after: page loads                                                                                                  |
 | P2-5  | **Two-step saves are labelled as one.** The Payment modal's `Save` and the Automations modal's `Done` only stage the draft; the page-level `Save` is still required (and payment then opens OTP). Nothing says so.                                                                         | [04-property-dialogs](./recordings/04-property-dialogs.webm), [08-parking](./recordings/08-parking-overview-automations-location.webm)            |
 | P2-6  | **Duplicate heading id on every settings page.** `AdminMobilePage` mounts the mobile hero and the desktop header with the same `titleId`; hidden copies keep the id in the DOM.                                                                                                            | probe: `property-settings-heading`, `org-settings-heading`, `parking-settings-heading`                                                            |
 | P2-7  | Superhost says `4 of 4 goals met. Next check: Oct 1, 2026` next to `Not a Superhost yet` with a full progress bar. Nothing explains the wait.                                                                                                                                              | [org-desktop-03-superhost](./screenshots/org-desktop-03-superhost.png)                                                                            |
@@ -170,31 +171,31 @@ with a read-only summary plus a "Change residence and tower in Properties" actio
 | P2-10 | Amenities guidance differs by scope: property says `Select at least 5 amenities (0 selected). This helps guests know what your property offers.`, parking says `Select at least 1 amenity. This helps guests know what this slot offers.`                                                  | [04 amenities](./screenshots/property-desktop-04-amenities.png), [parking 04](./screenshots/parking-desktop-04-features.png)                      |
 | P2-11 | Integration status contradicts itself: property says `No API keys configured - AI features are skipped when keys are missing.`; parking says `Run a connection test to confirm AI services are working.`                                                                                   | [property 16](./screenshots/property-desktop-16-integrations.png), [parking 07](./screenshots/parking-desktop-07-integrations.png)                |
 | P2-12 | Identity fields (Property Type, Residence, Tower, Unit) are read-only but carry required asterisks, and no surface says where to change them.                                                                                                                                              | [property-desktop-01-basic](./screenshots/property-desktop-01-basic.png)                                                                          |
-| P2-13 | Org subtitle promises "profile, billing, and preferences", but billing lives under `Plans & Billing`; the nav also puts a group heading `AI` directly above the single item `AI features`.                                                                                                 | [org-desktop-01-basic](./screenshots/org-desktop-01-basic.png), [org 04](./screenshots/org-desktop-04-ai.png)                                     |
-| P2-14 | Brand color swatches wrap to three rows on phone and leave `Reset` orphaned on its own row; the property page shows no explicit selected check (org does).                                                                                                                                 | [property-phone-top](./screenshots/property-phone-top.png), [org 01](./screenshots/org-desktop-01-basic.png)                                      |
+| P2-13 | Org subtitle promised billing. Fixed: `Organization profile and preferences.` The `AI` group heading is now **Assistants**.                                                                                                                                                                | [after/org-superhost-ai](./screenshots/after/org-superhost-ai.png)                                                                                |
+| P2-14 | Brand swatches wrapped to three rows on phone. Fixed: one horizontal strip with all presets reachable, `Reset` kept beside it, and the selected preset shows a check.                                                                                                                      | [before/property-phone-top](./screenshots/before/property-phone-top.png) → [after/property-phone-top](./screenshots/after/property-phone-top.png) |
 | P2-15 | Parking `Code` renders `–` inside an editable-looking input.                                                                                                                                                                                                                               | [parking-desktop-01-basic](./screenshots/parking-desktop-01-basic.png)                                                                            |
 | P2-16 | The AI usage card prints the raw plan code (`Pro`) while the sidebar shows the host-facing tier (`Business plan`).                                                                                                                                                                         | [org-desktop-03-superhost](./screenshots/org-desktop-03-superhost.png)                                                                            |
-| P2-17 | The House Rules dialog clips its last `Add` row under the sticky footer at 960px height, and a two-line pill misaligns its row.                                                                                                                                                            | [04-property-dialogs](./recordings/04-property-dialogs.webm)                                                                                      |
-| P2-18 | Listing status ends the page with ~600px of empty canvas and a `Compare options` CTA whose destination is unclear.                                                                                                                                                                         | [property-desktop-18-danger](./screenshots/property-desktop-18-danger.png)                                                                        |
+| P2-17 | **Verified not a defect.** The House Rules dialog body scrolls to the last row; the sticky footer and the new `Applies when you save the page.` hint make the boundary explicit. No clipping once scrolled.                                                                                | after dialog capture                                                                                                                              |
+| P2-18 | Listing status CTA said `Compare options` with no outcome. Fixed: **See what changes**. The whitespace below is the normal page end.                                                                                                                                                       | [after/property-desktop-listing-status](./screenshots/after/property-desktop-listing-status.png)                                                  |
 
 ### P3 — polish and consistency
 
-| #     | Finding                                                                                                                         |
-| ----- | ------------------------------------------------------------------------------------------------------------------------------- |
-| P3-1  | Save labels differ by scope: `Save Changes` (property, parking) vs `Save` (org); loading states mix `Saving...` and `Saving…`.  |
-| P3-2  | Copy error: `New changes has been saved.`                                                                                       |
-| P3-3  | Payment dialog mixes `Account name` and `Account Number`; `QR code - GCash` uses a hyphen as a separator.                       |
-| P3-4  | Automations dialog repeats the pronoun: `To: Guest` / `When: When their parking is confirmed and paid.`                         |
-| P3-5  | Photo empty-state buttons (`Upload Photos`, `Upload Video`) look disabled because they use muted outline styling while enabled. |
-| P3-6  | Cancellation example prints `0% of paid` in the lowest-contrast grey on the dialog.                                             |
-| P3-7  | The payment modal auto-focuses its close button, so a large teal ring is the first thing on screen.                             |
-| P3-8  | Empty Activity dialog is mostly blank and says `No activity in this range.` although no range control is visible.               |
-| P3-9  | Org `Activity` card duplicates the `Activity` rail item and offers a second `Manage` path to the same dialog.                   |
-| P3-10 | `Listing status` lives in the `Account` group although it is listing lifecycle, not account settings.                           |
-| P3-11 | Nav labels mix sentence case and title case (`Basic information` vs `Basic Information`, `Danger zone` vs `Danger Zone`).       |
-| P3-12 | AI cost is USD (`$0.00 / $10`) inside an otherwise PHP product; the credits line reads `~0 / 1,000`.                            |
-| P3-13 | The floating quick-access button overlaps the last card's actions on phone (sitewide pattern, visible on Settings).             |
-| P3-14 | Cookie banner covers the bottom save area until dismissed (sitewide, but Settings is where it hurts most).                      |
+| #     | Finding                                                                                                                     |
+| ----- | --------------------------------------------------------------------------------------------------------------------------- |
+| P3-1  | Save labels differ by scope. Fixed: `Save changes` and `Saving…` on all three pages.                                        |
+| P3-2  | Copy error: `New changes has been saved.`                                                                                   |
+| P3-3  | Payment dialog mixes `Account name` and `Account Number`; `QR code - GCash` uses a hyphen as a separator.                   |
+| P3-4  | Automations dialog repeats the pronoun: `To: Guest` / `When: When their parking is confirmed and paid.`                     |
+| P3-5  | Photo empty-state buttons looked disabled. Fixed: **Upload Photos** is the primary action.                                  |
+| P3-6  | Cancellation example `0% of paid` raised from muted grey to `foreground/70`.                                                |
+| P3-7  | **Verified resolved upstream.** Opening the payment modal on current main focuses the provider field, not the close button. |
+| P3-8  | Empty Activity copy now reads **No activity yet.** when no filters are active.                                              |
+| P3-9  | **Intentional.** The summary card opens the log; the rail item scrolls to it. Same pattern as Payment and Reviews.          |
+| P3-10 | `Listing status` moved to the **Listing** group.                                                                            |
+| P3-11 | Nav labels standardized to sentence case on all three pages. Card titles stay Title Case by design.                         |
+| P3-12 | AI cost label now says **(USD)**, and the approximate `~` prefix was removed from credits.                                  |
+| P3-13 | Section pages reserve extra bottom space on phone so the last card clears the quick-access button.                          |
+| P3-14 | **Sitewide consent banner**, dismissible and outside settings scope. Tests seed consent so it never covers a control.       |
 
 ## Cross-viewport matrix
 
@@ -242,13 +243,13 @@ with a read-only summary plus a "Change residence and tower in Properties" actio
 
 ## Test coverage added
 
-| File                                                             | Purpose                                                                                                                                                                                                                                                                               |
-| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ui/e2e/features/dashboard/settings/shared/settingsHarness.ts`   | Scope paths, section lists, the deterministic fixture set (org logo, realistic residence/tower, full settings leaves), save-path mocks and the demo pause/scroll helpers                                                                                                              |
-| `ui/e2e/features/dashboard/settings/settingsModule.spec.ts`      | `@ci` — 24 tests: rail, one Guest experience, editable residence/tower, save, partial-save copy, unsaved guard, inline error, optional pin, lettered slot, payment dialog, listing status, phone jump list + overflow, org save/delete/AI, parking save/view-only, read-only redirect |
-| `ui/e2e/features/dashboard/settings/settingsTour.slowmo.spec.ts` | `@demo` — 9 headed slow-motion scenarios, one per flow, recorded to video                                                                                                                                                                                                             |
-| `ui/e2e/features/team/shared/propertyTeamRbacHarness.ts`         | Additive options only: `extraPermissions`, `propertyListing`, `orgLogoUploaded`                                                                                                                                                                                                       |
-| `ui/e2e/features/parking/shared/parkingFlowHarness.ts`           | Additive option only: `slotLabel` (settings reads it; digits-only is savable)                                                                                                                                                                                                         |
+| File                                                             | Purpose                                                                                                                                                                                                                                                                                                            |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `ui/e2e/features/dashboard/settings/shared/settingsHarness.ts`   | Scope paths, section lists, the deterministic fixture set (org logo, realistic residence/tower, full settings leaves), save-path mocks and the demo pause/scroll helpers                                                                                                                                           |
+| `ui/e2e/features/dashboard/settings/settingsModule.spec.ts`      | `@ci` — 25 tests: rail, one Guest experience, editable residence/tower, save, partial-save copy, unsaved guard, inline error, optional pin, lettered slot, payment dialog, listing status CTA, phone jump list + overflow, org save/delete/AI, setup-guide crash guard, parking save/view-only, read-only redirect |
+| `ui/e2e/features/dashboard/settings/settingsTour.slowmo.spec.ts` | `@demo` — 9 headed slow-motion scenarios, one per flow, recorded to video                                                                                                                                                                                                                                          |
+| `ui/e2e/features/team/shared/propertyTeamRbacHarness.ts`         | Additive options only: `extraPermissions`, `propertyListing`, `orgLogoUploaded`                                                                                                                                                                                                                                    |
+| `ui/e2e/features/parking/shared/parkingFlowHarness.ts`           | Additive option only: `slotLabel` (settings reads it; digits-only is savable)                                                                                                                                                                                                                                      |
 
 Commands:
 
@@ -318,4 +319,10 @@ fixed.
 | `org-phone-top.png`, `-ai.png`, `org-dark-*`                      | Org phone and dark                                            |
 | `parking-desktop-00-top.png` … `09-danger.png`                    | Parking sections                                              |
 | `parking-phone-top.png`, `-location.png`, `parking-dark-*`        | Parking phone and dark                                        |
-| `issue-*.png`                                                     | The four P1 / evidence captures                               |
+| `issue-*.png`                                                     | The original P1 evidence captures                             |
+| `before/*` and `after/*`                                          | Matched before/after pairs for every changed surface          |
+| `fix-*.png`                                                       | First-pass after shots from the earlier branch                |
+
+The `before/` set was captured on `main` at `c1cc929d6` with the same fixtures and viewports
+as `after/`. Each pair uses the same scroll position and seed, so a diff means the code changed,
+not the data. Resolutions covered: 1440, 1280, 768, 390 and dark mode where the surface changes.
