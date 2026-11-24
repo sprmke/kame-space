@@ -47,15 +47,18 @@ export type SetupGuideStatePatch = Partial<{
 
 export function mergeSetupGuidePersistedState(
   current: SetupGuidePersistedState,
-  patch: SetupGuideStatePatch
+  patch: SetupGuideStatePatch | null | undefined
 ): SetupGuidePersistedState {
+  // A success response with no `setupGuide` used to throw here, which surfaced as an
+  // uncaught page error on any org page carrying a cached-but-empty state.
+  const next = patch ?? {};
   return {
     version: SETUP_GUIDE_STATE_VERSION,
-    dismissedAt: patch.dismissedAt !== undefined ? patch.dismissedAt : current.dismissedAt,
-    completedAt: patch.completedAt !== undefined ? patch.completedAt : current.completedAt,
-    lastStepId: patch.lastStepId !== undefined ? patch.lastStepId : current.lastStepId,
-    skippedSteps: patch.skippedSteps !== undefined ? patch.skippedSteps : current.skippedSteps,
-    reviewedSteps: patch.reviewedSteps !== undefined ? patch.reviewedSteps : current.reviewedSteps,
+    dismissedAt: next.dismissedAt !== undefined ? next.dismissedAt : current.dismissedAt,
+    completedAt: next.completedAt !== undefined ? next.completedAt : current.completedAt,
+    lastStepId: next.lastStepId !== undefined ? next.lastStepId : current.lastStepId,
+    skippedSteps: next.skippedSteps !== undefined ? next.skippedSteps : current.skippedSteps,
+    reviewedSteps: next.reviewedSteps !== undefined ? next.reviewedSteps : current.reviewedSteps,
   };
 }
 
