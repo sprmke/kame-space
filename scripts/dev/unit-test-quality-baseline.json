@@ -50,7 +50,6 @@
     "ui/src/features/dashboard/bookings/lib/templatePlaceholderCatalog.ts",
     "ui/src/features/dashboard/bookings/lib/templatePlaceholderHighlight.ts",
     "ui/src/features/dashboard/bookings/lib/templatePreviewReadonly.ts",
-    "ui/src/features/dashboard/bookings/lib/workflowActionButtonStyles.ts",
     "ui/src/features/dashboard/bookings/lib/workflowAdvanceMode.ts",
     "ui/src/features/dashboard/bookings/lib/workflowEmailTriggerAvailability.ts",
     "ui/src/features/dashboard/bookings/lib/workflowStageDeck.ts",
