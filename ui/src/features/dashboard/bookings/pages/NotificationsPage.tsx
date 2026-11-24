@@ -23,6 +23,7 @@ import {
   type ManageTab,
 } from '@/features/dashboard/notifications/components/NotificationsManage';
 import { NotificationsTelegramHistory } from '@/features/dashboard/notifications/components/NotificationsTelegramHistory';
+import { TelegramModuleEditLock } from '@/features/dashboard/notifications/components/TelegramModuleEditLock';
 import { useNotificationsHubView } from '@/features/dashboard/notifications/hooks/useNotificationsHubView';
 import { usePropertyTelegramHubStats } from '@/features/dashboard/notifications/hooks/useTelegramHubStats';
 import { NOTIFICATIONS_HOW_IT_WORKS } from '@/features/dashboard/notifications/lib/notificationsHelpCopy';
@@ -37,7 +38,6 @@ import {
 import { HowItWorksButton } from '@/components/help/HowItWorksButton';
 import { AdminMobilePage } from '@/components/mobile/MobileBrandHero';
 import { propertyDashboardPageTitle, usePageTitle } from '@/lib/pageTitle';
-import { cn } from '@/lib/utils';
 
 const NOTIFICATION_MODULES = [
   'chat',
@@ -68,11 +68,14 @@ const MODULE_DESCRIPTIONS: Record<PropertyNotificationModule, string> = {
 export function NotificationsPage() {
   const tenant = useOptionalOrgContext();
   const { data: access } = usePropertyPermissions();
+  const accessReady = access !== undefined;
   const canEditGlobalBot = hasAnyNotificationModuleEditPermission(access?.permissions);
   const canEditModule = (module: PropertyNotificationModule) =>
     hasPropertyPermission(access?.permissions, NOTIFICATION_MODULE_EDIT_PERMISSION[module]);
+  const someModulesLocked =
+    accessReady && NOTIFICATION_MODULES.some((module) => !canEditModule(module));
 
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const moduleParam = searchParams.get('module');
   const deepLinkModule = isNotificationModule(moduleParam) ? moduleParam : null;
   const hub = useNotificationsHubView({ module: deepLinkModule });
@@ -99,6 +102,15 @@ export function NotificationsPage() {
     setManageOpen(true);
   };
 
+  /** Drop `?module=` on close so a refresh or Back does not reopen the sheet. */
+  const onManageOpenChange = (next: boolean) => {
+    setManageOpen(next);
+    if (next || !searchParams.has('module')) return;
+    const params = new URLSearchParams(searchParams);
+    params.delete('module');
+    setSearchParams(params, { replace: true, preventScrollReset: true });
+  };
+
   return (
     <AdminMobilePage
       title="Notifications"
@@ -121,21 +133,25 @@ export function NotificationsPage() {
 
       <NotificationsManageDialog
         open={manageOpen}
-        onOpenChange={setManageOpen}
+        onOpenChange={onManageOpenChange}
         tab={manageTab}
         onTabChange={setManageTab}
         focusModuleId={deepLinkModule}
+        deliveryEditable={canEditGlobalBot}
         telegramContent={
           <TelegramNotificationsGlobalBotProvider>
             <TelegramNotificationsTelegramSection
               helpAction={<TelegramHelpDialog defaultTab="bot-token" triggerLabel="Setup Guide" />}
             >
-              <div
-                className={cn(!canEditGlobalBot && 'pointer-events-none opacity-60')}
-                aria-disabled={!canEditGlobalBot || undefined}
-              >
+              {someModulesLocked ? (
+                <p className="text-muted-foreground text-xs sm:text-sm">
+                  Some modules are view only. Ask the property owner for edit access.
+                </p>
+              ) : null}
+
+              <TelegramModuleEditLock locked={accessReady && !canEditGlobalBot}>
                 <TelegramGlobalBotTokenCard />
-              </div>
+              </TelegramModuleEditLock>
 
               <AdminSection
                 id="chat"
@@ -143,12 +159,9 @@ export function NotificationsPage() {
                 icon={MessageCircle}
                 description={MODULE_DESCRIPTIONS.chat}
               >
-                <div
-                  className={cn(!canEditModule('chat') && 'pointer-events-none opacity-60')}
-                  aria-disabled={!canEditModule('chat') || undefined}
-                >
+                <TelegramModuleEditLock locked={accessReady && !canEditModule('chat')}>
                   <TelegramChatSettingsCard embedded />
-                </div>
+                </TelegramModuleEditLock>
               </AdminSection>
 
               <AdminSection
@@ -157,12 +170,9 @@ export function NotificationsPage() {
                 icon={Megaphone}
                 description={MODULE_DESCRIPTIONS.marketing}
               >
-                <div
-                  className={cn(!canEditModule('marketing') && 'pointer-events-none opacity-60')}
-                  aria-disabled={!canEditModule('marketing') || undefined}
-                >
+                <TelegramModuleEditLock locked={accessReady && !canEditModule('marketing')}>
                   <TelegramMarketingSettingsCard embedded />
-                </div>
+                </TelegramModuleEditLock>
               </AdminSection>
 
               <AdminSection
@@ -171,12 +181,9 @@ export function NotificationsPage() {
                 icon={HardHat}
                 description={MODULE_DESCRIPTIONS.staff}
               >
-                <div
-                  className={cn(!canEditModule('staff') && 'pointer-events-none opacity-60')}
-                  aria-disabled={!canEditModule('staff') || undefined}
-                >
+                <TelegramModuleEditLock locked={accessReady && !canEditModule('staff')}>
                   <TelegramStaffSettingsCard embedded />
-                </div>
+                </TelegramModuleEditLock>
               </AdminSection>
 
               <AdminSection
@@ -185,12 +192,9 @@ export function NotificationsPage() {
                 icon={Bell}
                 description={MODULE_DESCRIPTIONS.operations}
               >
-                <div
-                  className={cn(!canEditModule('operations') && 'pointer-events-none opacity-60')}
-                  aria-disabled={!canEditModule('operations') || undefined}
-                >
+                <TelegramModuleEditLock locked={accessReady && !canEditModule('operations')}>
                   <TelegramAdminSettingsCard embedded />
-                </div>
+                </TelegramModuleEditLock>
               </AdminSection>
 
               <AdminSection
@@ -199,12 +203,9 @@ export function NotificationsPage() {
                 icon={DollarSign}
                 description={MODULE_DESCRIPTIONS.finance}
               >
-                <div
-                  className={cn(!canEditModule('finance') && 'pointer-events-none opacity-60')}
-                  aria-disabled={!canEditModule('finance') || undefined}
-                >
+                <TelegramModuleEditLock locked={accessReady && !canEditModule('finance')}>
                   <TelegramFinanceSettingsCard embedded />
-                </div>
+                </TelegramModuleEditLock>
               </AdminSection>
 
               <AdminSection
@@ -213,12 +214,9 @@ export function NotificationsPage() {
                 icon={Wrench}
                 description={MODULE_DESCRIPTIONS.maintenance}
               >
-                <div
-                  className={cn(!canEditModule('maintenance') && 'pointer-events-none opacity-60')}
-                  aria-disabled={!canEditModule('maintenance') || undefined}
-                >
+                <TelegramModuleEditLock locked={accessReady && !canEditModule('maintenance')}>
                   <TelegramMaintenanceSettingsCard embedded />
-                </div>
+                </TelegramModuleEditLock>
               </AdminSection>
             </TelegramNotificationsTelegramSection>
           </TelegramNotificationsGlobalBotProvider>

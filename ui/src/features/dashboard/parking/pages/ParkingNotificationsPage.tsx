@@ -19,10 +19,13 @@ import {
   type ManageTab,
 } from '@/features/dashboard/notifications/components/NotificationsManage';
 import { NotificationsTelegramHistory } from '@/features/dashboard/notifications/components/NotificationsTelegramHistory';
+import { TelegramModuleEditLock } from '@/features/dashboard/notifications/components/TelegramModuleEditLock';
 import { useNotificationsHubView } from '@/features/dashboard/notifications/hooks/useNotificationsHubView';
 import { useParkingTelegramHubStats } from '@/features/dashboard/notifications/hooks/useTelegramHubStats';
 import { useOptionalParkingContext } from '@/features/dashboard/org/components/RequireParkingContext';
 import { TelegramParkingSettingsCard } from '@/features/dashboard/parking/components/TelegramParkingSettingsCard';
+import { useParkingPermissions } from '@/features/dashboard/team/hooks/useParkingPermissions';
+import { hasParkingPermission } from '@/features/dashboard/team/lib/parkingPermissions';
 
 import { AdminMobilePage } from '@/components/mobile/MobileBrandHero';
 import { parkingDashboardPageTitle, usePageTitle } from '@/lib/pageTitle';
@@ -51,7 +54,12 @@ const MODULE_DESCRIPTIONS: Record<ParkingNotificationModule, string> = {
 
 export function ParkingNotificationsPage() {
   const parkingTenant = useOptionalParkingContext();
-  const [searchParams] = useSearchParams();
+  const { data: access } = useParkingPermissions();
+  /* Parking gates every Telegram module on one leaf, unlike the per-module property leaves. */
+  const canEditNotifications = hasParkingPermission(access?.permissions, 'notifications:edit');
+  const accessReady = access !== undefined;
+
+  const [searchParams, setSearchParams] = useSearchParams();
   const deepLinkModule = resolveParkingModule(searchParams.get('module'));
   const hub = useNotificationsHubView({ module: deepLinkModule });
   const telegramStats = useParkingTelegramHubStats();
@@ -82,6 +90,15 @@ export function ParkingNotificationsPage() {
     setManageOpen(true);
   };
 
+  /** Drop `?module=` on close so a refresh or Back does not reopen the sheet. */
+  const onManageOpenChange = (next: boolean) => {
+    setManageOpen(next);
+    if (next || !searchParams.has('module')) return;
+    const params = new URLSearchParams(searchParams);
+    params.delete('module');
+    setSearchParams(params, { replace: true, preventScrollReset: true });
+  };
+
   return (
     <AdminMobilePage
       title="Notifications"
@@ -97,16 +114,25 @@ export function ParkingNotificationsPage() {
 
       <NotificationsManageDialog
         open={manageOpen}
-        onOpenChange={setManageOpen}
+        onOpenChange={onManageOpenChange}
         tab={manageTab}
         onTabChange={setManageTab}
         focusModuleId={deepLinkModule}
+        deliveryEditable={canEditNotifications}
         telegramContent={
           <TelegramNotificationsGlobalBotProvider>
             <TelegramNotificationsTelegramSection
               helpAction={<TelegramHelpDialog defaultTab="bot-token" triggerLabel="Setup Guide" />}
             >
-              <TelegramGlobalBotTokenCard />
+              {accessReady && !canEditNotifications ? (
+                <p className="text-muted-foreground text-xs sm:text-sm">
+                  Some modules are view only. Ask the parking owner or manager for edit access.
+                </p>
+              ) : null}
+
+              <TelegramModuleEditLock locked={accessReady && !canEditNotifications}>
+                <TelegramGlobalBotTokenCard />
+              </TelegramModuleEditLock>
 
               <AdminSection
                 id="chat"
@@ -114,7 +140,9 @@ export function ParkingNotificationsPage() {
                 icon={MessageCircle}
                 description={MODULE_DESCRIPTIONS.chat}
               >
-                <TelegramChatSettingsCard embedded />
+                <TelegramModuleEditLock locked={accessReady && !canEditNotifications}>
+                  <TelegramChatSettingsCard embedded />
+                </TelegramModuleEditLock>
               </AdminSection>
 
               <AdminSection
@@ -123,7 +151,9 @@ export function ParkingNotificationsPage() {
                 icon={Car}
                 description={MODULE_DESCRIPTIONS.parking}
               >
-                <TelegramParkingSettingsCard />
+                <TelegramModuleEditLock locked={accessReady && !canEditNotifications}>
+                  <TelegramParkingSettingsCard />
+                </TelegramModuleEditLock>
               </AdminSection>
 
               <AdminSection
@@ -132,7 +162,9 @@ export function ParkingNotificationsPage() {
                 icon={DollarSign}
                 description={MODULE_DESCRIPTIONS.finance}
               >
-                <TelegramFinanceSettingsCard embedded />
+                <TelegramModuleEditLock locked={accessReady && !canEditNotifications}>
+                  <TelegramFinanceSettingsCard embedded />
+                </TelegramModuleEditLock>
               </AdminSection>
             </TelegramNotificationsTelegramSection>
           </TelegramNotificationsGlobalBotProvider>

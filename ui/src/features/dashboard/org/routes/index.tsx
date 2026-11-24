@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react';
 import type { ReactNode } from 'react';
+import { OrgNotificationsRedirect } from '@/features/dashboard/notifications/components/OrgNotificationsRedirect';
 
 import { Route } from 'react-router-dom';
 
@@ -104,7 +105,6 @@ const OrgTeamPage = lazy(() =>
 const OrgReviewsPage = lazy(() =>
   import('@/features/reviews/pages/OrgReviewsPage').then((m) => ({ default: m.OrgReviewsPage }))
 );
-
 export const orgOnboardingRoutes: ReactNode = (
   <>
     <Route path="/onboarding" element={<OnboardingPage />} />
@@ -141,6 +141,8 @@ export function orgAdminRoutes(orgRoute: OrgRouteFn): ReactNode {
         element={orgRoute('parkings', <OrgParkingsPage />, <OrgParkingsRouteSkeleton />)}
       />
       <Route path="team" element={orgRoute('team', <OrgTeamPage />, <OrgTeamRouteSkeleton />)} />
+      {/* The hub is property scoped; this keeps the org-level URL inside the dashboard. */}
+      <Route path="notifications" element={<OrgNotificationsRedirect />} />
       <Route
         path="plans"
         element={orgRoute('plans', <OrgPlansPage />, <OrgPlansRouteSkeleton />)}

@@ -1,5 +1,7 @@
 import { ChevronRight } from 'lucide-react';
 
+import { useTelegramNotificationsSettingsEditable } from '@/features/dashboard/bookings/components/telegram-notifications/TelegramNotificationsSettingsContext';
+
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -25,6 +27,8 @@ export function TelegramSettingsManageCard({
   nested = false,
   className,
 }: Props) {
+  const settingsEditable = useTelegramNotificationsSettingsEditable();
+
   return (
     <div
       className={cn(
@@ -49,7 +53,7 @@ export function TelegramSettingsManageCard({
         type="button"
         variant="outline"
         size="sm"
-        disabled={disabled}
+        disabled={disabled || !settingsEditable}
         className="min-h-[44px] shrink-0 gap-1 px-3"
         onClick={onManage}
       >

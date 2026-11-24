@@ -35,6 +35,9 @@ export const NOTIFICATIONS_HOW_IT_WORKS: HowItWorksCopy = {
 
 /** Notifications hub hints — summary cards, the feed, and the push cards. */
 export const NOTIFICATIONS_HELP_COPY = {
+  messages: {
+    hint: 'Guest message threads waiting for a reply. They are also counted in Unread.',
+  },
   telegramOn: {
     hint: 'How many notification modules have Telegram turned on.',
   },

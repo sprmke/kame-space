@@ -72,6 +72,12 @@ type DialogProps = {
   telegramContent: ReactNode;
   /** `?module=` deep link: scroll to that card once the sheet is open. */
   focusModuleId?: string | null;
+  /**
+   * Whether the caller may change Telegram delivery at all. The server gates the
+   * PATCH on one module edit leaf, so a read-only member must not get a switch
+   * that always fails.
+   */
+  deliveryEditable?: boolean;
 };
 
 /**
@@ -89,6 +95,7 @@ export function NotificationsManageDialog({
   onTabChange,
   telegramContent,
   focusModuleId,
+  deliveryEditable = true,
 }: DialogProps) {
   const telegramAvailability = useFeatureAvailability('notifications.telegram');
   const telegramAvailable = telegramAvailability.available || telegramAvailability.isLoading;
@@ -127,7 +134,7 @@ export function NotificationsManageDialog({
         <ResponsiveModalContent
           sheetLayout="split"
           className={cn(
-            'flex w-full min-h-0 flex-col gap-0 overflow-hidden p-0 pb-0 pt-0 sm:p-0',
+            'flex min-h-0 w-full flex-col gap-0 overflow-hidden p-0 pb-0 pt-0 sm:p-0',
             'max-h-[min(92dvh,760px)] max-w-[min(calc(100vw-1.5rem),44rem)] sm:max-w-[min(92vw,44rem)]'
           )}
         >
@@ -170,36 +177,39 @@ export function NotificationsManageDialog({
                   <div className="border-border bg-card overflow-hidden rounded-xl border">
                     <PushNotificationsRow push={push} embedded />
 
-                    {push.subscribed ? (
-                      <>
-                        <div className="border-border border-t px-3 py-3 sm:px-4">
-                          <NotificationPreferencesCard />
-                        </div>
-                        <div className="border-border border-t px-3 py-3 sm:px-4">
-                          <QuietHoursCard />
-                        </div>
-                      </>
-                    ) : push.supported ? (
+                    {push.supported && !push.subscribed ? (
                       <DevicePushPausedPanel className="border-border rounded-none border-0 border-t bg-transparent" />
                     ) : null}
+
+                    {/*
+                     * Preferences and quiet hours are account-level, not per device, so they
+                     * stay visible even when this device cannot receive push. Hiding them made
+                     * a group muted on a phone impossible to unmute from a desktop.
+                     */}
+                    <div className="border-border border-t px-3 py-3 sm:px-4">
+                      <NotificationPreferencesCard />
+                    </div>
+                    <div className="border-border border-t px-3 py-3 sm:px-4">
+                      <QuietHoursCard />
+                    </div>
                   </div>
                 )}
               </TabsContent>
 
               <TabsContent value="telegram" className="mt-0 focus-visible:outline-none">
                 {telegramAvailable ? (
-                  <div className="border-border bg-card overflow-hidden rounded-xl border">
-                    <TelegramDeliverySwitchRow embedded />
+                  <div className="space-y-4">
+                    <TelegramDeliverySwitchRow
+                      embedded
+                      disabled={!deliveryEditable}
+                      className="border-border border-b"
+                    />
                     {delivery.isLoading ? (
-                      <div className="border-border space-y-3 border-t px-3 py-3 sm:px-4">
-                        <ChannelCardsSkeleton />
-                      </div>
+                      <ChannelCardsSkeleton />
                     ) : telegramEnabled ? (
-                      <div className="border-border space-y-4 border-t px-3 py-3 sm:px-4">
-                        {telegramContent}
-                      </div>
+                      <div className="space-y-4">{telegramContent}</div>
                     ) : (
-                      <TelegramPausedPanel className="border-border rounded-none border-0 border-t bg-transparent" />
+                      <TelegramPausedPanel />
                     )}
                   </div>
                 ) : (

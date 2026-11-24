@@ -95,7 +95,6 @@ export function BottomTabBar({
           mobileBottomBarRowClassName,
           dense ? 'gap-0' : 'gap-0.5'
         )}
-        role="list"
       >
         {bounds ? (
           <SlidingActivePill
@@ -176,7 +175,6 @@ export function BottomTabBar({
                 key={item.key}
                 ref={setItemRef(item.key)}
                 type="button"
-                role="listitem"
                 onClick={item.onClick}
                 onPointerDown={item.onIntent}
                 onFocus={item.onIntent}
@@ -195,7 +193,6 @@ export function BottomTabBar({
               key={item.key}
               ref={setItemRef(item.key)}
               to={item.href}
-              role="listitem"
               aria-current={active ? 'page' : undefined}
               aria-label={itemAriaLabel}
               className={sharedClass}

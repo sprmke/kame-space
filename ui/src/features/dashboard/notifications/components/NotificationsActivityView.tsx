@@ -66,7 +66,7 @@ export function NotificationsActivityView() {
               type="button"
               variant="ghost"
               size="sm"
-              className="text-primary h-8 px-2"
+              className="text-primary h-11 px-3 sm:h-8 sm:px-2"
               onClick={() => markAllRead.mutate()}
               disabled={markAllRead.isPending}
             >
@@ -77,7 +77,8 @@ export function NotificationsActivityView() {
         <div
           ref={setScrollRoot}
           data-admin-content-scroll
-          className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain"
+          /* Clear the floating Quick access pill so the last row is reachable. */
+          className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain pb-16"
         >
           <InAppNotificationsPanel
             mode="full"

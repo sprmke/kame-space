@@ -229,6 +229,11 @@ type TelegramSwitchProps = {
   showPausedPanel?: boolean;
   /** Nest inside a parent card (hub Telegram tab). */
   embedded?: boolean;
+  /**
+   * The caller cannot change delivery. The server requires one module edit leaf,
+   * so a read-only member gets a disabled switch instead of a failing write.
+   */
+  disabled?: boolean;
   className?: string;
 };
 
@@ -239,6 +244,7 @@ type TelegramSwitchProps = {
 export function TelegramDeliverySwitchRow({
   showPausedPanel = false,
   embedded = false,
+  disabled = false,
   className,
 }: TelegramSwitchProps) {
   const { data, isLoading } = useTelegramDeliveryControl();
@@ -255,7 +261,7 @@ export function TelegramDeliverySwitchRow({
         title="Telegram delivery"
         description="Turn every Telegram alert on or off at once. Your module settings stay saved."
         checked={enabled}
-        disabled={update.isPending}
+        disabled={disabled || update.isPending}
         embedded={embedded}
         onCheckedChange={(next) => update.mutate(next)}
         className={className}

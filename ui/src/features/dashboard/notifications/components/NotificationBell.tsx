@@ -31,13 +31,11 @@ type Props = {
   onPrimary?: boolean;
   /**
    * `ghost` — header icon button.
-   * `fab` — desktop floating action (legacy; prefer AdminQuickAccessHub expand pill).
    * `panel` — controlled sheet only, no trigger (opened from Quick Access).
    */
-  variant?: 'ghost' | 'fab' | 'panel';
+  variant?: 'ghost' | 'panel';
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
-  className?: string;
 };
 
 export function NotificationBell({
@@ -45,7 +43,6 @@ export function NotificationBell({
   variant = 'ghost',
   open: openProp,
   onOpenChange,
-  className,
 }: Props = {}) {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const isControlled = openProp !== undefined;
@@ -156,28 +153,7 @@ export function NotificationBell({
   );
 
   const trigger =
-    variant === 'panel' ? null : variant === 'fab' ? (
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        aria-label={ariaLabel}
-        aria-expanded={open}
-        aria-haspopup="dialog"
-        className={cn(
-          'border-border/50 bg-background text-foreground shadow-elevated-lg',
-          'hover:bg-muted/80 relative hidden min-h-[52px] min-w-[52px] items-center justify-center rounded-full border',
-          'fixed right-5 z-[41] transition-transform hover:scale-105',
-          'bottom-[max(1.25rem,env(safe-area-inset-bottom))]',
-          'focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
-          'motion-reduce:transform-none motion-reduce:hover:scale-100',
-          'lg:flex',
-          className
-        )}
-      >
-        <Bell className={bellIconClassName} aria-hidden />
-        <NotificationCountBadge count={unreadCount} fab attention={attentionActive} />
-      </button>
-    ) : (
+    variant === 'panel' ? null : (
       <Button
         type="button"
         variant="ghost"
@@ -229,11 +205,9 @@ export function NotificationBell({
 
 function NotificationCountBadge({
   count,
-  fab = false,
   attention = false,
 }: {
   count: number;
-  fab?: boolean;
   attention?: boolean;
 }) {
   if (count <= 0) return null;
@@ -241,10 +215,7 @@ function NotificationCountBadge({
   return (
     <span
       className={cn(
-        'bg-destructive text-destructive-foreground absolute flex items-center justify-center rounded-full font-semibold leading-none',
-        fab
-          ? 'ring-background right-0.5 top-0.5 h-5 min-w-5 px-1 text-[10px] ring-2'
-          : 'right-1 top-1 h-4 min-w-[16px] px-1 text-[10px]',
+        'bg-destructive text-destructive-foreground absolute right-1 top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[10px] font-semibold leading-none',
         attention && 'animate-notification-badge-pulse motion-reduce:animate-none'
       )}
       aria-hidden

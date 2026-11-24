@@ -60,17 +60,18 @@ export function PushNotificationsRow({ push, embedded = false, className }: RowP
   } else if (!supported) {
     /*
      * The switch is disabled in this state, so the row itself has to explain why.
-     * `!` so the tone wins over the muted `text-card-description` token.
+     * Plain ink, not destructive red: a disabled capability is not an error, and
+     * `text-destructive` on the card surface only reaches 3.78:1 (WCAG AA wants 4.5).
      */
     description = pushUnsupportedMessage(reason);
-    descriptionClassName = '!text-destructive';
+    descriptionClassName = '!text-foreground';
   } else if (needsInstallFirst) {
     description =
       'Add this app to your Home Screen, then turn notifications on from the installed app.';
   } else if (blocked) {
     description =
       'Push notifications are blocked. Allow them for this site in your browser settings.';
-    descriptionClassName = '!text-destructive';
+    descriptionClassName = '!text-foreground';
   } else if (!subscribed) {
     description = 'Get booking, message and workflow alerts on this device when the app is closed.';
   }

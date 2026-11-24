@@ -1,4 +1,4 @@
-import { useId } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 
 import { useNotificationPreferences } from '@/features/dashboard/notifications/hooks/useNotificationPreferences';
 import { formatQuietHoursTime } from '@/features/dashboard/notifications/lib/notificationPreferences';
@@ -7,10 +7,17 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { useConnectivity } from '@/hooks/useConnectivity';
 
+/** Coalesce a native time picker's stream of changes into one write. */
+const QUIET_HOURS_SAVE_DELAY_MS = 500;
+
 /**
  * Quiet hours is a schedule, not a notification group, so it sits in its own
  * section below Push preferences instead of as a ninth switch in that list.
  * Times are saved in the stored IANA zone; start === end means "no window".
+ *
+ * Time fields keep a local draft and save once the picker settles: `type="time"`
+ * fires `change` on every step, which used to send one PUT per keystroke. A
+ * pending edit is flushed on blur and on unmount so closing the sheet keeps it.
  */
 export function QuietHoursCard() {
   const fieldId = useId();
@@ -21,8 +28,43 @@ export function QuietHoursCard() {
   const { connected } = useConnectivity();
   const disabled = !connected || saving;
 
-  const invalidWindow =
-    preferences.quietHoursEnabled && preferences.quietHoursStart === preferences.quietHoursEnd;
+  const [start, setStart] = useState(preferences.quietHoursStart);
+  const [end, setEnd] = useState(preferences.quietHoursEnd);
+
+  const updateRef = useRef(update);
+  updateRef.current = update;
+  const pendingRef = useRef<{ quietHoursStart?: string; quietHoursEnd?: string }>({});
+  const timerRef = useRef<number | null>(null);
+
+  const flush = useCallback(() => {
+    if (timerRef.current !== null) {
+      window.clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    const pending = pendingRef.current;
+    pendingRef.current = {};
+    if (Object.keys(pending).length > 0) updateRef.current(pending);
+  }, []);
+
+  /* Keep the fields honest when the server value lands or another tab changes it. */
+  useEffect(() => {
+    setStart(preferences.quietHoursStart);
+  }, [preferences.quietHoursStart]);
+
+  useEffect(() => {
+    setEnd(preferences.quietHoursEnd);
+  }, [preferences.quietHoursEnd]);
+
+  /* Never drop the last edit when the sheet closes mid-debounce. */
+  useEffect(() => flush, [flush]);
+
+  const scheduleSave = (patch: { quietHoursStart?: string; quietHoursEnd?: string }) => {
+    pendingRef.current = { ...pendingRef.current, ...patch };
+    if (timerRef.current !== null) window.clearTimeout(timerRef.current);
+    timerRef.current = window.setTimeout(flush, QUIET_HOURS_SAVE_DELAY_MS);
+  };
+
+  const invalidWindow = preferences.quietHoursEnabled && start === end;
 
   if (loading) {
     return (
@@ -71,12 +113,15 @@ export function QuietHoursCard() {
               <Input
                 id={startId}
                 type="time"
-                value={preferences.quietHoursStart}
+                value={start}
                 disabled={disabled}
                 aria-invalid={invalidWindow || undefined}
                 onChange={(event) => {
-                  if (event.target.value) update({ quietHoursStart: event.target.value });
+                  if (!event.target.value) return;
+                  setStart(event.target.value);
+                  scheduleSave({ quietHoursStart: event.target.value });
                 }}
+                onBlur={flush}
               />
             </div>
             <div className="space-y-1.5">
@@ -86,19 +131,22 @@ export function QuietHoursCard() {
               <Input
                 id={endId}
                 type="time"
-                value={preferences.quietHoursEnd}
+                value={end}
                 disabled={disabled}
                 aria-invalid={invalidWindow || undefined}
                 onChange={(event) => {
-                  if (event.target.value) update({ quietHoursEnd: event.target.value });
+                  if (!event.target.value) return;
+                  setEnd(event.target.value);
+                  scheduleSave({ quietHoursEnd: event.target.value });
                 }}
+                onBlur={flush}
               />
             </div>
           </div>
 
           {invalidWindow ? (
             <p className="text-destructive text-xs" role="alert">
-              From and To can’t be the same time.
+              From and To can&apos;t be the same time.
             </p>
           ) : (
             <p className="text-muted-foreground text-xs">

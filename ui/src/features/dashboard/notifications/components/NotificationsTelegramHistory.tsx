@@ -92,11 +92,13 @@ export function NotificationsTelegramHistory() {
       <Card className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <div className="border-border flex shrink-0 items-center justify-between gap-3 border-b px-3 py-3 sm:px-4">
           <h2 className="text-card-title">Telegram</h2>
+          <span className="text-muted-foreground text-xs">Last {retentionDays} days</span>
         </div>
 
         <div
           ref={setScrollRoot}
-          className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain"
+          /* Clear the floating Quick access pill so the last row is reachable. */
+          className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain pb-16"
         >
           {showSkeleton ? (
             <div className="px-4 py-3">
@@ -173,7 +175,7 @@ export function NotificationsTelegramHistory() {
                               {truncated || isExpanded ? (
                                 <button
                                   type="button"
-                                  className="text-primary mt-1 min-h-[32px] text-xs font-semibold hover:underline"
+                                  className="text-primary mt-1 min-h-[44px] text-xs font-semibold hover:underline"
                                   onClick={() => toggleExpanded(message.id)}
                                 >
                                   {isExpanded ? 'Show less' : 'Show more'}
@@ -201,11 +203,7 @@ export function NotificationsTelegramHistory() {
                         <div className="min-h-[48px]" aria-hidden />
                       )}
                     </div>
-                  ) : (
-                    <p className="text-muted-foreground px-4 py-3 text-center text-xs">
-                      Last {retentionDays} days
-                    </p>
-                  )}
+                  ) : null}
                 </>
               ) : null}
             </>
