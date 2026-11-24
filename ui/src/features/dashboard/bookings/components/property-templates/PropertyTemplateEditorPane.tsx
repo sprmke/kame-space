@@ -356,20 +356,21 @@ export function PropertyTemplateEditorPane({
     <div className="flex min-h-0 min-w-0 flex-1 flex-col">
       {/* Header and chrome stay put so Save is reachable from anywhere in a long template. */}
       <div className="bg-card border-separator shrink-0 border-b">
-        {onBack ? (
-          <button
-            type="button"
-            onClick={onBack}
-            className="text-muted-foreground hover:text-foreground flex min-h-[44px] w-full items-center gap-1 px-3 text-[13px] font-medium lg:hidden"
-          >
-            <ChevronLeft className="size-4 shrink-0" aria-hidden />
-            All templates
-          </button>
-        ) : null}
-
-        <div className="flex min-w-0 items-start gap-3 px-3 pb-3 pt-3 sm:px-4">
+        <div className="flex min-w-0 items-start gap-2 px-2 pb-3 pt-2 sm:gap-3 sm:px-4 sm:pt-3">
+          {/* Back lives on the title row so the phone editor starts one row higher. */}
+          {onBack ? (
+            <button
+              type="button"
+              onClick={onBack}
+              aria-label="All templates"
+              title="All templates"
+              className="text-muted-foreground hover:text-foreground relative -ml-1 flex size-10 shrink-0 items-center justify-center rounded-lg transition-colors before:absolute before:-inset-0.5 before:content-[''] lg:hidden"
+            >
+              <ChevronLeft className="size-5 shrink-0" aria-hidden />
+            </button>
+          ) : null}
           {/* The open template is the one brand-tinted mark on the page; rail rows stay quiet. */}
-          <div className="bg-primary/10 flex size-9 shrink-0 items-center justify-center rounded-lg sm:size-10">
+          <div className="bg-primary/10 mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg sm:size-10">
             <Icon className="text-primary size-4 sm:size-5" aria-hidden />
           </div>
           <div className="min-w-0 flex-1 space-y-1">
@@ -385,7 +386,9 @@ export function PropertyTemplateEditorPane({
             </div>
             <p className="text-muted-foreground truncate text-xs">{metaLine}</p>
             {template.description ? (
-              <p className="text-muted-foreground line-clamp-2 text-xs">{template.description}</p>
+              <p className="text-muted-foreground line-clamp-2 hidden text-xs sm:block">
+                {template.description}
+              </p>
             ) : null}
           </div>
         </div>
@@ -485,7 +488,11 @@ export function PropertyTemplateEditorPane({
           <SegmentedControl
             value={activeTab}
             onChange={handleTabChange}
-            options={EDITOR_VIEW_OPTIONS}
+            options={
+              canEdit
+                ? EDITOR_VIEW_OPTIONS
+                : EDITOR_VIEW_OPTIONS.filter((option) => option.value === 'preview')
+            }
             size="dense"
             aria-label={`${template.name} view`}
             listClassName={cn(cardHeaderSegmentedListClassName, 'shrink-0')}
@@ -726,6 +733,7 @@ export function PropertyTemplateEditorPane({
               ref={editorRef}
               content={content}
               onChange={setContent}
+              editable={canEdit}
               fill
               minHeight="clamp(240px, 46dvh, 520px)"
               validPlaceholderKeys={validPlaceholderKeys}
