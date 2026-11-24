@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   buildTelegramReminderSchedule,
+  countRecurrenceOccurrences,
   defaultRecurrenceUntil,
   isRecurrenceScheduleDirty,
   normalizeFinanceReminderInterval,
@@ -144,7 +145,8 @@ describe('month-end series clamp instead of skipping short months', () => {
   // pinned in `financeRecurrence_test.ts`.
   function dates(
     anchorDate: string,
-    recurrenceInterval: 'monthly' | 'twice_monthly' | 'every_2_months' | 'quarterly' | 'every_6_months' | 'yearly',
+    recurrenceInterval:
+      'monthly' | 'twice_monthly' | 'every_2_months' | 'quarterly' | 'every_6_months' | 'yearly',
     recurrenceUntil: string
   ) {
     const preview = buildTelegramReminderSchedule({
@@ -224,7 +226,6 @@ describe('month-end series clamp instead of skipping short months', () => {
     expect(preview?.totalCount).toBe(3);
   });
 });
-
 
 describe('normalizeFinanceReminderInterval', () => {
   it('keeps a supported interval, trimmed and lower-cased', () => {
@@ -315,9 +316,7 @@ describe('buildTelegramReminderSchedule', () => {
   });
 
   it('builds one window for a single occurrence', () => {
-    expect(
-      buildTelegramReminderSchedule({ ...base, recurrenceInterval: 'none' })
-    ).toEqual({
+    expect(buildTelegramReminderSchedule({ ...base, recurrenceInterval: 'none' })).toEqual({
       windows: [{ windowStart: '2026-01-12', windowEnd: '2026-01-15' }],
       totalCount: 1,
       isRecurring: false,
@@ -338,9 +337,7 @@ describe('buildTelegramReminderSchedule', () => {
   });
 
   it('returns nothing when the series end is before the anchor', () => {
-    expect(
-      buildTelegramReminderSchedule({ ...base, recurrenceUntil: '2025-12-31' })
-    ).toBeNull();
+    expect(buildTelegramReminderSchedule({ ...base, recurrenceUntil: '2025-12-31' })).toBeNull();
     expect(buildTelegramReminderSchedule({ ...base, recurrenceUntil: undefined })).toBeNull();
   });
 
@@ -350,5 +347,24 @@ describe('buildTelegramReminderSchedule', () => {
 
     const negative = buildTelegramReminderSchedule({ ...base, daysBefore: -5 });
     expect(negative?.windows[0]).toEqual({ windowStart: '2026-01-15', windowEnd: '2026-01-15' });
+  });
+});
+
+describe('countRecurrenceOccurrences', () => {
+  it('counts the start occurrence and each step through the end date', () => {
+    expect(countRecurrenceOccurrences('2026-11-24', 'daily', '2026-11-26')).toBe(3);
+    expect(countRecurrenceOccurrences('2026-11-24', 'weekly', '2026-12-08')).toBe(3);
+    expect(countRecurrenceOccurrences('2026-11-24', 'monthly', '2027-01-24')).toBe(3);
+    expect(countRecurrenceOccurrences('2026-11-24', 'yearly', '2028-11-24')).toBe(3);
+  });
+
+  it('returns one when the end is on or before the start', () => {
+    expect(countRecurrenceOccurrences('2026-11-24', 'monthly', '2026-11-24')).toBe(1);
+    expect(countRecurrenceOccurrences('2026-11-24', 'monthly', '2026-11-01')).toBe(1);
+    expect(countRecurrenceOccurrences('2026-11-24', 'monthly', '')).toBe(1);
+  });
+
+  it('caps at the server limit of 500', () => {
+    expect(countRecurrenceOccurrences('2020-01-01', 'daily', '2030-01-01')).toBe(500);
   });
 });

@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 import { demoPause, dismissConsent, installMaintenanceMocks } from './shared/maintenanceHarness';
 import {
@@ -22,6 +22,13 @@ import {
  * and the phone/tablet sheet layouts.
  */
 
+async function openDateRange(page: Page) {
+  await page
+    .getByRole('button', { name: 'Previous period' })
+    .locator('xpath=following-sibling::button[1]')
+    .click();
+}
+
 test.describe('maintenance tour @demo', () => {
   test.use({ viewport: { width: 1440, height: 960 }, actionTimeout: 10_000 });
 
@@ -41,20 +48,17 @@ test.describe('maintenance tour @demo', () => {
     await demoPause(page, 1.8);
 
     // KPI row and its help hints.
-    for (const title of ['Total', 'Completed', 'Pending', 'Telegram enabled']) {
+    for (const title of ['Total', 'Overdue', 'Pending', 'Completed']) {
       await page.getByText(title, { exact: true }).first().hover();
       await demoPause(page, 0.45);
     }
-    await page.getByRole('button', { name: /About Pending/i }).hover();
+    await page.getByRole('button', { name: /About Overdue/i }).hover();
     await demoPause(page, 1.4);
     await page.mouse.move(700, 420);
     await demoPause(page, 0.6);
 
     // Date range presets.
-    await page
-      .getByRole('button', { name: /November 2026/ })
-      .first()
-      .click();
+    await openDateRange(page);
     await demoPause(page, 1.4);
     await page.getByRole('button', { name: /^Week/ }).hover();
     await demoPause(page, 1.2);
@@ -72,30 +76,29 @@ test.describe('maintenance tour @demo', () => {
     await page.getByRole('heading', { name: 'Maintenance', exact: true }).first().click();
     await demoPause(page, 0.6);
 
-    // Status multi-select. The trigger's accessible name differs between builds, so drive
-    // the visible label and assert through the list instead.
-    await page.getByRole('button', { name: /^(All Status|Status filter:)/ }).click();
+    // Status multi-select.
+    await page.getByRole('button', { name: 'All statuses' }).click();
     await demoPause(page, 1.1);
-    await page.getByRole('option', { name: 'Completed' }).hover();
+    await page.getByRole('option', { name: 'Overdue' }).hover();
     await demoPause(page, 0.5);
-    await page.getByRole('option', { name: 'Completed' }).click();
-    await expect(page.getByText('Aircon filter service')).toHaveCount(0);
+    await page.getByRole('option', { name: 'Overdue' }).click();
+    await expect(page.getByText('Pool pump inspection')).toHaveCount(0);
     await demoPause(page, 1.6);
-    await page.getByRole('option', { name: 'Completed' }).click();
-    await expect(page.getByText('Aircon filter service')).toBeVisible();
+    await page.getByRole('option', { name: 'Overdue' }).click();
+    await expect(page.getByText('Pool pump inspection')).toBeVisible();
     await demoPause(page, 0.8);
     await page.getByRole('heading', { name: 'Maintenance', exact: true }).first().click();
     await demoPause(page, 0.6);
 
     // Sort order.
-    await page.getByRole('button', { name: /Newest scheduled/i }).click();
+    await page.getByRole('button', { name: /Due soonest/i }).click();
     await demoPause(page, 1);
-    await page.getByRole('option', { name: /Oldest scheduled/i }).hover();
+    await page.getByRole('option', { name: /Newest scheduled/i }).hover();
     await demoPause(page, 0.5);
-    await page.getByRole('option', { name: /Oldest scheduled/i }).click();
-    await demoPause(page, 1.2);
-    await page.getByRole('button', { name: /Oldest scheduled/i }).click();
     await page.getByRole('option', { name: /Newest scheduled/i }).click();
+    await demoPause(page, 1.2);
+    await page.getByRole('button', { name: /Newest scheduled/i }).click();
+    await page.getByRole('option', { name: /Due soonest/i }).click();
     await demoPause(page, 0.8);
 
     // Calendar, one day's detail, then cards.
@@ -106,7 +109,10 @@ test.describe('maintenance tour @demo', () => {
       page.getByRole('button', { name: /Choose reminders view: Calendar/ })
     ).toBeVisible();
     await demoPause(page, 1.8);
-    await page.getByRole('button', { name: /November 28, 2026/ }).click();
+    await page
+      .getByRole('button', { name: /– \d+ reminders?$/ })
+      .first()
+      .click();
     await demoPause(page, 1.8);
     await page.getByRole('button', { name: /Choose reminders view/i }).click();
     await page.getByRole('option', { name: 'Card', exact: true }).click();
@@ -119,7 +125,7 @@ test.describe('maintenance tour @demo', () => {
     await demoPause(page, 1);
   });
 
-  test('02 create, edit and delete a reminder', async ({ page }) => {
+  test('02 create, mark done and delete a reminder', async ({ page }) => {
     test.setTimeout(240_000);
 
     await page.goto(teamRbacPaths.maintenance);
@@ -129,43 +135,44 @@ test.describe('maintenance tour @demo', () => {
     ).toBeVisible({ timeout: 20_000 });
     await demoPause(page, 1.2);
 
-    // Create through the three-step wizard.
+    // Create through the two-step wizard: Details (with repeat + Telegram) then Preview.
     await page
       .getByRole('button', { name: /Add reminder/i })
       .first()
       .click();
     const dialog = page.getByRole('dialog');
-    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole('heading', { name: 'Add reminder' })).toBeVisible();
     await demoPause(page, 1.2);
 
-    await dialog.locator('input[name="label"]').fill('Replace balcony drain');
+    await dialog.getByLabel('Label').fill('Replace balcony drain');
     await demoPause(page, 0.6);
     await dialog.getByRole('combobox').first().click();
     await demoPause(page, 0.8);
     await page.getByRole('option', { name: 'Plumbing', exact: true }).click();
     await demoPause(page, 0.6);
-    await dialog.locator('textarea').first().fill('Water pools near the drain after rain.');
+    await dialog.getByLabel('Notes').fill('Water pools near the drain after rain.');
     await demoPause(page, 0.8);
 
     await dialog.getByRole('button', { name: 'Next' }).click();
-    await demoPause(page, 1);
-    await dialog.getByRole('button', { name: 'Next' }).click();
-    await demoPause(page, 1.2);
+    await demoPause(page, 1.4);
     await dialog.getByRole('button', { name: 'Add reminder' }).click();
     await demoPause(page, 1.6);
 
-    // Edit the row that was just created and mark it done.
+    // Quick complete the overdue recurring reminder from the row.
+    const overdueRow = page.locator('tr', { hasText: 'Deep clean kitchen' });
+    await overdueRow.getByRole('button', { name: /Mark Deep clean kitchen done/ }).click();
+    await demoPause(page, 1.4);
+    await expect(overdueRow.getByText('Done')).toBeVisible();
+    await demoPause(page, 0.8);
+
+    // Edit the just-created row and mark it done from the form instead.
     const row = page.locator('tr', { hasText: 'Replace balcony drain' });
     await expect(row).toBeVisible();
     await row.getByRole('button', { name: 'Edit' }).click();
     await expect(dialog).toBeVisible();
     await demoPause(page, 1);
-    await dialog.getByRole('button', { name: 'Next' }).click();
-    await demoPause(page, 1);
-    await dialog.getByText('Send reminders').click();
-    await demoPause(page, 0.9);
     await dialog.getByText('Mark as done').click();
-    await demoPause(page, 0.9);
+    await demoPause(page, 0.8);
     await dialog.getByRole('button', { name: 'Next' }).click();
     await demoPause(page, 1.4);
     await dialog.getByRole('button', { name: 'Save', exact: true }).click();
@@ -224,7 +231,7 @@ test.describe('maintenance tour @demo', () => {
     await demoPause(page, 1.5);
     await page.getByRole('option', { name: /View series/i }).click();
     await demoPause(page, 2);
-    await page.keyboard.press('Escape');
+    await page.getByRole('button', { name: 'Close' }).click();
     await demoPause(page, 1);
 
     await page.getByRole('button', { name: /Maintenance actions/i }).click();
@@ -233,15 +240,13 @@ test.describe('maintenance tour @demo', () => {
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();
     await demoPause(page, 1.2);
-    await dialog.locator('input[name="label"]').fill('Phone walkthrough reminder');
+    await dialog.getByLabel('Label').fill('Phone walkthrough reminder');
     await demoPause(page, 0.6);
     await dialog.getByRole('combobox').first().click();
     await demoPause(page, 0.8);
     await page.getByRole('option', { name: 'Aircon', exact: true }).click();
     await demoPause(page, 0.6);
-    await dialog.getByRole('button', { name: 'Next' }).click();
-    await demoPause(page, 1);
-    await dialog.getByText('Send reminders').click();
+    await dialog.getByRole('checkbox', { name: 'Telegram reminders' }).click();
     await demoPause(page, 1);
     await dialog.getByRole('button', { name: 'Next' }).click();
     await demoPause(page, 1.6);

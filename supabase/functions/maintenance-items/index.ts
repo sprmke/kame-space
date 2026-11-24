@@ -17,6 +17,7 @@ import { resolveScopedPropertyAccess } from '../_shared/propertyScope.ts';
 import { serveAuthenticated } from '../_shared/serveEdge.ts';
 import { logAssetActivity } from '../_shared/assetActivity.ts';
 import { assertAssetRowInScope } from '../_shared/assetRowScope.ts';
+import { validateMaintenanceItemFields } from '../_shared/maintenanceValidation.ts';
 import { capturePostHogEvent } from '../_shared/posthog.ts';
 
 serveAuthenticated('maintenance-items', async (req, user) => {
@@ -53,6 +54,7 @@ serveAuthenticated('maintenance-items', async (req, user) => {
       to: url.searchParams.get('to'),
       q: url.searchParams.get('q') ?? undefined,
       includeDueInRange: url.searchParams.get('include_due_in_range') === 'true',
+      includeOverdue: url.searchParams.get('include_overdue') !== 'false',
     });
     return jsonSuccess(req, items);
   }
@@ -84,9 +86,15 @@ serveAuthenticated('maintenance-items', async (req, user) => {
     const category = typeof body.category === 'string' ? body.category.trim() : '';
     const scheduled_on =
       typeof body.scheduled_on === 'string' ? body.scheduled_on.slice(0, 10) : '';
-    if (!label || !category || !/^\d{4}-\d{2}-\d{2}$/.test(scheduled_on)) {
-      return jsonError(req, 'Invalid fields');
-    }
+    const fieldError = validateMaintenanceItemFields({
+      label,
+      category,
+      scheduledOn: scheduled_on,
+      notes: body.notes,
+      recurrenceUntil:
+        typeof body.recurrence_until === 'string' ? body.recurrence_until.slice(0, 10) : null,
+    });
+    if (fieldError) return jsonError(req, fieldError);
 
     const recurrence_interval =
       body.recurrence_interval === null || body.recurrence_interval === 'none'
@@ -154,15 +162,23 @@ serveAuthenticated('maintenance-items', async (req, user) => {
     const scope = isRecurrenceEditScope(body.scope) ? body.scope : 'this';
     const label = typeof body.label === 'string' ? body.label.trim() : '';
     const category = typeof body.category === 'string' ? body.category.trim() : '';
-    if (!label || !category) {
-      return jsonError(req, 'Invalid fields');
-    }
+    const scheduledOn =
+      typeof body.scheduled_on === 'string' ? body.scheduled_on.slice(0, 10) : undefined;
+    const fieldError = validateMaintenanceItemFields({
+      label,
+      category,
+      ...(scheduledOn !== undefined ? { scheduledOn } : {}),
+      notes: body.notes,
+      recurrenceUntil:
+        typeof body.recurrence_until === 'string' ? body.recurrence_until.slice(0, 10) : null,
+    });
+    if (fieldError) return jsonError(req, fieldError);
     const patch: Parameters<typeof updateMaintenanceItem>[1] = {
       label,
       category,
     };
-    if (typeof body.scheduled_on === 'string') {
-      patch.scheduled_on = body.scheduled_on.slice(0, 10);
+    if (scheduledOn !== undefined) {
+      patch.scheduled_on = scheduledOn;
     }
     if (body.notes !== undefined) {
       patch.notes = typeof body.notes === 'string' ? body.notes : null;

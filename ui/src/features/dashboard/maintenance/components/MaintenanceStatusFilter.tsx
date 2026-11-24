@@ -14,7 +14,7 @@ export function MaintenanceStatusFilter({ value, onChange }: Props) {
       options={MAINTENANCE_STATUS_OPTIONS}
       value={value}
       onChange={onChange}
-      emptyLabel="All Status"
+      emptyLabel="All statuses"
       pluralUnit="statuses"
       ariaLabel="Status filter"
     />

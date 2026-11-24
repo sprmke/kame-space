@@ -1697,7 +1697,11 @@
 
   /** KPI / stat values on dashboard cards. */
   .text-stat-value {
-    @apply text-foreground text-base font-bold tabular-nums tracking-tight sm:text-xl md:text-2xl;
+    /* Color intentionally omitted: StatCard applies `valueClassName` after this token
+     * (`text-emerald-600`, `text-rose-600`). `@apply text-foreground` here won the cascade
+     * and every accent rendered as near-black in light mode. Body text still inherits
+     * foreground from the page. */
+    @apply text-base font-bold tabular-nums tracking-tight sm:text-xl md:text-2xl;
   }
 
   /** Money / amounts in list rows. */

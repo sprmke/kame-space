@@ -37,7 +37,7 @@ export function parseMaintenanceQueryFromParams(params: URLSearchParams): Mainte
     .map((value) => value.trim())
     .filter(
       (value): value is MaintenanceQuery['statusFilter'][number] =>
-        value === 'pending' || value === 'completed'
+        value === 'overdue' || value === 'pending' || value === 'completed'
     );
 
   const categoryFilter = (params.get('categories') ?? '')

@@ -23,38 +23,10 @@ import {
   reminderFieldsForRecurringRow,
   reminderFieldsForUpdate,
 } from './telegramMaintenance.ts';
+import { summarizeMaintenanceItems, type MaintenanceSummaryResult } from './maintenanceSummary.ts';
+import type { MaintenanceItemRow } from './maintenanceServiceTypes.ts';
 
-export type MaintenanceItemRow = {
-  id: string;
-  label: string;
-  category: string | null;
-  scheduled_on: string;
-  notes: string | null;
-  recurrence_series_id: string | null;
-  recurrence_interval: RecurrenceInterval | null;
-  telegram_reminder_enabled: boolean;
-  telegram_due_date: string | null;
-  telegram_days_before: number;
-  telegram_reminder_interval:
-    'hourly' | 'every_2_hours' | 'every_4_hours' | 'every_12_hours' | 'daily_noon';
-  telegram_message_template: string | null;
-  completed_at: string | null;
-  created_by: string | null;
-  created_at: string;
-  updated_at: string;
-};
-
-export type MaintenanceSummaryResult = {
-  period: {
-    from: string | null;
-    to: string | null;
-  };
-  total: number;
-  telegramEnabled: number;
-  completed: number;
-  pending: number;
-  byCategory: { category: string; count: number }[];
-};
+export type { MaintenanceItemRow, MaintenanceSummaryResult };
 
 function mapMaintenanceItemRow(row: Record<string, unknown>): MaintenanceItemRow {
   const interval = row.recurrence_interval;
@@ -119,6 +91,12 @@ export async function listMaintenanceItems(params: {
   q?: string;
   /** Also return rows whose telegram_due_date falls in range (merged, deduped). */
   includeDueInRange?: boolean;
+  /**
+   * Also return unfinished rows scheduled before `from` (overdue). Maintenance is the one
+   * list where unfinished work must not age out of view when the period moves on.
+   * Defaults to true; pass false for a strictly period-bounded read.
+   */
+  includeOverdue?: boolean;
 }): Promise<MaintenanceItemRow[]> {
   const supabase = getSupabase();
   let query = supabase.from('maintenance_items').select('*').order('scheduled_on', {
@@ -129,37 +107,53 @@ export async function listMaintenanceItems(params: {
   if (params.to) query = query.lte('scheduled_on', params.to);
   const { data, error } = await query;
   if (error) throw new Error(`maintenance_items query failed: ${error.message}`);
-  const byScheduled = (data ?? []).map((row) =>
-    mapMaintenanceItemRow(row as Record<string, unknown>)
-  );
 
-  if (!params.includeDueInRange || !params.from || !params.to) {
-    return filterMaintenanceItems(byScheduled, params.q);
-  }
-
-  const { data: dueData, error: dueError } = await (params.propertyId
-    ? supabase
-        .from('maintenance_items')
-        .select('*')
-        .eq('property_id', params.propertyId)
-        .gte('telegram_due_date', params.from)
-        .lte('telegram_due_date', params.to)
-        .order('telegram_due_date', { ascending: true })
-    : supabase
-        .from('maintenance_items')
-        .select('*')
-        .gte('telegram_due_date', params.from)
-        .lte('telegram_due_date', params.to)
-        .order('telegram_due_date', { ascending: true }));
-  if (dueError) {
-    throw new Error(`maintenance_items due query failed: ${dueError.message}`);
+  if (!params.from) {
+    const rows = (data ?? []).map((row) => mapMaintenanceItemRow(row as Record<string, unknown>));
+    return filterMaintenanceItems(rows, params.q);
   }
 
   const merged = new Map<string, MaintenanceItemRow>();
-  for (const row of byScheduled) merged.set(row.id, row);
-  for (const raw of dueData ?? []) {
-    const row = mapMaintenanceItemRow(raw as Record<string, unknown>);
-    merged.set(row.id, row);
+  for (const row of data ?? []) {
+    const item = mapMaintenanceItemRow(row as Record<string, unknown>);
+    merged.set(item.id, item);
+  }
+
+  if (params.includeDueInRange && params.to) {
+    let dueQuery = supabase
+      .from('maintenance_items')
+      .select('*')
+      .gte('telegram_due_date', params.from)
+      .lte('telegram_due_date', params.to)
+      .order('telegram_due_date', { ascending: true });
+    if (params.propertyId) dueQuery = dueQuery.eq('property_id', params.propertyId);
+    const { data: dueData, error: dueError } = await dueQuery;
+    if (dueError) {
+      throw new Error(`maintenance_items due query failed: ${dueError.message}`);
+    }
+    for (const raw of dueData ?? []) {
+      const item = mapMaintenanceItemRow(raw as Record<string, unknown>);
+      merged.set(item.id, item);
+    }
+  }
+
+  if (params.includeOverdue !== false) {
+    let overdueQuery = supabase
+      .from('maintenance_items')
+      .select('*')
+      .lt('scheduled_on', params.from)
+      .is('completed_at', null)
+      .order('scheduled_on', { ascending: true })
+      .limit(200);
+    if (params.propertyId) overdueQuery = overdueQuery.eq('property_id', params.propertyId);
+    const { data: overdueData, error: overdueError } = await overdueQuery;
+    if (overdueError) {
+      throw new Error(`maintenance_items overdue query failed: ${overdueError.message}`);
+    }
+    for (const raw of overdueData ?? []) {
+      const item = mapMaintenanceItemRow(raw as Record<string, unknown>);
+      merged.set(item.id, item);
+    }
   }
 
   return filterMaintenanceItems([...merged.values()], params.q);
@@ -249,42 +243,13 @@ export async function extendRecurringSeries(
   return { rows: merged, created_count: inserted.length };
 }
 
-function summarizeMaintenanceItems(
-  items: MaintenanceItemRow[]
-): Omit<MaintenanceSummaryResult, 'period'> {
-  let telegramEnabled = 0;
-  let completed = 0;
-  let pending = 0;
-  const categoryCounts = new Map<string, number>();
-
-  for (const item of items) {
-    if (item.telegram_reminder_enabled) telegramEnabled += 1;
-    if (item.completed_at) completed += 1;
-    else pending += 1;
-
-    const key = item.category?.trim() || '-';
-    categoryCounts.set(key, (categoryCounts.get(key) ?? 0) + 1);
-  }
-
-  const byCategory = [...categoryCounts.entries()]
-    .map(([category, count]) => ({ category, count }))
-    .sort((a, b) => b.count - a.count || a.category.localeCompare(b.category));
-
-  return {
-    total: items.length,
-    telegramEnabled,
-    completed,
-    pending,
-    byCategory,
-  };
-}
-
 export async function computeMaintenanceSummary(params: {
   propertyId?: string;
   from: string | null;
   to: string | null;
   q?: string;
   includeDueInRange?: boolean;
+  includeOverdue?: boolean;
 }): Promise<MaintenanceSummaryResult> {
   const items = await listMaintenanceItems({
     propertyId: params.propertyId,
@@ -292,6 +257,7 @@ export async function computeMaintenanceSummary(params: {
     to: params.to,
     q: params.q,
     includeDueInRange: params.includeDueInRange,
+    includeOverdue: params.includeOverdue,
   });
   const summary = summarizeMaintenanceItems(items);
 

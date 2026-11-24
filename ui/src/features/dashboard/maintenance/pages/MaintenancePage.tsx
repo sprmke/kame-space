@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { endOfMonth, format, startOfMonth } from 'date-fns';
-import { Plus, Wrench } from 'lucide-react';
+import { AlertCircle, Plus, RefreshCw, Wrench } from 'lucide-react';
 
 import { BookingDateRangeFilter } from '@/features/dashboard/bookings/components/BookingDateRangeFilter';
 import {
@@ -62,7 +62,8 @@ export function MaintenancePage() {
 
   const query = useMemo(() => {
     const parsed = parseMaintenanceQueryFromParams(searchParams);
-    if (!parsed.from && !parsed.to && !searchParams.has('from')) {
+    const allTime = searchParams.get('preset') === 'all';
+    if (!allTime && !parsed.from && !parsed.to && !searchParams.has('from')) {
       const thisMonth = rangeForPreset('this_month');
       return { ...parsed, ...thisMonth };
     }
@@ -71,7 +72,11 @@ export function MaintenancePage() {
 
   const setQuery = useCallback(
     (next: MaintenanceQuery, preset?: MaintenanceRangePreset) => {
-      setSearchParams(writeMaintenanceQueryToParams(next, preset), {
+      /* No dates is an explicit All dates choice. Without this, the date-range sync effect
+       * writes nulls back before the URL has `preset=all`, and the mount default snaps the
+       * view back to this month. */
+      const allDates = !next.from && !next.to;
+      setSearchParams(writeMaintenanceQueryToParams(next, allDates ? 'all' : preset), {
         replace: true,
       });
     },
@@ -87,6 +92,7 @@ export function MaintenancePage() {
   });
 
   useEffect(() => {
+    if (searchParams.get('preset') === 'all') return;
     if (searchParams.get('from') || searchParams.get('to')) return;
     const def = rangeForPreset('this_month');
     setSearchParams(
@@ -114,8 +120,11 @@ export function MaintenancePage() {
   });
 
   const handleClearDate = useCallback(() => {
-    setQuery({ ...query, page: 1, from: null, to: null });
-  }, [query, setQuery]);
+    /* Clear the picker's local range too: otherwise `useSyncDateRangeWithQuery` sees the
+     * URL drop to null while its state still holds the month and writes it straight back. */
+    dateNav.clearDateRange();
+    setQuery({ ...query, page: 1, from: null, to: null }, 'all');
+  }, [dateNav, query, setQuery]);
 
   useAdminMobileCardViewGuard(isMobileLayout, query, setQuery);
 
@@ -189,7 +198,6 @@ export function MaintenancePage() {
   return (
     <AdminMobilePage
       title="Maintenance"
-      subtitle="Set maintenance items and reminders."
       titleId="maintenance-heading"
       heroTrailing={heroActions}
       overlap={overlapControls}
@@ -198,12 +206,28 @@ export function MaintenancePage() {
     >
       {summaryQuery.isLoading && !summary ? (
         <MaintenanceOverviewSkeleton />
+      ) : summaryQuery.isError && !summary ? (
+        <div className="surface-card flex flex-col items-center justify-center gap-3 px-4 py-8 text-center sm:py-14">
+          <div className="icon-well-sm bg-destructive/10 inline-flex items-center justify-center">
+            <AlertCircle className="text-destructive size-[18px]" aria-hidden />
+          </div>
+          <p className="text-section-title text-foreground font-bold">Could not load totals</p>
+          <button
+            type="button"
+            className="border-border bg-card text-foreground hover:bg-muted inline-flex min-h-[44px] items-center gap-1.5 rounded-lg border px-3 text-[13px] font-semibold"
+            onClick={() => void summaryQuery.refetch()}
+          >
+            <RefreshCw className="size-4" aria-hidden />
+            Try again
+          </button>
+        </div>
       ) : summary ? (
         <MaintenanceSummaryCards
           total={summary.total}
           telegramEnabled={summary.telegramEnabled}
           completed={summary.completed}
           pending={summary.pending}
+          overdue={summary.overdue}
         />
       ) : (
         <div className="surface-card flex flex-col items-center justify-center gap-3 px-4 py-8 text-center sm:py-20">
@@ -231,8 +255,10 @@ export function MaintenancePage() {
         onCreateOpenChange={setCreateOpen}
         calendarInitialMonth={dateNav.dateRange.from ?? undefined}
         onCalendarMonthChange={handleCalendarMonthChange}
+        canAdd={canAddReminder}
         canEdit={canEditReminder}
         canDelete={canDeleteReminder}
+        onShowAllDates={handleClearDate}
       />
     </AdminMobilePage>
   );

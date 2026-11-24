@@ -54,7 +54,9 @@ export function FormFieldBlock({
       {children}
       {hint ? <p className="text-caption text-muted-foreground mt-1">{hint}</p> : null}
       {error ? (
-        <p role="alert" className="text-destructive mt-1 text-xs font-medium">
+        /* red-700/red-400 instead of `text-destructive`: the destructive token is 3.78:1
+         * at 12px on white, below WCAG AA for body-size text. */
+        <p role="alert" className="mt-1 text-xs font-medium text-red-700 dark:text-red-400">
           {error}
         </p>
       ) : null}

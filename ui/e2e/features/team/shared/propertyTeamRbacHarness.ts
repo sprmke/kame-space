@@ -1728,6 +1728,7 @@ export async function installPropertyTeamRbacMocks(
             telegramEnabled: 0,
             completed: 0,
             pending: 0,
+            overdue: 0,
             byCategory: [],
           },
         });

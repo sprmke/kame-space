@@ -2,6 +2,7 @@ import { format, parseISO } from 'date-fns';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
+import { maintenanceReminderStatus } from '@/features/dashboard/maintenance/lib/maintenanceReminders';
 import type {
   MaintenanceExportType,
   MaintenanceItem,
@@ -60,9 +61,10 @@ function periodRangeLabel(from: string | null, to: string | null): string {
 }
 
 function itemStatusLabel(item: MaintenanceItem): string {
-  if (item.completed_at) return 'Done';
-  if (item.telegram_reminder_enabled) return 'Pending';
-  return '-';
+  const status = maintenanceReminderStatus(item);
+  if (status === 'completed') return 'Done';
+  if (status === 'overdue') return 'Overdue';
+  return 'Pending';
 }
 
 type MaintenancePdfPayload = {
@@ -74,8 +76,22 @@ type MaintenancePdfPayload = {
 };
 
 function buildMaintenanceHeaderMeta(query: MaintenanceQuery): string[] {
-  if (!query.q.trim()) return [];
-  return [`Search: "${query.q.trim()}"`];
+  const meta: string[] = [];
+  if (query.q.trim()) meta.push(`Search: "${query.q.trim()}"`);
+  if (query.statusFilter.length > 0) {
+    meta.push(
+      `Status: ${query.statusFilter
+        .map((status) => status[0].toUpperCase() + status.slice(1))
+        .join(', ')}`
+    );
+  }
+  if (query.categoryFilter.length > 0) {
+    meta.push(`Category: ${query.categoryFilter.join(', ')}`);
+  }
+  if (query.telegramFilter !== 'all') {
+    meta.push(`Telegram: ${query.telegramFilter === 'enabled' ? 'On' : 'Off'}`);
+  }
+  return meta;
 }
 
 function appendOverviewSection(doc: jsPDF, y: number, summary: MaintenanceSummary): number {
@@ -197,7 +213,7 @@ async function buildMaintenanceReportPdf(
   if (type === 'reminders' || type === 'combined') {
     y = advanceSectionGap(y);
     y = ensurePageSpace(doc, y, type === 'combined' && payload.items.length === 0 ? 40 : 70);
-    y = appendRemindersSection(doc, y, payload.items);
+    appendRemindersSection(doc, y, payload.items);
   }
 
   addPageFooter(doc, 'Maintenance', payload.scopeLabel);

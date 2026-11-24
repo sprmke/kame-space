@@ -707,6 +707,24 @@ Viewing reminders is included on every plan. PDF export needs the reporting feat
 
 Yes. Pick Other (type your own), then type the category name and press Enter (or choose Use "..."). It saves with the reminder and works in filters, cards, and reports like the built-in categories.
 
+### What is the difference between Pending and Overdue on Maintenance?
+
+- category: Maintenance & Operations
+- audience: host
+- source: docs/guides/routes/org/property/maintenance.md
+- order: 60
+
+Pending is work due today or later. Overdue is unfinished work whose scheduled date has passed. A task you finish late counts as Completed, not Overdue. The list opens with Due soonest first, and unfinished reminders from older months stay in view.
+
+### How do I mark a maintenance task done quickly?
+
+- category: Maintenance & Operations
+- audience: host
+- source: docs/guides/routes/org/property/maintenance.md
+- order: 70
+
+Use the check icon on the reminder row, card, or calendar day. On phone, open the ... menu and choose Mark done. The confirmation has an Undo action. You can also tick Mark as done when editing.
+
 ### What can I ask the AI assistant?
 
 - category: AI Assistant

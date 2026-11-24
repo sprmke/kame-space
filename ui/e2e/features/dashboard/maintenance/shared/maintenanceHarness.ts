@@ -32,6 +32,19 @@ export const MAINTENANCE_ITEMS_PATH = '**/functions/v1/maintenance-items**';
 export const MAINTENANCE_SUMMARY_PATH = '**/functions/v1/maintenance-summary**';
 export const MAINTENANCE_ACTIVITY_PATH = '**/functions/v1/list-activity-log**';
 
+/** ISO date in Asia/Manila, offset from now by whole days. */
+export function manilaIso(offsetDays = 0): string {
+  const date = new Date(Date.now() + offsetDays * 86_400_000);
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Manila',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date);
+  const get = (type: string) => parts.find((part) => part.type === type)?.value ?? '';
+  return `${get('year')}-${get('month')}-${get('day')}`;
+}
+
 export function maintenanceItem(
   overrides: Partial<MaintenanceItemFixture> = {}
 ): MaintenanceItemFixture {
@@ -39,7 +52,7 @@ export function maintenanceItem(
     id: 'rem-1',
     label: 'Aircon filter service',
     category: 'Aircon',
-    scheduled_on: '2026-11-28',
+    scheduled_on: manilaIso(4),
     notes: 'Replace the washable filter.',
     recurrence_series_id: null,
     recurrence_interval: null,
@@ -56,29 +69,32 @@ export function maintenanceItem(
   };
 }
 
-/** One pending one-off, one completed Telegram reminder, one recurring pending reminder. */
+/**
+ * One pending one-off, one completed Telegram reminder, one overdue recurring reminder.
+ * Dates are relative to today so the overdue/pending split stays deterministic whenever CI runs.
+ */
 export const MAINTENANCE_FIXTURES: MaintenanceItemFixture[] = [
   maintenanceItem(),
   maintenanceItem({
     id: 'rem-2',
     label: 'Pool pump inspection',
     category: 'Pool',
-    scheduled_on: '2026-11-26',
+    scheduled_on: manilaIso(-2),
     notes: null,
     telegram_reminder_enabled: true,
-    telegram_due_date: '2026-11-26',
-    completed_at: '2026-11-20T04:00:00.000Z',
+    telegram_due_date: manilaIso(-2),
+    completed_at: `${manilaIso(-1)}T04:00:00.000Z`,
   }),
   maintenanceItem({
     id: 'rem-3',
     label: 'Deep clean kitchen',
     category: 'Cleaning',
-    scheduled_on: '2026-11-20',
+    scheduled_on: manilaIso(-6),
     notes: null,
     recurrence_series_id: 'series-1',
     recurrence_interval: 'monthly',
     telegram_reminder_enabled: true,
-    telegram_due_date: '2026-11-20',
+    telegram_due_date: manilaIso(-6),
   }),
 ];
 
@@ -89,13 +105,16 @@ export function summarizeMaintenance(items: MaintenanceItemFixture[]) {
     if (!category) continue;
     byCategory.set(category, (byCategory.get(category) ?? 0) + 1);
   }
+  const today = manilaIso();
   const completed = items.filter((item) => item.completed_at).length;
+  const overdue = items.filter((item) => !item.completed_at && item.scheduled_on < today).length;
   return {
-    period: { from: '2026-11-01', to: '2026-11-30' },
+    period: { from: null, to: null },
     total: items.length,
     telegramEnabled: items.filter((item) => item.telegram_reminder_enabled).length,
     completed,
-    pending: items.length - completed,
+    pending: items.length - completed - overdue,
+    overdue,
     byCategory: [...byCategory.entries()]
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([category, count]) => ({ category, count })),
@@ -142,7 +161,7 @@ export async function installMaintenanceMocks(
         id: `rem-new-${creates}`,
         label: String(body.label ?? 'New reminder'),
         category: body.category ? String(body.category) : null,
-        scheduled_on: String(body.scheduled_on ?? '2026-11-24'),
+        scheduled_on: String(body.scheduled_on ?? manilaIso()),
         notes: body.notes ? String(body.notes) : null,
         recurrence_series_id: body.recurrence_interval ? `series-new-${creates}` : null,
         recurrence_interval: body.recurrence_interval ?? null,

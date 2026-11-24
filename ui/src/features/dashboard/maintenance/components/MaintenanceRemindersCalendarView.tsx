@@ -1,10 +1,11 @@
-import { Pencil, Repeat, Trash2 } from 'lucide-react';
+import { CheckCircle2, Pencil, Repeat, Trash2 } from 'lucide-react';
 
 import { CalendarDatePill } from '@/features/dashboard/bookings/components/calendar/CalendarDatePill';
 import { DateCalendarView } from '@/features/dashboard/bookings/components/calendar/DateCalendarView';
 import type { StatusTone } from '@/features/dashboard/bookings/lib/bookingStatus';
 import { recurrenceIntervalLabel } from '@/features/dashboard/finance/lib/recurrence';
 import { MaintenanceStatusBadge } from '@/features/dashboard/maintenance/components/MaintenanceRemindersCardGrid';
+import { maintenanceReminderStatus } from '@/features/dashboard/maintenance/lib/maintenanceReminders';
 import type { MaintenanceItem } from '@/features/dashboard/maintenance/lib/types';
 
 import { cn } from '@/lib/utils';
@@ -13,6 +14,7 @@ type ItemActions = {
   onEdit?: (item: MaintenanceItem) => void;
   onDelete?: (item: MaintenanceItem) => void;
   onOpenSeries?: (item: MaintenanceItem) => void;
+  onMarkDone?: (item: MaintenanceItem) => void;
 };
 
 type Props = ItemActions & {
@@ -22,13 +24,13 @@ type Props = ItemActions & {
   isRefreshing?: boolean;
   initialMonth?: Date;
   onMonthChange?: (month: Date) => void;
-  showStatus?: boolean;
 };
 
 function reminderTone(item: MaintenanceItem): StatusTone {
-  if (item.telegram_reminder_enabled && !item.completed_at) return 'yellow';
-  if (item.completed_at) return 'green';
-  return 'neutral';
+  const status = maintenanceReminderStatus(item);
+  if (status === 'completed') return 'green';
+  if (status === 'overdue') return 'red';
+  return item.telegram_reminder_enabled ? 'yellow' : 'neutral';
 }
 
 export function MaintenanceRemindersCalendarView({
@@ -38,10 +40,10 @@ export function MaintenanceRemindersCalendarView({
   isRefreshing,
   initialMonth,
   onMonthChange,
-  showStatus = false,
   onEdit,
   onDelete,
   onOpenSeries,
+  onMarkDone,
 }: Props) {
   return (
     <DateCalendarView
@@ -57,10 +59,10 @@ export function MaintenanceRemindersCalendarView({
       renderDayItem={(item) => (
         <MaintenanceReminderDayCard
           item={item}
-          showStatus={showStatus}
           onEdit={onEdit ? () => onEdit(item) : undefined}
           onDelete={onDelete ? () => onDelete(item) : undefined}
           onOpenSeries={onOpenSeries ? () => onOpenSeries(item) : undefined}
+          onMarkDone={onMarkDone ? () => onMarkDone(item) : undefined}
         />
       )}
       entityLabel="reminders"
@@ -75,17 +77,20 @@ export function MaintenanceRemindersCalendarView({
 
 function MaintenanceReminderDayCard({
   item,
-  showStatus,
   onEdit,
   onDelete,
   onOpenSeries,
+  onMarkDone,
 }: {
   item: MaintenanceItem;
-  showStatus: boolean;
   onEdit?: () => void;
   onDelete?: () => void;
   onOpenSeries?: () => void;
+  onMarkDone?: () => void;
 }) {
+  const status = maintenanceReminderStatus(item);
+  const isComplete = status === 'completed';
+
   return (
     <div className="border-border/50 bg-card rounded-xl border p-3">
       {item.recurrence_series_id && onOpenSeries ? (
@@ -106,18 +111,16 @@ function MaintenanceReminderDayCard({
         <p className="text-data-secondary mt-0.5 truncate">{item.category}</p>
       ) : null}
 
-      {showStatus && item.telegram_reminder_enabled ? (
-        <div className="mt-2">
-          <MaintenanceStatusBadge isComplete={Boolean(item.completed_at)} />
-        </div>
-      ) : null}
+      <div className="mt-2">
+        <MaintenanceStatusBadge status={status} />
+      </div>
 
       {item.notes ? <p className="text-data-secondary mt-1 line-clamp-2">{item.notes}</p> : null}
 
       <div className="mt-2 flex justify-end gap-0.5">
-        {item.recurrence_series_id && onOpenSeries ? (
-          <DayIconButton label="View series" onClick={onOpenSeries}>
-            <Repeat className="size-4" />
+        {onMarkDone && !isComplete ? (
+          <DayIconButton label={`Mark ${item.label} done`} onClick={onMarkDone}>
+            <CheckCircle2 className="size-4" />
           </DayIconButton>
         ) : null}
         {onEdit ? (

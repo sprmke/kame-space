@@ -3,12 +3,14 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import {
   CalendarPlus,
   CalendarRange,
+  ChevronDown,
   Hash,
   Loader2,
   Pencil,
   Repeat,
   Tag,
   Trash2,
+  X,
 } from 'lucide-react';
 
 import {
@@ -47,6 +49,7 @@ import { RecurringSeriesTableSkeleton } from '@/components/skeletons/AdminSkelet
 import { IsoDateInput } from '@/components/ui/iso-date-input';
 import {
   ResponsiveModal,
+  ResponsiveModalClose,
   ResponsiveModalContent,
   ResponsiveModalFooter,
   ResponsiveModalHeader,
@@ -74,9 +77,18 @@ type Props = {
   open: boolean;
   onClose: () => void;
   query: MaintenanceQuery;
+  canEdit?: boolean;
+  canDelete?: boolean;
 };
 
-export function RecurringSeriesModal({ anchor, open, onClose, query }: Props) {
+export function RecurringSeriesModal({
+  anchor,
+  open,
+  onClose,
+  query,
+  canEdit = true,
+  canDelete = true,
+}: Props) {
   const seriesId = anchor?.recurrence_series_id ?? null;
   const { data: items = [], isLoading, isFetching } = useRecurringSeries(open ? seriesId : null);
   const { extend, update, remove } = useRecurringSeriesMutations(seriesId, query);
@@ -86,6 +98,7 @@ export function RecurringSeriesModal({ anchor, open, onClose, query }: Props) {
 
   const [extendBeforeUntil, setExtendBeforeUntil] = useState('');
   const [extendAfterUntil, setExtendAfterUntil] = useState('');
+  const [extendOpen, setExtendOpen] = useState(false);
   const [editing, setEditing] = useState<MaintenanceItem | null>(null);
   const [deleting, setDeleting] = useState<MaintenanceItem | null>(null);
   const [wizard, setWizard] = useState<MaintenanceItemFormWizardState>(INITIAL_WIZARD);
@@ -185,7 +198,7 @@ export function RecurringSeriesModal({ anchor, open, onClose, query }: Props) {
       >
         <ResponsiveModalContent
           sheetLayout="split"
-          className="flex max-h-[min(92dvh,44rem)] w-full max-w-[min(calc(100vw-1.5rem),36rem)] flex-col gap-0 overflow-hidden p-0 pb-0 pt-0 sm:max-w-[min(90vw,42rem)] sm:p-0 md:max-w-[min(90vw,48rem)] lg:max-h-[min(90dvh,52rem)] lg:max-w-[min(calc(100vw-3rem),56rem)]"
+          className="flex max-h-[min(92dvh,44rem)] w-full max-w-[min(calc(100vw-1.5rem),36rem)] flex-col gap-0 overflow-hidden p-0 pb-0 pt-0 max-lg:h-[min(92dvh,44rem)] sm:max-w-[min(90vw,42rem)] sm:p-0 md:max-w-[min(90vw,48rem)] lg:max-h-[min(90dvh,52rem)] lg:max-w-[min(calc(100vw-3rem),56rem)]"
           onPointerDownOutside={(e) => {
             const target = e.target as Element | null;
             if (target?.closest('[data-radix-popper-content-wrapper]')) {
@@ -199,7 +212,16 @@ export function RecurringSeriesModal({ anchor, open, onClose, query }: Props) {
           }}
         >
           <div className="border-border/60 shrink-0 space-y-3.5 border-b px-4 pb-3 pt-[max(env(safe-area-inset-top,0px),0.875rem)] sm:px-5 sm:pb-3">
-            <ResponsiveModalHeader className="pr-0 text-left">
+            <ResponsiveModalHeader className="relative pr-0 text-left">
+              <ResponsiveModalClose asChild>
+                <button
+                  type="button"
+                  aria-label="Close"
+                  className="text-muted-foreground hover:bg-muted hover:text-foreground absolute right-0 top-0 inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg transition-colors lg:hidden"
+                >
+                  <X className="size-4" aria-hidden />
+                </button>
+              </ResponsiveModalClose>
               <ResponsiveModalTitle className="flex flex-wrap items-center gap-2 pr-12 sm:pr-14">
                 <span>{summary?.label ?? anchor.label}</span>
                 {interval ? (
@@ -224,8 +246,20 @@ export function RecurringSeriesModal({ anchor, open, onClose, query }: Props) {
 
             {interval && seriesStart && seriesEnd ? (
               <div className="space-y-2">
-                <p className="text-overline">Extend series</p>
-                <div className="grid gap-2 sm:grid-cols-2">
+                <button
+                  type="button"
+                  className="text-muted-foreground hover:text-foreground flex min-h-[44px] w-full items-center justify-between gap-2 text-left lg:hidden"
+                  aria-expanded={extendOpen}
+                  onClick={() => setExtendOpen((next) => !next)}
+                >
+                  <span className="text-overline">Extend series</span>
+                  <ChevronDown
+                    className={cn('size-4 transition-transform', extendOpen && 'rotate-180')}
+                    aria-hidden
+                  />
+                </button>
+                <p className="text-overline hidden lg:block">Extend series</p>
+                <div className={cn('grid gap-2 sm:grid-cols-2', !extendOpen && 'hidden lg:grid')}>
                   <ExtendPanel
                     label="Add earlier occurrences"
                     description={`Before ${formatIsoDateForDisplay(seriesStart)}`}
@@ -281,7 +315,7 @@ export function RecurringSeriesModal({ anchor, open, onClose, query }: Props) {
                 No occurrences found in this series.
               </p>
             ) : (
-              <AdminDataTable minWidth={480} stickyHeader className="min-h-0 flex-1">
+              <AdminDataTable minWidth={320} stickyHeader className="min-h-0 flex-1">
                 <AdminTableHeadRow sticky>
                   <AdminTableTh className="pl-2 pr-3 sm:pl-3">Date</AdminTableTh>
                   <AdminTableTh className="hidden px-2 sm:table-cell sm:px-3 lg:max-w-none lg:whitespace-normal">
@@ -301,7 +335,7 @@ export function RecurringSeriesModal({ anchor, open, onClose, query }: Props) {
                         <p className="text-data-primary">{formatIsoDate(item.scheduled_on)}</p>
                         {item.id === anchor.id ? (
                           <span className="bg-primary/10 text-primary mt-0.5 inline-flex rounded-full px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
-                            Opened from list
+                            Selected
                           </span>
                         ) : null}
                       </td>
@@ -315,25 +349,29 @@ export function RecurringSeriesModal({ anchor, open, onClose, query }: Props) {
                       </td>
                       <td className={adminTableCell.action}>
                         <div className="flex justify-end gap-0.5">
-                          <button
-                            type="button"
-                            className={adminTableIconButtonClass}
-                            aria-label={`Edit ${formatIsoDate(item.scheduled_on)}`}
-                            onClick={() => setEditing(item)}
-                          >
-                            <Pencil className="size-4" />
-                          </button>
-                          <button
-                            type="button"
-                            className={cn(
-                              adminTableIconButtonClass,
-                              'hover:bg-destructive/10 hover:text-destructive'
-                            )}
-                            aria-label={`Delete ${formatIsoDate(item.scheduled_on)}`}
-                            onClick={() => setDeleting(item)}
-                          >
-                            <Trash2 className="size-4" />
-                          </button>
+                          {canEdit ? (
+                            <button
+                              type="button"
+                              className={adminTableIconButtonClass}
+                              aria-label={`Edit ${formatIsoDate(item.scheduled_on)}`}
+                              onClick={() => setEditing(item)}
+                            >
+                              <Pencil className="size-4" />
+                            </button>
+                          ) : null}
+                          {canDelete ? (
+                            <button
+                              type="button"
+                              className={cn(
+                                adminTableIconButtonClass,
+                                'hover:bg-destructive/10 hover:text-destructive'
+                              )}
+                              aria-label={`Delete ${formatIsoDate(item.scheduled_on)}`}
+                              onClick={() => setDeleting(item)}
+                            >
+                              <Trash2 className="size-4" />
+                            </button>
+                          ) : null}
                         </div>
                       </td>
                     </tr>
@@ -348,7 +386,8 @@ export function RecurringSeriesModal({ anchor, open, onClose, query }: Props) {
       <ResponsiveModal open={editing != null} onOpenChange={onEditOpenChange}>
         <ResponsiveModalContent
           sheetLayout="split"
-          className="flex max-h-[min(90dvh,44rem)] max-w-[min(calc(100vw-1.5rem),34rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-[min(calc(100vw-2rem),36rem)] sm:p-0"
+          className="flex max-h-[min(90dvh,44rem)] max-w-[min(calc(100vw-1.5rem),34rem)] flex-col gap-0 overflow-hidden p-0 max-lg:h-[min(92dvh,44rem)] sm:max-w-[min(calc(100vw-2rem),36rem)] sm:p-0"
+          onOpenAutoFocus={(event) => event.preventDefault()}
           onPointerDownOutside={(e) => {
             const target = e.target as Element | null;
             if (target?.closest('[data-radix-popper-content-wrapper]')) {
@@ -362,7 +401,11 @@ export function RecurringSeriesModal({ anchor, open, onClose, query }: Props) {
             <ResponsiveModalTitle>Edit occurrence</ResponsiveModalTitle>
             {wizard.stepLabels.length > 1 ? (
               <nav aria-label="Reminder steps" className="mt-3">
-                <SegmentedStepProgress labels={wizard.stepLabels} currentIndex={wizard.stepIndex} />
+                <SegmentedStepProgress
+                  labels={wizard.stepLabels}
+                  currentIndex={wizard.stepIndex}
+                  ariaLabel="Reminder steps"
+                />
               </nav>
             ) : null}
           </ResponsiveModalHeader>
@@ -433,17 +476,19 @@ function SeriesSummaryGrid({
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
         <SummaryStat icon={Tag} label="Category" value={category ?? '-'} />
         <SummaryStat icon={Hash} label="Occurrences" value={String(count)} />
-        <SummaryStat
-          icon={CalendarRange}
-          label="Date range"
-          value={
-            <>
-              {formatIsoDate(seriesStart)}
-              <span className="text-muted-foreground mx-1 font-normal">→</span>
-              {formatIsoDate(seriesEnd)}
-            </>
-          }
-        />
+        <div className="col-span-2 sm:col-span-1">
+          <SummaryStat
+            icon={CalendarRange}
+            label="Date range"
+            value={
+              <>
+                {formatIsoDate(seriesStart)}
+                <span className="text-muted-foreground mx-1 font-normal">→</span>
+                {formatIsoDate(seriesEnd)}
+              </>
+            }
+          />
+        </div>
       </div>
     </div>
   );
@@ -466,7 +511,7 @@ function SummaryStat({
           {label}
         </p>
       </div>
-      <div className="text-foreground mt-1.5 truncate text-sm font-semibold">{value}</div>
+      <div className="text-foreground mt-1.5 break-words text-sm font-semibold">{value}</div>
     </div>
   );
 }

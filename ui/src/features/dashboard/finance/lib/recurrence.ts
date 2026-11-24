@@ -41,7 +41,7 @@ export const FINANCE_REMINDER_INTERVAL_OPTIONS: {
   },
   {
     value: 'daily_noon',
-    label: 'Daily at 12:00 PM',
+    label: 'Daily at noon',
     description: 'One reminder each day at noon, Manila time.',
   },
 ];
@@ -439,4 +439,28 @@ export function defaultRecurrenceUntil(
     return formatIso(date.getFullYear(), date.getMonth() + 1, date.getDate());
   }
   return formatIso(y + 5, m, Math.min(d, daysInMonth(y + 5, m)));
+}
+
+/**
+ * How many reminders a schedule creates, using the same stepping as the server and the
+ * same 500-occurrence cap. Used by the maintenance form so hosts see the row count before
+ * saving a recurring reminder instead of learning it from a toast afterwards.
+ */
+export function countRecurrenceOccurrences(
+  start: string,
+  interval: Exclude<RecurrenceInterval, 'none'>,
+  until: string
+): number {
+  if (!start) return 0;
+  if (!until || until < start) return 1;
+  const primaryDay = parseIso(start).d;
+  let cur = start;
+  let count = 0;
+  while (cur <= until && count < 500) {
+    count += 1;
+    const next = addInterval(cur, interval, primaryDay);
+    if (next <= cur) break;
+    cur = next;
+  }
+  return count;
 }

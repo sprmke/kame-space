@@ -18,6 +18,12 @@ type Options = {
   initialRange?: DateRange | null;
 };
 
+/* All dates is represented by an empty picker range. `toIsoDate` only accepts a Date, so
+ * normalize missing and invalid dates to null instead of throwing "Invalid time value". */
+function safeIso(value: Date | undefined): string | null {
+  return value && !Number.isNaN(value.getTime()) ? toIsoDate(value) : null;
+}
+
 /**
  * Generic hook for date navigation state. Mirrors the
  * `useDateNavigation` from property-management-app (apps/web/src/hooks/use-date-navigation.ts)
@@ -49,8 +55,17 @@ export function useDateNavigation(options: Options = {}): DateNavigationState {
 
   const setDateRange = useCallback((range: DateRange) => {
     setDateRangeState(range);
-    setReferenceDate(range.from);
-    setDatePresetState(detectPresetFromRange(range.from, range.to));
+    setReferenceDate(range.from ?? new Date());
+    setDatePresetState(
+      range.from && range.to ? detectPresetFromRange(range.from, range.to) : 'custom'
+    );
+  }, []);
+
+  /** Explicit All dates: the picker has no range and the URL drops `from`/`to`. */
+  const clearDateRange = useCallback(() => {
+    setDateRangeState({} as DateRange);
+    setReferenceDate(new Date());
+    setDatePresetState('custom');
   }, []);
 
   const navigatePeriod = useCallback(
@@ -76,6 +91,7 @@ export function useDateNavigation(options: Options = {}): DateNavigationState {
     datePreset,
     setDatePreset,
     setDateRange,
+    clearDateRange,
     navigatePeriod,
     goToToday,
   };
@@ -102,6 +118,7 @@ export function useSyncDateRangeWithQuery(
   urlTo: string | null,
   onChange: (next: { from: string | null; to: string | null }) => void
 ) {
+  const { setDateRange } = state;
   const firstEmit = useRef(true);
   const hydratingFromUrl = useRef(false);
   const dateRangeRef = useRef(state.dateRange);
@@ -115,12 +132,12 @@ export function useSyncDateRangeWithQuery(
     const from = fromIsoDate(urlFrom);
     const to = fromIsoDate(urlTo);
     if (!from || !to) return;
-    const curFrom = toIsoDate(dateRangeRef.current.from);
-    const curTo = toIsoDate(dateRangeRef.current.to);
+    const curFrom = safeIso(dateRangeRef.current.from);
+    const curTo = safeIso(dateRangeRef.current.to);
     if (curFrom === urlFrom && curTo === urlTo) return;
     hydratingFromUrl.current = true;
-    state.setDateRange({ from, to });
-  }, [urlFrom, urlTo, state.setDateRange]);
+    setDateRange({ from, to });
+  }, [urlFrom, urlTo, setDateRange]);
 
   useEffect(() => {
     if (firstEmit.current) {
@@ -132,8 +149,8 @@ export function useSyncDateRangeWithQuery(
       return;
     }
     const next = {
-      from: toIsoDate(state.dateRange.from),
-      to: toIsoDate(state.dateRange.to),
+      from: safeIso(state.dateRange.from),
+      to: safeIso(state.dateRange.to),
     };
     if (next.from === urlFrom && next.to === urlTo) {
       return;

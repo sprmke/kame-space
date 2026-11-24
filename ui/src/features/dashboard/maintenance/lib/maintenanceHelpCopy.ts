@@ -4,12 +4,12 @@
  */
 import type { HelpCopyModule } from '@/lib/help/types';
 
-/** Maintenance summary cards. `telegramEnabled` items will send a reminder. */
+/** Maintenance summary cards. */
 export const MAINTENANCE_HELP_COPY = {
-  telegramEnabled: {
-    hint: 'Items that will send a reminder to your Telegram chat.',
+  overdue: {
+    hint: 'Unfinished reminders whose scheduled date has passed.',
   },
   pending: {
-    hint: 'Items not marked complete yet.',
+    hint: 'Unfinished reminders for today or later.',
   },
 } satisfies HelpCopyModule;
