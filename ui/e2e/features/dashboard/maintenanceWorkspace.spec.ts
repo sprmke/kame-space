@@ -340,6 +340,21 @@ test.describe('@ci maintenance workspace', () => {
     await expect(page.locator('table')).toHaveCount(0);
     await expect(page.getByRole('tab', { name: 'Calendar', exact: true })).toBeVisible();
     await expect(page.getByText('Overdue').first()).toBeVisible();
+
+    // The card is an article with sibling buttons: no nested interactive controls.
+    const results = await new AxeBuilder({ page })
+      .include('[data-admin-mobile-page]')
+      .withTags(WCAG_TAGS)
+      .analyze();
+    const serious = results.violations.filter((violation) =>
+      ['serious', 'critical'].includes(violation.impact ?? '')
+    );
+    expect(
+      serious.map(
+        (violation) =>
+          `${violation.id}: ${violation.nodes.map((node) => node.target.join(' ')).join(', ')}`
+      )
+    ).toEqual([]);
   });
 
   test('create dialog has no serious or critical WCAG violations', async ({ page }) => {
