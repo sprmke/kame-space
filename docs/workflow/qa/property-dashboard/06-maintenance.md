@@ -95,6 +95,8 @@ Before images are the original audit captures against the seeded local stack. Af
 | ![Before: thin middle step](./maintenance/create-step2-thin.jpg)                          | ![After: merged details step](./maintenance/after/04-desktop-create-details.jpg)    |
 | ![Before: completed filter blank status](./maintenance/completed-filter-blank-status.jpg) | ![After: explicit statuses](./maintenance/after/01-desktop-1440.jpg)                |
 
+The 320 list and calendar after captures are in the additional set below. The 320 FAB overlap (M-11) and the calendar's empty default panel (M-12) are deferred; the calendar capture selects a day so the populated panel is visible.
+
 Additional after states: [completed filter](./maintenance/after/21-desktop-completed-filter.jpg), [filters](./maintenance/after/02-desktop-filters.jpg), [tablet](./maintenance/after/07-tablet-768.jpg), [390 list](./maintenance/after/08-phone-390.jpg), [no matches](./maintenance/after/09-phone-no-match.jpg), [refine sheet](./maintenance/after/10-phone-refine.jpg), [card actions](./maintenance/after/11-phone-card-actions.jpg), [desktop preview](./maintenance/after/05-desktop-create-preview.jpg), [empty period](./maintenance/after/18-desktop-empty-period.jpg), [empty all dates](./maintenance/after/19-desktop-empty-all-dates.jpg), [dark theme](./maintenance/after/20-desktop-dark.jpg).
 
 ---
