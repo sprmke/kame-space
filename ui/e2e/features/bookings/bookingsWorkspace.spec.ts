@@ -23,6 +23,8 @@ import {
  * counts are exercised for real rather than asserted against a static array.
  */
 
+const WCAG_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
+
 const STAGE_COUNTS = {
   'Action Required': 5,
   'Pending Docs': 4,
@@ -115,7 +117,7 @@ test.describe('bookings list @ci', () => {
 
   test('every row opens its own booking detail', async ({ page }) => {
     await openList(page);
-    await page.getByRole('button', { name: 'Open booking for Ana Villanueva' }).click();
+    await page.getByRole('link', { name: 'Ana Villanueva', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Ana Villanueva' })).toBeVisible({
       timeout: 20_000,
     });
@@ -140,6 +142,30 @@ test.describe('bookings list @ci', () => {
     await openList(page);
     await expectNoPageHorizontalOverflow(page);
     await expectNoUnnamedInteractiveControls(page);
+  });
+
+  test('rows stay rows, with the guest name as the real link', async ({ page }) => {
+    await openList(page);
+    // A populated table is where `role="button"` rows failed axe; the empty-state sweep missed it.
+    await expect(page.locator('tbody tr[role="button"]')).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Maria Santos', exact: true })).toBeVisible();
+    // Sort state lives on the column header, not on the button inside it.
+    await expect(page.locator('th[aria-sort]')).toHaveCount(1);
+    await expect(page.locator('button[aria-sort]')).toHaveCount(0);
+  });
+
+  test('list has no serious or critical axe violations', async ({ page }) => {
+    await openList(page);
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    const results = await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze();
+    const serious = results.violations.filter((v) =>
+      ['serious', 'critical'].includes(v.impact ?? '')
+    );
+    expect(
+      serious.map(
+        (v) => `${v.id}: ${v.help} (${v.nodes.slice(0, 3).map((n) => n.target.join(' ')).join(', ')})`
+      )
+    ).toEqual([]);
   });
 
   test('a failed list request surfaces an error state with the reason', async ({ page }) => {
@@ -242,8 +268,6 @@ test.describe('booking detail @ci', () => {
   });
 });
 
-const WCAG_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
-
 /**
  * The existing axe sweep covers the bookings *list* but not a booking *detail* page.
  * Detail is the denser surface (workflow rail, nested doc groups, forms), so it gets
@@ -261,17 +285,8 @@ test.describe('booking detail — accessibility @ci', () => {
     });
     await page.emulateMedia({ reducedMotion: 'reduce' });
     const results = await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze();
-    /**
-     * Two known defects are tracked in
-     * `docs/workflow/in-progress/bookings-ux-review/README.md` and excluded so that any
-     * *new* serious violation still fails this gate:
-     *  - `color-contrast`: Cancel booking tinted button is 4.12:1 (needs 4.5:1)
-     *  - `label-content-name-mismatch`: aria-label "Return to Pending Review" vs visible
-     *    text "Return to Review"
-     */
-    const KNOWN = new Set(['color-contrast', 'label-content-name-mismatch']);
-    const serious = results.violations.filter(
-      (v) => ['serious', 'critical'].includes(v.impact ?? '') && !KNOWN.has(v.id)
+    const serious = results.violations.filter((v) =>
+      ['serious', 'critical'].includes(v.impact ?? '')
     );
     expect(
       serious.map(
@@ -299,19 +314,28 @@ test.describe('booking detail — read-only member @ci', () => {
     await expect(page.getByRole('button', { name: /^(Write|Edit review)$/ })).toHaveCount(0);
   });
 
-  /**
-   * Known defect (open): the door-code field renders an editable input + Save for a
-   * view-only member, and the server rejects the write with 403. Flip this to a normal
-   * assertion once `GuestAccessCodeField` is permission-gated.
-   */
   test('door code field is read-only for a viewer', async ({ page }) => {
-    test.fail();
     await installBookingsWorkspaceMocks(page, { permissionTemplate: 'read_only' });
     await openDetail(page, BOOKING_ROW_IDS.pendingReview);
     await expect(page.getByRole('heading', { name: 'Ana Villanueva' })).toBeVisible({
       timeout: 30_000,
     });
     await expect(page.getByRole('button', { name: /^Save$/ })).toHaveCount(0);
+    await expect(page.getByLabel('Door code for this stay')).toHaveCount(0);
+    await expect(page.getByText('Uses the property code')).toBeVisible();
+  });
+
+  test('review gate is replaced by a view-only note', async ({ page }) => {
+    await installBookingsWorkspaceMocks(page, {
+      permissionTemplate: 'read_only',
+      primaryStatus: 'PENDING_REVIEW',
+    });
+    await openDetail(page);
+    await expect(page.getByRole('heading', { name: 'Maria Santos' })).toBeVisible({
+      timeout: 30_000,
+    });
+    await expect(page.getByRole('checkbox', { name: /I manually reviewed/i })).toHaveCount(0);
+    await expect(page.getByText(/View only\. Moving this booking forward/)).toBeVisible();
   });
 });
 
@@ -349,6 +373,18 @@ test.describe('bookings list — phone @ci', () => {
     ).toBeGreaterThanOrEqual(44);
   });
 
+  test('quick access pill stays off the booking detail actions', async ({ page }) => {
+    await openList(page);
+    await expect(page.getByRole('toolbar', { name: /Quick access/ })).toHaveCount(1);
+
+    await page.getByRole('button', { name: /Open booking for Maria Santos/ }).click();
+    await expect(page.getByRole('heading', { name: 'Maria Santos' })).toBeVisible({
+      timeout: 30_000,
+    });
+    // The rail's primary CTA occupies the same corner (review P2-10).
+    await expect(page.getByRole('toolbar', { name: /Quick access/ })).toHaveCount(0);
+  });
+
   test('detail puts Progress above the fold and can expand the details', async ({ page }) => {
     await installBookingsWorkspaceMocks(page);
     await page.goto(bookingsPaths.detail());
@@ -368,13 +404,7 @@ test.describe('bookings list — phone @ci', () => {
     expect(box!.x + box!.width, 'primary CTA right edge').toBeLessThanOrEqual(382);
   });
 
-  /**
-   * Known defect (open): at 390px the primary workflow CTA renders its label with
-   * `whitespace-nowrap` inside a two-button row, so "Mark GAF as complete" is clipped
-   * to "Mark GAF as comple". Flip to a normal assertion when the row stacks.
-   */
   test('primary workflow CTA label is not clipped', async ({ page }) => {
-    test.fail();
     await installBookingsWorkspaceMocks(page);
     await page.goto(bookingsPaths.detail());
     await dismissCookieConsent(page);

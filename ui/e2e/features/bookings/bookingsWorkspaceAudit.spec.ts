@@ -19,7 +19,7 @@ import {
  * Writes to `docs/workflow/in-progress/bookings-ux-review/screenshots/`.
  */
 
-const SHOTS = 'docs/workflow/in-progress/bookings-ux-review/screenshots';
+const SHOTS = 'docs/workflow/in-progress/bookings-ux-review/after';
 
 async function settle(page: Page) {
   await dismissCookieConsent(page);
@@ -75,9 +75,9 @@ test.describe('bookings workspace audit @demo', () => {
 
       await page.emulateMedia({ colorScheme: 'dark' });
       await page.goto(bookingsPaths.list);
-      await expect(page.getByRole('button', { name: 'Open booking for Maria Santos' })).toBeVisible(
-        { timeout: 20_000 }
-      );
+      await expect(page.getByRole('link', { name: 'Maria Santos', exact: true })).toBeVisible({
+        timeout: 20_000,
+      });
       await demoPause(page, 1);
       await capture(page, SHOTS, '07-desktop-table-dark');
     });
@@ -90,6 +90,7 @@ test.describe('bookings workspace audit @demo', () => {
       await expect(page.getByRole('heading', { name: 'Maria Santos' })).toBeVisible({
         timeout: 30_000,
       });
+      await demoPause(page, 2.5);
       await capture(page, SHOTS, '10-desktop-detail-overview');
 
       for (const [, name] of [
@@ -129,6 +130,7 @@ test.describe('bookings workspace audit @demo', () => {
       await expect(page.getByRole('heading', { name: 'Maria Santos' })).toBeVisible({
         timeout: 30_000,
       });
+      await demoPause(page, 2.5);
       await capture(page, SHOTS, '21-laptop-detail');
     });
   });
@@ -153,6 +155,7 @@ test.describe('bookings workspace audit @demo', () => {
       await expect(page.getByRole('heading', { name: 'Maria Santos' })).toBeVisible({
         timeout: 30_000,
       });
+      await demoPause(page, 2.5);
       await capture(page, SHOTS, '32-tablet-detail');
     });
   });
@@ -193,6 +196,7 @@ test.describe('bookings workspace audit @demo', () => {
       await expect(page.getByRole('heading', { name: 'Maria Santos' })).toBeVisible({
         timeout: 30_000,
       });
+      await demoPause(page, 2.5);
       await capture(page, SHOTS, '50-phone-detail');
       await demoScroll(page, 420, 0.8);
       await capture(page, SHOTS, '51-phone-detail-workflow');
@@ -214,6 +218,7 @@ test.describe('bookings workspace audit @demo', () => {
 
       await page.goto(bookingsPaths.detail(BOOKING_ROW_IDS.pendingReview));
       await demoPause(page, 1);
+      await demoPause(page, 2.5);
       await capture(page, SHOTS, '61-read-only-detail');
     });
 
@@ -226,6 +231,7 @@ test.describe('bookings workspace audit @demo', () => {
       await page.goto(bookingsPaths.detail());
       await settle(page);
       await demoPause(page, 1);
+      await demoPause(page, 2.5);
       await capture(page, SHOTS, '62-free-plan-detail');
     });
   });
