@@ -43,7 +43,6 @@ the journeys honest.
 | Slow-motion journeys                                           | [`recordings/`](./recordings)                                                                            |
 | Before / after pairs (same fixtures)                           | [`fixes/compare/index.html`](./fixes/compare/index.html)                                                 |
 | Snapshot fixtures used for both runs                           | [`fixes/fixtures/`](./fixes/fixtures)                                                                    |
-| Automated per-page diagnostics                                 | [`fixes/after/diagnostics.json`](./fixes/after/diagnostics.json)                                         |
 | Committed E2E journeys                                         | `ui/e2e/features/admin/superAdminModuleTour.spec.ts` (`@ci`), `superAdminMobileShell.spec.ts` (`@smoke`) |
 | Shared mocks for the above                                     | `ui/e2e/features/admin/shared/superAdminConsoleHarness.ts`                                               |
 
