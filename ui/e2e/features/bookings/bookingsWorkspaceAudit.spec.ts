@@ -213,7 +213,10 @@ test.describe('bookings workspace audit @demo', () => {
       await installBookingsWorkspaceMocks(page, { permissionTemplate: 'read_only' });
       await page.goto(bookingsPaths.list);
       await settle(page);
-      await demoPause(page, 1);
+      await expect(page.getByRole('link', { name: 'Maria Santos', exact: true })).toBeVisible({
+        timeout: 20_000,
+      });
+      await demoPause(page, 3);
       await capture(page, SHOTS, '60-read-only-list');
 
       await page.goto(bookingsPaths.detail(BOOKING_ROW_IDS.pendingReview));

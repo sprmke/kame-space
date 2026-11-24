@@ -476,9 +476,10 @@ export function BookingDetailPage() {
             data-booking-detail-layout
             className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-6"
           >
-            {isMobileWorkflowFirst && (
+            {(
               <BookingDetailMobileSummary
-                className="order-1 lg:hidden"
+                className="order-1"
+                variant={isMobileWorkflowFirst ? 'collapsible' : 'static'}
                 booking={booking}
                 detailsExpanded={detailsExpanded}
                 onToggleDetails={handleToggleDetails}

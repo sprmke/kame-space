@@ -15,6 +15,11 @@ import { formatBookingDate } from '@/utils/format/bookingDisplay';
 type Props = {
   booking: BookingRow;
   detailsExpanded: boolean;
+  /**
+   * `collapsible` (below `lg`) keeps the Details toggle. `static` is the stacked layout at
+   * `lg+`, where the details are always visible: no toggle, actions always shown.
+   */
+  variant?: 'collapsible' | 'static';
   onToggleDetails: () => void;
   editMode?: boolean;
   onEdit?: () => void;
@@ -31,6 +36,7 @@ type Props = {
 export function BookingDetailMobileSummary({
   booking,
   detailsExpanded,
+  variant = 'collapsible',
   onToggleDetails,
   editMode = false,
   onEdit,
@@ -53,6 +59,8 @@ export function BookingDetailMobileSummary({
 
   return (
     <section
+      /* CSS hides this when the page is wide enough for two columns (see index.css). */
+      data-booking-summary
       className={cn(
         'surface-card border-border/80 rounded-2xl border p-3 sm:p-4',
         editMode &&
@@ -106,7 +114,7 @@ export function BookingDetailMobileSummary({
       </p>
 
       <div className="mt-3 space-y-2">
-        {!editMode ? (
+        {!editMode && variant === 'collapsible' ? (
           <button
             type="button"
             onClick={onToggleDetails}
@@ -141,7 +149,7 @@ export function BookingDetailMobileSummary({
             Cancel
           </button>
         ) : (
-          detailsExpanded && (
+          (detailsExpanded || variant === 'static') && (
             <div className="flex items-stretch gap-2">
               {onEdit ? (
                 <Button

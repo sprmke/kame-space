@@ -26,38 +26,43 @@ dark 1440). `compare/` holds labelled side-by-side pairs for the surfaces that c
 
 ## Changed surfaces
 
-| Pair                         | SSIM  | Item                     | What to look at                                                                                                        |
-| ---------------------------- | ----- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
-| `32-tablet-detail`           | 0.70  | P1-1, P1-2               | Was a 320px rail squeezed beside a 400px booking; now one column, Progress first, header/tabs/CTA all readable         |
-| `51-phone-detail-workflow`   | 0.65  | P1-1, P2-8, P2-10        | "Mark GAF as complet" → full label on its own row; "2 of 2 sent" / "0 of 1 received"; no quick-access pill over Cancel |
-| `52-phone-detail-lower`      | 0.65  | P1-1                     | Same scroll position, CTA pair no longer overlapping Cancel booking                                                    |
-| `50-phone-detail`            | 0.78  | P2-2, P3-1               | No constant "DIRECT" chip; 44px back-link hit area                                                                     |
-| `21-laptop-detail`           | 0.80  | P1-3                     | Progress was 1,234px below the fold at 1024; it is now the first panel                                                 |
-| `10-desktop-detail-overview` | 0.81  | P2-2, P2-7, P1-1         | No "DIRECT"; "Guest still needs: …"; pair stacks rather than clipping at the 384px rail                                |
-| `16-desktop-detail-dark`     | 0.83  | same as above, dark mode | Contrast and spacing hold in dark                                                                                      |
-| `62-free-plan-detail`        | 0.86  | P1-1, P2-2               | Free-plan manual-send rail keeps its labels intact                                                                     |
-| `61-read-only-detail`        | 0.87  | P1-4, P1-5               | Door code is text, not an input + Save; the review gate is a "View only" note                                          |
-| `06-desktop-card`            | 0.997 | P2-1                     | "No flags" removed from the card footer                                                                                |
-| `04-desktop-kanban`          | 0.998 | P2-1                     | Same on kanban cards                                                                                                   |
-| `30-tablet-list`             | 0.998 | P2-1, P3-4               | Card view on tablet: no "No flags"; email reveals its full value on hover                                              |
-| `02-desktop-status-filter`   | 0.999 | P2-6                     | Scroll shadow at the clipped edge of the status list                                                                   |
+| Pair                         | SSIM   | Item              | What to look at                                                                                                        |
+| ---------------------------- | ------ | ----------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `32-tablet-detail`           | 0.702  | P1-1, P1-2        | Was a 320px rail squeezed beside a 400px booking; now summary, then Progress, then details, all full width             |
+| `51-phone-detail-workflow`   | 0.651  | P1-1, P2-8, P2-10 | "Mark GAF as complet" → full label on its own row; "2 of 2 sent" / "0 of 1 received"; no quick-access pill over Cancel |
+| `52-phone-detail-lower`      | 0.651  | P1-1              | CTA pair no longer overlapping Cancel booking                                                                          |
+| `21-laptop-detail`           | 0.769  | P1-3              | Progress was 1,234px below the fold at 1024; it now leads, under the guest summary                                     |
+| `50-phone-detail`            | 0.782  | P2-2, P3-1        | No constant "DIRECT" chip; 44px back-link hit area                                                                     |
+| `10-desktop-detail-overview` | 0.810  | P2-2, P2-7, P1-1  | No "DIRECT"; "Guest still needs: …"; the pair stacks instead of clipping at the 384px rail                             |
+| `16-desktop-detail-dark`     | 0.827  | as above          | Dark mode holds contrast and spacing                                                                                   |
+| `62-free-plan-detail`        | 0.857  | P1-1, P2-2        | Free-plan manual-send rail keeps its labels intact                                                                     |
+| `61-read-only-detail`        | 0.871  | P1-4, P1-5        | Door code is text, not an input + Save; the review gate is a "View only" note                                          |
+| `02-desktop-status-filter`   | 0.989  | P2-6              | Scroll shadow marks the clipped row as "more below"                                                                    |
+| `06-desktop-card`            | 0.9972 | P2-1              | "No flags" removed from the card footer                                                                                |
+| `30-tablet-list`             | 0.9979 | P2-1, P3-4        | Card view on tablet: no "No flags"; email reveals its full value on hover                                              |
+| `04-desktop-kanban`          | 0.9983 | P2-1              | Same on kanban cards                                                                                                   |
 
 ## Unchanged (verified, not assumed)
 
-| Pair                               | SSIM    | Surface                                      |
-| ---------------------------------- | ------- | -------------------------------------------- |
-| `01-desktop-list-table`            | 0.99999 | Table chrome, stage cards, toolbar           |
-| `07-desktop-table-dark`            | 0.99999 | Table in dark mode                           |
-| `03-desktop-more-filters`          | 0.99999 | More-filters popover                         |
-| `02b-desktop-status-filter-bottom` | 0.99900 | Status popover, scrolled                     |
-| `05-desktop-calendar`              | 0.99999 | Calendar view                                |
-| `20-laptop-list`                   | 0.99999 | List at 1024                                 |
-| `31-tablet-refine-sheet`           | 0.99996 | Refine sheet at 768                          |
-| `40-phone-list`                    | 1.00000 | Phone list                                   |
-| `41-phone-list-scrolled`           | 0.99999 | Phone list scrolled                          |
-| `42-phone-refine-sheet`            | 0.99996 | Phone refine sheet                           |
-| `43-phone-date-sheet`              | 1.00000 | Phone date sheet                             |
-| `60-read-only-list`                | 0.99999 | Read-only list (Import / New already hidden) |
+| Pair                               | SSIM    | Surface                            |
+| ---------------------------------- | ------- | ---------------------------------- |
+| `01-desktop-list-table`            | 0.99999 | Table chrome, stage cards, toolbar |
+| `07-desktop-table-dark`            | 0.99999 | Table in dark mode                 |
+| `03-desktop-more-filters`          | 0.99999 | More-filters popover               |
+| `02b-desktop-status-filter-bottom` | 0.99900 | Status popover, scrolled           |
+| `05-desktop-calendar`              | 0.99999 | Calendar view                      |
+| `20-laptop-list`                   | 1.00000 | List at 1024                       |
+| `31-tablet-refine-sheet`           | 0.99911 | Refine sheet at 768                |
+| `40-phone-list`                    | 1.00000 | Phone list                         |
+| `41-phone-list-scrolled`           | 1.00000 | Phone list scrolled                |
+| `42-phone-refine-sheet`            | 1.00000 | Phone refine sheet                 |
+| `43-phone-date-sheet`              | 1.00000 | Phone date sheet                   |
+
+### One capture artefact
+
+`60-read-only-list` measures 0.990 and is **not** a UI change: the before frame was taken while the
+sidebar was still painting its loading skeleton, so one row differs by timing. The list and every
+nav item are identical, so the pair is kept out of `compare/`.
 
 ## Regression proof
 

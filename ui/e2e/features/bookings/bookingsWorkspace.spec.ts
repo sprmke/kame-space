@@ -156,6 +156,11 @@ test.describe('bookings list @ci', () => {
 
   test('list has no serious or critical axe violations', async ({ page }) => {
     await openList(page);
+    // A background refetch dims the table to 60% for 300ms, which would read as a contrast
+    // failure. Wait for the settling class to clear before measuring.
+    await expect
+      .poll(() => page.locator('table').evaluate((el) => Number(getComputedStyle(el).opacity)))
+      .toBe(1);
     await page.emulateMedia({ reducedMotion: 'reduce' });
     const results = await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze();
     const serious = results.violations.filter((v) =>
@@ -195,7 +200,11 @@ test.describe('booking detail @ci', () => {
     await expect(page.getByRole('heading', { name: 'Maria Santos' })).toBeVisible({
       timeout: 30_000,
     });
-    await expect(page.getByText('Pending Documents').first()).toBeVisible();
+    // The compact summary is in the DOM at every width but hidden when the page is wide
+    // enough for two columns, so assert against the visible header.
+    await expect(
+      page.locator('[data-booking-detail-header]').getByText('Pending Documents')
+    ).toBeVisible();
     await expect(page.getByRole('link', { name: /Back to Bookings/ })).toBeVisible();
 
     const tabs = page.getByRole('tablist', { name: 'Booking detail sections' });
@@ -206,7 +215,7 @@ test.describe('booking detail @ci', () => {
     for (const [tab, marker] of [
       ['Guests', /Primary guest/i],
       ['Pricing', /Rate|Total|Balance/i],
-      ['Files', /GAF|Valid ID|Document/i],
+      ['Files', /Valid ID/],
       ['Activity', /Activity|Booking ID/i],
     ] as const) {
       await tabs.getByRole('tab', { name: tab, exact: true }).click();
