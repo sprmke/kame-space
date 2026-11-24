@@ -1,0 +1,35 @@
+{
+  "generator": "Built-in imagegen",
+  "approvedReference": "exec-c59dbec4-df67-4b80-a06f-dc82b56aa14f.png",
+  "welcome": {
+    "source": "exec-59a997e4-9455-4b91-9848-f9e08d004e84.png",
+    "instructions": "One transparent full-body welcome pose matching approved green turtle, cream belly, orange shell, with soft translucent contact shadow."
+  },
+  "faceBase": {
+    "source": "exec-d4fadc4b-d6ad-45d7-b11c-ea7a22d7052e.png",
+    "prompt": "PRECISION EDIT for animation layer preparation. Output same canvas aspect, same scale, same exact position and pose and lighting as reference. Only remove BOTH BROWN EYES and the entire OPEN MOUTH from this turtle face, filling those regions with smoothly matched original green skin. Retain peach cheeks and teal head spots. The blank face is intentional as the separate original eyes and separate mouth sprites will be composited later. Do not change any silhouette, head shape, body, arm, shell, belly, toes, colors, shadows, camera, crop, margins, or other pixels. Keep TRUE alpha transparency background and soft translucent shadow. ONE character same pixel-aligned composition as reference, full body and same generous transparent margins. No text. This is a clean facial animation base plate, not a character redesign."
+  },
+  "mouthAtlas": {
+    "source": "exec-327d5572-22b8-4252-8748-e4d6d5d6e0c5.png",
+    "prompt": "Generate ONLY a mouth-sprite atlas for this exact reference turtle character. TRUE alpha transparent background. No face, head, green skin patches, body, eyes, labels, letters, grid lines or numbers. Nine separate small 3D rendered mouth shapes in an exactly evenly spaced 3-column by 3-row square grid. Each mouth centered in its own equal-sized square cell with at least 20% margin. Every mouth uses identical dark warm brown lip edge, softly shaded dark inner mouth, coral tongue when open, matching reference's gentle cute 3D-rendered style and lighting. Slight smile corners, no scary human teeth, no realistic lips, no external skin border, no cast shadow outside mouth. These are transparent facial overlays for compositing over the original green turtle face. Camera frontal, no perspective or angle variation. Consistent width and scale. Row 1 left to right: relaxed closed curved smile (X); firmly closed smile for M B P (A); narrow slightly open horizontal smiling mouth for consonants (B). Row 2 left to right: medium open smile for EH (C); tall open delighted mouth for AH with coral tongue, closely matching the reference mouth (D); small rounded oval opening for OH (E). Row 3 left to right: very small rounded O opening for OO/W (F); narrow mouth with tiny subtle cream upper edge for F/V (G); medium opening with raised coral tongue for L (H). Output atlas only. Nine distinct mouths, crisp clean alpha edges, no green background."
+  },
+  "armCleanPlate": {
+    "source": "exec-75ffddf9-eade-40b3-b234-cdc87e25739a.png",
+    "instructions": "Remove only the raised viewer-left arm from face-base.png. Reconstruct underlying shell and shoulder; preserve framing, blank face, colors, body, transparency and ground shadow. Runtime uses this repair only within the original arm outline."
+  },
+  "study04": {
+    "bodyParts": {
+      "source": "exec-5fddef45-de00-4a64-8a9a-c2754003e570.png",
+      "initial": "exec-6432c320-79af-45dc-add1-b5f34ba8c79a.png",
+      "instructions": "Six isolated body parts in 3x2 atlas matching welcome.png materials and lighting: torso, left waving arm, right hanging arm, left leg, right leg, bent thinking arm. Follow-up removes background, grid and shadows to true alpha. Runtime uses only arms and legs."
+    },
+    "head": {
+      "source": "exec-de91b3cd-ef32-424a-a01e-02ae93b3e01b.png",
+      "instructions": "Keep only blank head from face-base.png with cheeks and crown spots; preserve canvas, size and position. Remove entire body and all shadows."
+    },
+    "torso": {
+      "source": "exec-10c2a0fe-0a0e-4270-9f16-2b5f6c8208e1.png",
+      "instructions": "Keep torso, cream belly and orange shell from face-base.png. Remove head, arms, legs and shadow; reconstruct hidden shoulder and neck. Match perspective, panel shapes, colors and lighting. Runtime aligns generated alpha bounds to the reference layout."
+    }
+  }
+}
