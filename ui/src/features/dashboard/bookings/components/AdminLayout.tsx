@@ -327,7 +327,7 @@ function AdminLayoutShell({ children, fillMain = false }: Props) {
    * floating Quick access pill sits exactly over the rail's primary CTA on phone and tablet
    * (review P2-10). The same actions stay one tap away in the bottom bar's More sheet.
    */
-  const hideQuickAccessFab = /\/bookings\/[^/]+$/.test(location.pathname);
+  const hideQuickAccessFab = /\/property\/[^/]+\/bookings\/[^/]+$/.test(location.pathname);
   const navigate = useNavigate();
   const {
     orgSlug: routeOrgSlug,
