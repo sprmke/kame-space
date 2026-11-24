@@ -9,6 +9,9 @@ updated: 2026-11-16
 
 Route: `/org/:orgSlug/property/:propertySlug/notifications`
 
+`/org/:orgSlug/notifications` is not a page of its own: it redirects to this hub for the
+last property you used (or the first property in that org).
+
 Deep links:
 
 - `?view=activity|telegram` — opens that hub tab (bell **View all** uses `?view=activity`)
@@ -38,16 +41,18 @@ Single hub for **in-app activity** (booking workflow + inbox events in the bell)
 
 Page subtitle: "Manage in-app notifications and Telegram alerts for this property."
 
-**Hub layout.** Four KPI cards sit above the tabs: **Unread**, **Messages** (unread inbox threads), **Telegram on** (modules enabled / total) and **Connected** (modules with a bot token and chat ID / total). Each card jumps to the tab it describes. Below them, the **Activity** and **Telegram** tabs, and the activity list is the first thing on the tab.
+**Hub layout.** Four KPI cards sit above the tabs: **Unread**, **Messages** (unread inbox threads, also counted in Unread), **Telegram on** and **Connected** (both read "N of 6"). Each card jumps to the tab it describes. Below them, the **Activity** and **Telegram** tabs, and the activity list is the first thing on the tab. When the feed request fails the two activity cards read **n/a** instead of a clean zero, and the card below offers **Retry**.
 
 **Manage sheet.** Header **Manage** (gear icon in the phone hero) opens one sheet with two tabs:
 
-- **Activity** — one bordered card: **Push notifications** (master), then **Push preferences** (one switch per group) and **Quiet hours** (From/To window) as sections inside that same card. No separate nested card around only the master toggle.
-- **Telegram** — the **Telegram delivery** master switch, **Setup Guide**, the shared bot token card and the six module cards (enable, credentials, schedules, templates).
+- **Activity** — one bordered card: **Push notifications** (master), then **Push preferences** (one switch per group) and **Quiet hours** (From/To window) as sections inside that same card. Preferences and Quiet hours are account-level, so they stay visible and editable even on a device that cannot receive push; only the device opt-in row is unavailable there.
+- **Telegram** — the **Telegram delivery** master switch, **Setup Guide**, the shared bot token card and the six module cards (enable, credentials, schedules, templates). Delivery sits on the sheet surface with a divider; the module cards are the only borders.
+
+**View-only members.** A member without any `notifications.<module>:edit` leaf sees one line, "Some modules are view only. Ask the property owner for edit access." The fields, toggles, **Connect**, **Manage** and the **Telegram delivery** switch are disabled (not just dimmed), so keyboard users cannot type into a control that would fail on save. Reading the current setup still works.
 
 Saving is instant, no Save button. Closing the sheet or leaving the Telegram tab with unsaved card edits prompts Save / Discard / Keep editing. Keeping all of this behind Manage is what lets the page tabs stay read-only.
 
-**Off states.** Both tabs lead with a master switch. While its state is being read the row shows a skeleton instead of "not available"; a browser that cannot receive push says so in red with the switch disabled. When a channel is off, its controls are hidden and replaced with a short panel explaining what turning it back on gives you (still inside the Activity card when push is off); both master switches are independent.
+**Off states.** Both tabs lead with a master switch. While its state is being read the row shows a skeleton instead of "not available"; a browser that cannot receive push says so in plain ink with the switch disabled (a disabled capability is not an error, and destructive red fails contrast on the card). When a channel is off, its controls are hidden and replaced with a short panel explaining what turning it back on gives you (still inside the Activity card when push is off); both master switches are independent.
 
 **How it works** lives beside the page title (the `?` next to "Notifications"), not inside the sheet. The Telegram bot walkthrough is the **Setup Guide** action in the Telegram group heading.
 
@@ -61,7 +66,7 @@ Telegram module settings (and optional credentials) are bulk-copyable via org **
 
 The page **Telegram** tab is a read-only copy of what each Telegram group received: one row per send with the module, relative time, the message text (clamped, **Show more** expands), and a **Failed** badge with Telegram's reason when a send was rejected.
 
-- **15-day window.** Reads only cover the last 15 days; a daily job prunes older rows, so storage stays bounded.
+- **15-day window.** Reads only cover the last 15 days; a daily job prunes older rows, so storage stays bounded. The window is shown in the **Telegram** card header, not under the list.
 - **Paginated.** Scroll loads older pages (20 at a time); only fetched pages stay in memory.
 - **Scoped to this asset.** Unlike the org-wide Activity feed, history shows the sends for this property.
 - **No Telegram calls.** The list reads our own table, so browsing history costs no bot API quota.
@@ -83,15 +88,15 @@ In the header **Manage** sheet only (**Activity** tab). The page Activity feed d
 ### In-app activity
 
 - **Activity** section lists org-wide in-app notifications (same data as the bell).
-- Desktop: the bell floats above the AI assistant button and opens a **slide-over panel**. Phone: tap **Notifications** in the bottom menu for the same sheet. **View all** opens this page at **Activity** when more than five items exist.
-- Rows open the related booking or inbox thread. When a row has both `conversation_id` and `booking_id` (linked stay), **Messages wins** so Activity chat taps never land on booking detail. Inbox rows deep-link with `?conversationId=` (and `?platform=` / `?messageId=` when known) so the conversation opens and scrolls to that chat pill; **Mark all as read** on the full list.
-- With unread items, the desktop bell uses a soft periodic ring nudge and the count badge a gentle pulse (paused while the panel is open; respects `prefers-reduced-motion`). The mobile **Notifications** tab badge uses the same pulse.
+- Phone and desktop: the **Quick access** pill opens the notification sheet (desktop renders it as a slide-over panel). **View all** opens this page at **Activity** when more than five items exist.
+- Rows open the related booking or inbox thread. When a row has both `conversation_id` and `booking_id` (linked stay), **Messages wins** so Activity chat taps never land on booking detail. Inbox rows deep-link with `?conversationId=` (and `?platform=` / `?messageId=` when known) so the conversation opens and scrolls to that chat pill; **Mark all as read** on the full list. Review, pricing, maintenance, analytics, billing and settings rows open their property page. A row that cannot resolve a destination (for example a billing notice with no property) renders as plain text: it does not look tappable and is not marked read by a dead tap.
+- With unread items the bell uses a soft periodic ring nudge and the count badge a gentle pulse (paused while the panel is open; respects `prefers-reduced-motion`). Unread rows also carry a screen-reader-only "Unread" label, not just a colour and a dot.
 - Inbox rows show the guest **participant name** as the title with an inline **channel pill** (**Chat**, **Facebook**, or **Instagram**), matching the Inbox thread list — **one row per conversation**, not per message.
 - **`booking_trip_viewed`** — one row per booking, the first time the guest opens their trip page. Title is the guest's first name ("Maria opened their trip"), body names what they can now see. It is the only booking event that never repeats: `guest_submissions.guest_trip_first_viewed_at` is stamped by a conditional update, so a refresh, a second device or two tabs at once still produce one row. The deep link goes to the booking.
 - The bell **unread badge** uses the same collapse rule as the list: one unread per inbox conversation (plus each unread booking event). Legacy per-message `inbox_new_message` rows for one thread count as **1**, not N. `notifications-list` computes `unreadCount` from the recent capped window with `type` + `conversation_id` selected so collapse can run.
 - When available, a **stay date range** appears under the name (e.g. `Aug 14 - 15, 2026` for inquiry or booked dates).
 - The realtime **toast** uses the same guest name as the title with an inline **channel pill** (**Chat**, **Facebook**, or **Instagram**) for inbox rows, a **channel glyph** for inbox or a **category glyph** for booking events, the message preview in the body, and the stay range beneath it. Its **View** action uses the brand primary colour, and repeat messages in one conversation replace the open toast instead of stacking.
-- The **Activity** title and **Mark all as read** stay pinned at the top of the card; only the feed scrolls. Pages load 20 at a time on scroll (not a full dump). Unread rows use a primary left rail, soft tint, stronger title weight, and a status dot. Separators use the full `border` token so rows stay distinct. Phone rows stay dense (13px title, single-line body preview, tighter padding); card chrome uses shared `text-card-title` / `text-card-description` tokens so Telegram headings and in-app descriptions stay the same size.
+- The **Activity** title and **Mark all as read** stay pinned at the top of the card; only the feed scrolls, with bottom padding so the last row clears the floating Quick access pill. Pages load 20 at a time on scroll (not a full dump). Unread rows use a primary left rail, soft tint, stronger title weight, and a status dot. Separators use the full `border` token so rows stay distinct. Phone rows stay dense (13px title, single-line body preview, tighter padding); card chrome uses shared `text-card-title` / `text-card-description` tokens so Telegram headings and in-app descriptions stay the same size.
 - **Telegram** history matches that pattern: delivery switch pinned, list scrolls and loads older pages (20) on scroll. History only fetches while the Telegram tab is open (Activity does not load it).
 
 ### Telegram notifications
@@ -190,6 +195,10 @@ Notifications is the one place to review in-app alerts and set up Telegram for t
   A: Yes. Open **Telegram** on the Notifications page. It lists the last 15 days of sends with the module, the message, and the time. Failed sends show the reason.
 - Q: How do I stop every Telegram alert at once?
   A: **Manage**, **Telegram**, then turn off **Telegram delivery**. Each module keeps its own switch, so turning delivery back on restores your setup.
+- Q: Why can I read the Telegram settings but not change anything?
+  A: Your role has view access to notifications but not edit access to any module. Ask the property owner for the notifications edit permission. You can still read the tokens, schedules and templates.
+- Q: I tapped an Activity row and nothing happened before. What changed?
+  A: Rows that lead somewhere still open it. Rows with no destination (like a billing notice) are now plain text, so they no longer mark themselves read for nothing. Use **Mark all as read** to clear them.
 - Q: Where did the bell go on my phone?
   A: It is in the bottom menu as **Notifications**. On a computer it floats above the AI assistant button.
 - Q: Why does a toast say "Guest" or "New guest message"?
@@ -282,12 +291,12 @@ Credentials unlock logic: `telegramCredentialsReady()` — saved token **and** c
 
 ## Testing
 
-| Layer | Path / spec                                                                                                                                                                                                         | Manual                          |
-| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
-| Unit  | Telegram template validators; `notificationPreferences.test.ts` (group parity, normalize)                                                                                                                           | —                               |
-| E2E   | `ui/e2e/features/dashboard/dashboardModulesSmoke.spec.ts` notifications shell (`@ci`); `notificationsHub.spec.ts` (KPI cards, history + paging, deep links, feed paging, Manage tabs, master switch, unsaved token) | Live Telegram send, PWA OS push |
-| Deno  | `_shared/telegramMessageLog_test.ts` (row shaping, truncation, status)                                                                                                                                              | —                               |
-| N/A   | —                                                                                                                                                                                                                   | —                               |
+| Layer | Path / spec                                                                                                                                                                                                                                                                                                                                                        | Manual                          |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------- |
+| Unit  | Telegram template validators; `notificationPreferences.test.ts` (group parity, normalize); `notificationsPaths.test.ts` (destinations per event type)                                                                                                                                                                                                              | —                               |
+| E2E   | `dashboardModulesSmoke.spec.ts` notifications shell (`@ci`); `notificationsHub.spec.ts` (KPI cards, history + paging, deep links, feed paging, Manage tabs, master switch, unsaved token, read-only disabled controls, static rows, error `n/a`, desktop Quick access, org redirect); `notificationsAudit.spec.ts` (`@demo` before/after walk at 375 / 768 / 1440) | Live Telegram send, PWA OS push |
+| Deno  | `_shared/telegramMessageLog_test.ts` (row shaping, truncation, status); `_shared/notificationsPaging_test.ts` (composite cursor, inbox collapse, page fill)                                                                                                                                                                                                        | —                               |
+| A11y  | `ui/e2e/features/a11y/axeSweep.spec.ts` audits this route with no exception                                                                                                                                                                                                                                                                                        | —                               |
 
 ---
 
