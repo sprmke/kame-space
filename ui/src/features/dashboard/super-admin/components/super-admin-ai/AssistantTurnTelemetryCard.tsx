@@ -75,7 +75,7 @@ export function AssistantTurnTelemetryCard({ telemetry }: { telemetry: Assistant
           </li>
           <li className="flex items-center justify-between gap-2 text-sm">
             <span className="text-muted-foreground">Completion-check misses</span>
-            <span className={cn('tabular-nums', missRateFlagged ? 'text-destructive' : undefined)}>
+            <span className={cn('tabular-nums', missRateFlagged ? 'text-destructive-strong' : undefined)}>
               {telemetry.completionMissTurns} ({formatPct(telemetry.completionMissRatePct)})
             </span>
           </li>
@@ -116,7 +116,7 @@ export function AssistantTurnTelemetryCard({ telemetry }: { telemetry: Assistant
               <>
                 {' '}
                 &middot;{' '}
-                <span className={stepFailureFlagged ? 'text-destructive' : undefined}>
+                <span className={stepFailureFlagged ? 'text-destructive-strong' : undefined}>
                   {formatPct(telemetry.stepFailureRatePct)} step failure rate
                 </span>
               </>

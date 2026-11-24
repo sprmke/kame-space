@@ -34,6 +34,8 @@
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
+    /* Text-safe red: 5.06:1 on white, 4.72:1 on the canvas. Use for error copy. */
+    --destructive-strong: 0 78% 48%;
 
     --success: 168 65% 40%;
     --success-foreground: 0 0% 100%;
@@ -123,6 +125,7 @@
 
     --destructive: 0 62% 50%;
     --destructive-foreground: 0 0% 100%;
+    --destructive-strong: 0 84% 72%;
 
     --success: 168 65% 45%;
     --success-foreground: 0 0% 100%;

@@ -4,26 +4,21 @@ import { useSearchParams } from 'react-router-dom';
 
 import { AdminListPagination } from '@/features/dashboard/bookings/components/AdminListToolbar';
 import { AdminPageHeader } from '@/features/dashboard/bookings/components/AdminPageHeader';
-import {
-  OrgPropertiesEmptyState,
-  OrgPropertyCard,
-} from '@/features/dashboard/org/components/org-properties/OrgPropertyCard';
+import { OrgPropertiesEmptyState } from '@/features/dashboard/org/components/org-properties/OrgPropertyCard';
 import { SuperAdminPlatformPropertiesSummaryCards } from '@/features/dashboard/super-admin/components/super-admin-platform-properties/SuperAdminPlatformPropertiesSummaryCards';
 import { SuperAdminPlatformPropertiesTable } from '@/features/dashboard/super-admin/components/super-admin-platform-properties/SuperAdminPlatformPropertiesTable';
 import {
   SuperAdminPlatformPropertiesResultsMeta,
   SuperAdminPlatformPropertiesToolbar,
 } from '@/features/dashboard/super-admin/components/super-admin-platform-properties/SuperAdminPlatformPropertiesToolbar';
+import { SuperAdminPlatformPropertyRow } from '@/features/dashboard/super-admin/components/super-admin-platform-properties/SuperAdminPlatformPropertyRow';
 import { usePlatformProperties } from '@/features/dashboard/super-admin/hooks/usePlatformProperties';
-import { platformPropertyToProperty } from '@/features/dashboard/super-admin/lib/platformPropertyAdapter';
-import { superAdminPaths } from '@/features/dashboard/super-admin/lib/superAdminPaths';
 import {
   superAdminPlatformPropertiesHasActiveFilters,
   type PlatformPropertiesDevelopmentFilter,
   type SuperAdminPlatformPropertiesFilters,
   type SuperAdminPlatformPropertiesViewMode,
 } from '@/features/dashboard/super-admin/lib/superAdminPlatformPropertiesFilters';
-import type { PlatformProperty } from '@/features/dashboard/super-admin/types/platformProperty';
 
 import { SuperAdminAdminListBodySkeleton } from '@/components/skeletons/SuperAdminSkeletons';
 import { useAdminMobileGridViewGuard } from '@/hooks/useAdminMobileGridViewGuard';
@@ -33,19 +28,6 @@ import {
   buildPageItems,
   normalizeAdminPageLimit,
 } from '@/lib/table/pagination';
-
-function platformPropertyCardProps(property: PlatformProperty) {
-  return {
-    property: platformPropertyToProperty(property),
-    orgSlug: property.organizationSlug,
-    hideStats: true,
-    organizationName: property.organizationName,
-    developmentName: property.developmentName,
-    developmentHref: property.developmentSlug
-      ? superAdminPaths.developmentDetail(property.developmentSlug)
-      : null,
-  };
-}
 
 export function SuperAdminPlatformPropertiesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -135,7 +117,7 @@ export function SuperAdminPlatformPropertiesPage() {
           metricTitles={['Total properties', 'Active', 'Linked developments', 'Organizations']}
         />
       ) : error ? (
-        <p className="text-destructive text-sm">Could not load properties.</p>
+        <p className="text-destructive-strong text-sm">Could not load properties.</p>
       ) : (
         <>
           <SuperAdminPlatformPropertiesSummaryCards properties={platformProperties} />
@@ -159,9 +141,9 @@ export function SuperAdminPlatformPropertiesPage() {
             showTableView ? (
               <SuperAdminPlatformPropertiesTable properties={platformProperties} />
             ) : (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3 xl:grid-cols-4">
                 {platformProperties.map((property) => (
-                  <OrgPropertyCard key={property.id} {...platformPropertyCardProps(property)} />
+                  <SuperAdminPlatformPropertyRow key={property.id} platformProperty={property} />
                 ))}
               </div>
             )

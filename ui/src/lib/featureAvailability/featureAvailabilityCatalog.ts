@@ -67,7 +67,7 @@ export const FEATURE_AVAILABILITY_CATALOG: readonly FeatureAvailabilityCatalogEn
     module: 'inbox',
     surface: 'section',
     label: 'Facebook and Instagram chat',
-    description: 'Everything below. FB/IG threads stay readable.',
+    description: 'Turns Facebook and Instagram messaging off for hosts.',
     provider: 'Meta',
   },
   {
@@ -77,7 +77,7 @@ export const FEATURE_AVAILABILITY_CATALOG: readonly FeatureAvailabilityCatalogEn
     surface: 'button + modal',
     label: 'Connect / reconnect Meta',
     description:
-      'Connect / Reconnect / Resubscribe / page picker / Disconnect in the Channels modal; meta-inbox-oauth-*, meta-inbox-resubscribe, meta-inbox-disconnect',
+      'Connecting, reconnecting, or disconnecting a Meta account in Inbox settings.',
     provider: 'Meta',
   },
   {
@@ -87,7 +87,7 @@ export const FEATURE_AVAILABILITY_CATALOG: readonly FeatureAvailabilityCatalogEn
     surface: 'section (composer)',
     label: 'Reply on Facebook and Instagram',
     description:
-      'Composer on FB/IG threads, edit/unsend, AI suggest on FB/IG threads, assistant propose_send_inbox_reply / draft_inbox_reply on FB/IG',
+      'Replying to Facebook and Instagram messages, including AI drafts.',
     provider: 'Meta',
   },
   {
@@ -96,7 +96,7 @@ export const FEATURE_AVAILABILITY_CATALOG: readonly FeatureAvailabilityCatalogEn
     module: 'inbox',
     surface: 'background',
     label: 'Auto-reply on Facebook and Instagram',
-    description: 'AI auto-reply to inbound FB/IG DMs; Automation tab Meta toggles show the notice',
+    description: 'Automatic AI replies to new Facebook and Instagram messages.',
     provider: 'Meta',
   },
   {
@@ -105,7 +105,7 @@ export const FEATURE_AVAILABILITY_CATALOG: readonly FeatureAvailabilityCatalogEn
     module: 'inbox',
     surface: 'background + button',
     label: 'Sync from Meta',
-    description: 'Meta inbox sync: initial import, reconcile, and Load older from Meta',
+    description: 'Importing past and new Meta messages into the Inbox.',
     provider: 'Meta',
   },
   {
@@ -114,7 +114,7 @@ export const FEATURE_AVAILABILITY_CATALOG: readonly FeatureAvailabilityCatalogEn
     module: 'pricing',
     surface: 'modal',
     label: 'Channel sync',
-    description: 'Everything below. Header button stays, dialog opens to the reason.',
+    description: 'Turns Airbnb channel sync off for hosts. The header button stays and explains why.',
     provider: 'Airbnb',
   },
   {
@@ -124,7 +124,7 @@ export const FEATURE_AVAILABILITY_CATALOG: readonly FeatureAvailabilityCatalogEn
     surface: 'background + button',
     label: 'Channel sync imports',
     description:
-      'calendar-sync-cron global sweep, "Sync now", add/edit/remove feed, assistant propose_run_channel_sync',
+      'Importing calendars, syncing now, and managing feeds.',
     provider: 'Airbnb',
   },
   {
@@ -133,7 +133,7 @@ export const FEATURE_AVAILABILITY_CATALOG: readonly FeatureAvailabilityCatalogEn
     module: 'pricing',
     surface: 'background + button',
     label: 'Airbnb calendar sync',
-    description: 'Airbnb feeds: cron import, add feed, Sync now. Export link keeps serving.',
+    description: 'Importing Airbnb calendars and syncing now. The export link keeps working.',
     provider: 'Airbnb',
   },
   {
@@ -142,7 +142,7 @@ export const FEATURE_AVAILABILITY_CATALOG: readonly FeatureAvailabilityCatalogEn
     module: 'pricing',
     surface: 'background + button',
     label: 'Agoda calendar sync',
-    description: 'Agoda feeds: cron import, add feed, Sync now. Export link keeps serving.',
+    description: 'Importing Agoda calendars and syncing now. The export link keeps working.',
     provider: 'Agoda',
   },
   {
@@ -151,7 +151,7 @@ export const FEATURE_AVAILABILITY_CATALOG: readonly FeatureAvailabilityCatalogEn
     module: 'pricing',
     surface: 'background + button',
     label: 'Booking.com calendar sync',
-    description: 'Booking.com feeds: cron import, add feed, Sync now. Export link keeps serving.',
+    description: 'Importing Booking.com calendars and syncing now. The export link keeps working.',
     provider: 'Booking.com',
   },
   {
@@ -185,7 +185,7 @@ export const FEATURE_AVAILABILITY_CATALOG: readonly FeatureAvailabilityCatalogEn
     surface: 'button',
     label: 'AI studio generation',
     description:
-      'New creation, refine, references upload. Past sessions and outputs stay viewable.',
+      'Creating and refining content, and uploading references. Past sessions stay viewable.',
   },
   {
     key: 'marketing.trends',
@@ -194,7 +194,7 @@ export const FEATURE_AVAILABILITY_CATALOG: readonly FeatureAvailabilityCatalogEn
     surface: 'section (tab)',
     label: 'Marketing trends',
     description:
-      'Trending topics rail and sheet in AI studio, and the marketing-trends read endpoint.',
+      'Trending topics in AI Studio.',
   },
   {
     key: 'analytics.ai_review',
@@ -202,7 +202,7 @@ export const FEATURE_AVAILABILITY_CATALOG: readonly FeatureAvailabilityCatalogEn
     module: 'analytics',
     surface: 'section (tab)',
     label: 'AI review',
-    description: '"AI review" section content and the weekly cron',
+    description: 'The AI review section and its weekly refresh.',
   },
   {
     key: 'analytics.ai_review.regenerate',
@@ -210,7 +210,7 @@ export const FEATURE_AVAILABILITY_CATALOG: readonly FeatureAvailabilityCatalogEn
     module: 'analytics',
     surface: 'button + background',
     label: 'AI review regenerate',
-    description: 'Regenerate button + analytics-ai-review-cron. Last review stays visible.',
+    description: 'The regenerate button. The last review stays visible.',
   },
   {
     key: 'notifications.telegram',
@@ -218,7 +218,7 @@ export const FEATURE_AVAILABILITY_CATALOG: readonly FeatureAvailabilityCatalogEn
     module: 'notifications',
     surface: 'section (tab)',
     label: 'Telegram',
-    description: 'Everything below, property and parking',
+    description: 'Everything below, for properties and parking.',
     provider: 'Telegram',
   },
   {
@@ -227,7 +227,7 @@ export const FEATURE_AVAILABILITY_CATALOG: readonly FeatureAvailabilityCatalogEn
     module: 'notifications',
     surface: 'section',
     label: 'Telegram settings',
-    description: 'Telegram setting cards read-only (save, test, discover chats, bot token)',
+    description: 'Telegram setting cards become read-only (save, test, discover chats, bot token).',
     provider: 'Telegram',
   },
   {
@@ -237,7 +237,7 @@ export const FEATURE_AVAILABILITY_CATALOG: readonly FeatureAvailabilityCatalogEn
     surface: 'background',
     label: 'Telegram delivery',
     description:
-      'Every Telegram sendMessage from the app, all channels and crons. Settings stay editable.',
+      'Outgoing Telegram messages from the app. Settings stay editable.',
     provider: 'Telegram',
   },
 ] as const;

@@ -133,7 +133,7 @@ export function SuperAdminOtpDialog({ open, gatedAction, onCancel, onVerified }:
           ) : null}
 
           {error ? (
-            <p className="text-destructive text-center text-sm" role="alert">
+            <p className="text-destructive-strong text-center text-sm" role="alert">
               {error}
             </p>
           ) : null}

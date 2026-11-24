@@ -46,7 +46,7 @@ export function SuperAdminOrgBillingPanel({ organizationId }: { organizationId: 
   if (error || !data) {
     return (
       <SuperAdminSettingsCard title="Billing" description="Could not load billing.">
-        <p role="alert" className="text-destructive text-sm">
+        <p role="alert" className="text-destructive-strong text-sm">
           {error instanceof Error ? error.message : 'Try again in a moment.'}
         </p>
       </SuperAdminSettingsCard>

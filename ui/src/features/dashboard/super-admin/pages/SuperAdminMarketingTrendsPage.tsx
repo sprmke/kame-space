@@ -17,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { pluralize } from '@/lib/pluralize';
 import { cn } from '@/lib/utils';
 
 const SOURCE_LABELS: Record<string, string> = {
@@ -27,6 +28,22 @@ const SOURCE_LABELS: Record<string, string> = {
   netflix: 'Netflix',
   editor: 'Added by staff',
 };
+
+const RUN_STATUS_LABEL: Record<TrendRun['status'], string> = {
+  published: 'Published',
+  failed: 'Failed',
+  running: 'Running',
+  skipped: 'Skipped',
+};
+
+/** Operator-facing failure copy; the raw provider message stays behind "Technical detail". */
+function runErrorMessage(run: TrendRun): string | null {
+  if (!run.ai_error) return null;
+  if (/schema validation/i.test(run.ai_error)) {
+    return 'The AI reply did not match the expected format. Re-run when ready.';
+  }
+  return 'The AI step did not finish. Re-run when ready.';
+}
 
 const STATUS_TONE: Record<TrendRun['status'], string> = {
   published:
@@ -52,11 +69,12 @@ function RunLedger({ runs }: { runs: TrendRun[] }) {
                 STATUS_TONE[run.status]
               )}
             >
-              {run.status}
+              {RUN_STATUS_LABEL[run.status]}
             </span>
             <span className="text-sm font-medium">{formatSuperAdminDate(run.run_date)}</span>
             <span className="text-caption">
-              {run.trigger} · {run.topic_count} topics · {run.candidate_count} candidates
+              {run.trigger === 'manual' ? 'Manual' : 'Scheduled'} · {pluralize(run.topic_count, 'topic')} ·{' '}
+              {pluralize(run.candidate_count, 'candidate')}
             </span>
           </div>
           <div className="mt-2 flex flex-wrap gap-1.5">
@@ -71,12 +89,19 @@ function RunLedger({ runs }: { runs: TrendRun[] }) {
                     : 'bg-red-50 text-red-800 dark:bg-red-950/40 dark:text-red-200'
                 )}
               >
-                {SOURCE_LABELS[source] ?? source}: {stat.ok ? stat.count : 'failed'}
+                {SOURCE_LABELS[source] ?? source}
+                {stat.ok ? `: ${stat.count}` : ' unavailable'}
               </span>
             ))}
           </div>
           {run.ai_error ? (
-            <p className="mt-2 text-xs text-red-800 dark:text-red-200">{run.ai_error}</p>
+            <div className="mt-2 space-y-1">
+              <p className="text-xs text-red-800 dark:text-red-200">{runErrorMessage(run)}</p>
+              <details className="text-caption">
+                <summary className="cursor-pointer">Technical detail</summary>
+                <p className="mt-1 font-mono break-all">{run.ai_error}</p>
+              </details>
+            </div>
           ) : null}
         </li>
       ))}

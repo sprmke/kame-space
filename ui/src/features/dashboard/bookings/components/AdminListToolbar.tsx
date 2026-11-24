@@ -91,6 +91,7 @@ export function AdminListPerPageSelect({ limit, onChange }: PerPageProps) {
           'lg:rounded-lg'
         )}
       >
+        <span className="text-muted-foreground text-xs font-normal">Rows</span>
         <SelectValue className="min-w-[1.25rem] tabular-nums" />
       </SelectTrigger>
       <SelectContent align="start" className="min-w-[var(--radix-select-trigger-width)] rounded-xl">

@@ -310,7 +310,7 @@ export function SuperAdminHostShell() {
           <ListingCardGridSkeleton count={8} label="Loading properties" />
         )
       ) : activeQuery.error ? (
-        <p className="text-destructive text-sm">
+        <p className="text-destructive-strong text-sm">
           Could not load {mode === 'organizations' ? 'organizations' : 'properties'}.
         </p>
       ) : mode === 'organizations' ? (

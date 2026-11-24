@@ -19,7 +19,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Eye, GripVertical, HelpCircle, Pencil, Plus, Search, Trash2 } from 'lucide-react';
+import { Eye, GripVertical, HelpCircle, Pencil, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import {
@@ -38,6 +38,7 @@ import {
   type HelpCenterFaqStatusFilter,
 } from '@/features/dashboard/super-admin/hooks/useHelpCenterFaqsAdmin';
 
+import { AdminSearchInput } from '@/components/navigation/AdminSearchInput';
 import { SuperAdminAdminListBodySkeleton } from '@/components/skeletons/SuperAdminSkeletons';
 import {
   AlertDialog,
@@ -50,7 +51,6 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -114,7 +114,7 @@ function FaqRow({
               {isSynced ? 'Synced' : 'Manual'}
             </span>
           </div>
-          <p className="text-muted-foreground mt-1 text-sm leading-relaxed">{faq.answer}</p>
+          <p className="text-muted-foreground mt-1 line-clamp-1 text-sm leading-relaxed">{faq.answer}</p>
         </div>
       </div>
 
@@ -147,7 +147,7 @@ function FaqRow({
           size="icon"
           aria-label="Delete FAQ"
           onClick={onDeleteRequest}
-          className="text-destructive size-9"
+          className="text-destructive-strong size-9"
         >
           <Trash2 className="size-4" aria-hidden />
         </Button>
@@ -320,28 +320,22 @@ export function SuperAdminHelpFaqsPage() {
           view="grouped"
         />
       ) : error ? (
-        <p className="text-destructive text-sm">Could not load FAQs.</p>
+        <p className="text-destructive-strong text-sm">Could not load FAQs.</p>
       ) : (
         <>
           <SuperAdminHelpFaqsSummaryCards faqs={faqs} />
 
           <div className="flex flex-wrap items-center gap-2">
-            <div className="relative min-w-[min(100%,14rem)] flex-1 sm:max-w-xs">
-              <Search
-                className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2"
-                aria-hidden
-              />
-              <Input
-                value={searchInput}
-                onChange={(event) => {
-                  setSearchInput(event.target.value);
-                  if (page !== 1) setPage(1);
-                }}
-                placeholder="Search FAQs…"
-                className="h-10 pl-9"
-                aria-label="Search FAQs"
-              />
-            </div>
+            <AdminSearchInput
+                  value={searchInput}
+                  onChange={(value) => {
+                    setSearchInput(value);
+                    if (page !== 1) setPage(1);
+                  }}
+                  placeholder="Search FAQs…"
+                  ariaLabel="Search FAQs"
+                  debounceMs={0}
+                />
             <Select
               value={statusFilter}
               onValueChange={(value) => {

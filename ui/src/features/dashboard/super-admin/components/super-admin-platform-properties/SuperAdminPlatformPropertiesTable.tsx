@@ -112,7 +112,7 @@ export function SuperAdminPlatformPropertiesTable({ properties }: Props) {
                 />
               </td>
               <td className={adminTableCell.action}>
-                <AdminTableRowAffordance />
+                <AdminTableRowAffordance icon="chevron" />
               </td>
             </tr>
           );

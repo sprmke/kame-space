@@ -14,9 +14,10 @@ export function SuperAdminPricingSummaryCards({ plans }: Props) {
   return (
     <section
       aria-label="Pricing plan summary"
-      className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4 lg:gap-4"
+      className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3 lg:gap-4"
     >
       <AdminMetricCard
+        density="responsive"
         title="Total plans"
         value={String(summary.total)}
         icon={Layers}
@@ -24,6 +25,7 @@ export function SuperAdminPricingSummaryCards({ plans }: Props) {
         iconBgClassName="bg-sky-100 dark:bg-sky-900/30"
       />
       <AdminMetricCard
+        density="responsive"
         title="Host tiers"
         value={String(summary.subscriptionTiers)}
         icon={CreditCard}
@@ -31,6 +33,7 @@ export function SuperAdminPricingSummaryCards({ plans }: Props) {
         iconBgClassName="bg-emerald-100 dark:bg-emerald-900/30"
       />
       <AdminMetricCard
+        density="responsive"
         title="Active plans"
         value={String(summary.activePlans)}
         icon={Sparkles}
@@ -38,6 +41,7 @@ export function SuperAdminPricingSummaryCards({ plans }: Props) {
         iconBgClassName="bg-amber-100 dark:bg-amber-900/30"
       />
       <AdminMetricCard
+        density="responsive"
         title="Default plan"
         value={summary.defaultPlanName}
         icon={Star}

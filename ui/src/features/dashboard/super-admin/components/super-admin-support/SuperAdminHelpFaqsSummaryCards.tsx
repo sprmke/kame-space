@@ -21,9 +21,10 @@ export function SuperAdminHelpFaqsSummaryCards({ faqs }: Props) {
   return (
     <section
       aria-label="FAQ summary"
-      className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4 lg:gap-4"
+      className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3 lg:gap-4"
     >
       <AdminMetricCard
+        density="responsive"
         title="Total FAQs"
         value={String(summary.total)}
         icon={BookOpen}
@@ -31,6 +32,7 @@ export function SuperAdminHelpFaqsSummaryCards({ faqs }: Props) {
         iconBgClassName="bg-sky-100 dark:bg-sky-900/30"
       />
       <AdminMetricCard
+        density="responsive"
         title="Published"
         value={String(summary.published)}
         icon={Eye}
@@ -38,6 +40,7 @@ export function SuperAdminHelpFaqsSummaryCards({ faqs }: Props) {
         iconBgClassName="bg-emerald-100 dark:bg-emerald-900/30"
       />
       <AdminMetricCard
+        density="responsive"
         title="Unpublished"
         value={String(summary.unpublished)}
         icon={EyeOff}
@@ -45,6 +48,7 @@ export function SuperAdminHelpFaqsSummaryCards({ faqs }: Props) {
         iconBgClassName="bg-amber-100 dark:bg-amber-900/30"
       />
       <AdminMetricCard
+        density="responsive"
         title="Categories"
         value={String(summary.categories)}
         icon={FolderOpen}

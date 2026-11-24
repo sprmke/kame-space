@@ -1,11 +1,11 @@
-import { Filter, Search } from 'lucide-react';
+import { Filter } from 'lucide-react';
 
 import { AdminListPerPageSelect } from '@/features/dashboard/bookings/components/AdminListToolbar';
 import { SuperAdminListViewToggle } from '@/features/dashboard/super-admin/components/shared/SuperAdminListViewToggle';
 import type { SuperAdminApprovalsFilters } from '@/features/dashboard/super-admin/lib/superAdminApprovalsFilters';
 import type { SuperAdminListViewMode } from '@/features/dashboard/super-admin/lib/superAdminListViewMode';
 
-import { Input } from '@/components/ui/input';
+import { AdminSearchInput } from '@/components/navigation/AdminSearchInput';
 import {
   Select,
   SelectContent,
@@ -24,7 +24,7 @@ const TYPE_LABELS: Record<SuperAdminApprovalsFilters['type'], string> = {
 
 const STATUS_OPTIONS: { value: SuperAdminApprovalsFilters['status']; label: string }[] = [
   { value: 'all', label: 'All status' },
-  { value: 'pending', label: 'In review' },
+  { value: 'pending', label: 'Awaiting review' },
   { value: 'approved', label: 'Approved' },
   { value: 'changes', label: 'Changes requested' },
   { value: 'rejected', label: 'Rejected' },
@@ -56,19 +56,12 @@ export function SuperAdminApprovalsToolbar({
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-        <div className="relative min-w-[min(100%,16rem)] flex-1 sm:max-w-xs">
-          <Search
-            className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2"
-            aria-hidden
-          />
-          <Input
-            value={filters.search}
-            onChange={(event) => onSearchChange(event.target.value)}
-            placeholder="Search approvals…"
-            className="h-10 pl-9"
-            aria-label="Search approvals"
-          />
-        </div>
+        <AdminSearchInput
+          value={filters.search}
+          onChange={onSearchChange}
+          placeholder="Search approvals…"
+          ariaLabel="Search approvals"
+        />
 
         <Select
           value={filters.type}
@@ -94,7 +87,7 @@ export function SuperAdminApprovalsToolbar({
           onValueChange={(value) => onStatusChange(value as SuperAdminApprovalsFilters['status'])}
         >
           <SelectTrigger
-            className="h-10 w-[min(100%,9.5rem)] shrink-0 sm:w-[9.5rem]"
+            className="h-10 w-[min(100%,11rem)] shrink-0 sm:w-[11rem]"
             aria-label="Filter by status"
           >
             <Filter className="size-4 shrink-0 opacity-70" aria-hidden />

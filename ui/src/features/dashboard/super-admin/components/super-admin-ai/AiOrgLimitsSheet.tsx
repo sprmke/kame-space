@@ -72,7 +72,7 @@ export function AiOrgLimitsSheet({ orgId, onOpenChange }: AiOrgLimitsSheetProps)
                 ))}
               </div>
             ) : error || !data || !org ? (
-              <p className="text-destructive text-sm">Could not load AI limits.</p>
+              <p className="text-destructive-strong text-sm">Could not load AI limits.</p>
             ) : (
               <>
                 <div className="flex flex-wrap items-center gap-2">

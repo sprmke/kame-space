@@ -122,7 +122,7 @@ export function SuperAdminPricingPlansPage() {
           metricTitles={['Total plans', 'Host tiers', 'Active plans', 'Default plan']}
         />
       ) : error ? (
-        <p className="text-destructive text-sm">Could not load pricing plans.</p>
+        <p className="text-destructive-strong text-sm">Could not load pricing plans.</p>
       ) : (
         <>
           <SuperAdminPricingSummaryCards plans={plans} />

@@ -1,6 +1,6 @@
 import { lazy } from 'react';
 
-import { Navigate, Route } from 'react-router-dom';
+import { Navigate, Route, useLocation } from 'react-router-dom';
 
 import { AuthLayout } from '@/features/guest/auth/components/AuthLayout';
 import { LegacyAuthRegisterRedirect } from '@/features/guest/auth/components/LegacyAuthRegisterRedirect';
@@ -17,6 +17,13 @@ const HostLoginPage = lazy(() =>
   import('@/features/guest/auth/pages/HostAuthPages').then((m) => ({ default: m.HostLoginPage }))
 );
 
+/** Old `/login` bookmarks and emails land on the host sign-in, keeping any redirect. */
+function LegacyLoginRedirect() {
+  const location = useLocation();
+  const redirect = new URLSearchParams(location.search).get('redirect') ?? undefined;
+  return <Navigate to={hostLoginPath(redirect)} replace />;
+}
+
 /**
  * Host + guest auth pages — both passwordless (email OTP + Google).
  *
@@ -25,6 +32,7 @@ const HostLoginPage = lazy(() =>
  */
 export const guestAuthRoutes = [
   <Route key="legacy-sign-in" path="/sign-in" element={<LegacySignInRedirect />} />,
+  <Route key="legacy-login" path="/login" element={<LegacyLoginRedirect />} />,
   <Route
     key="legacy-host-register"
     path="/for-hosts/register"

@@ -172,39 +172,39 @@ export function BottomTabBar({
 
           if (item.onClick || !item.href) {
             return (
-              <button
-                key={item.key}
-                ref={setItemRef(item.key)}
-                type="button"
-                role="listitem"
-                onClick={item.onClick}
-                onPointerDown={item.onIntent}
-                onFocus={item.onIntent}
-                aria-current={active ? 'page' : undefined}
-                aria-label={itemAriaLabel}
-                aria-expanded={item.onClick ? active : undefined}
-                className={sharedClass}
-              >
-                {content}
-              </button>
+              <div key={item.key} role="listitem" className="contents">
+                <button
+                  ref={setItemRef(item.key)}
+                  type="button"
+                  onClick={item.onClick}
+                  onPointerDown={item.onIntent}
+                  onFocus={item.onIntent}
+                  aria-current={active ? 'page' : undefined}
+                  aria-label={itemAriaLabel}
+                  aria-expanded={item.onClick ? active : undefined}
+                  className={sharedClass}
+                >
+                  {content}
+                </button>
+              </div>
             );
           }
 
           return (
-            <Link
-              key={item.key}
-              ref={setItemRef(item.key)}
-              to={item.href}
-              role="listitem"
-              aria-current={active ? 'page' : undefined}
-              aria-label={itemAriaLabel}
-              className={sharedClass}
-              onPointerDown={item.onIntent}
-              onFocus={item.onIntent}
-              onClick={() => scrollAdminViewToTop('auto')}
-            >
-              {content}
-            </Link>
+            <div key={item.key} role="listitem" className="contents">
+              <Link
+                ref={setItemRef(item.key)}
+                to={item.href}
+                aria-current={active ? 'page' : undefined}
+                aria-label={itemAriaLabel}
+                className={sharedClass}
+                onPointerDown={item.onIntent}
+                onFocus={item.onIntent}
+                onClick={() => scrollAdminViewToTop('auto')}
+              >
+                {content}
+              </Link>
+            </div>
           );
         })}
       </div>

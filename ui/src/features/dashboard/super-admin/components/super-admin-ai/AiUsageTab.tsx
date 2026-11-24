@@ -78,32 +78,37 @@ export function AiUsageTab() {
       {isLoading && !data ? (
         <SuperAdminOverviewBodySkeleton metricCount={4} />
       ) : error ? (
-        <p className="text-destructive text-sm">Could not load AI usage.</p>
+        <p className="text-destructive-strong text-sm">Could not load AI usage.</p>
       ) : null}
       {data ? (
         <>
-          <section className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-5 lg:gap-4">
+          <section className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-5 lg:gap-4">
             <StatCard
+              density="responsive"
               title="Spend"
               value={`$${data.totals.costUsd.toLocaleString('en-US', { maximumFractionDigits: 2 })}`}
               iconBgClassName="bg-violet-100 dark:bg-violet-900/30"
             />
             <StatCard
+              density="responsive"
               title="Credits"
               value={(data.totals.credits ?? 0).toLocaleString('en-US')}
               iconBgClassName="bg-sky-100 dark:bg-sky-900/30"
             />
             <StatCard
+              density="responsive"
               title="Orgs using AI"
               value={String(data.totals.orgsWithUsage)}
               iconBgClassName="bg-emerald-100 dark:bg-emerald-900/30"
             />
             <StatCard
+              density="responsive"
               title="Quota breaches"
               value={String(data.totals.quotaBreaches)}
               iconBgClassName="bg-rose-100 dark:bg-rose-900/30"
             />
             <StatCard
+              density="responsive"
               title="Projected this month"
               value={`$${data.totals.projectedMonthEndUsd.toLocaleString('en-US', { maximumFractionDigits: 0 })}`}
               iconBgClassName="bg-amber-100 dark:bg-amber-900/30"
@@ -333,7 +338,7 @@ export function AiUsageTab() {
                           <TableCell
                             className={
                               o.overDaily
-                                ? 'text-destructive font-medium tabular-nums'
+                                ? 'text-destructive-strong font-medium tabular-nums'
                                 : 'tabular-nums'
                             }
                           >
@@ -342,7 +347,7 @@ export function AiUsageTab() {
                           <TableCell
                             className={
                               o.overMonthly
-                                ? 'text-destructive font-medium tabular-nums'
+                                ? 'text-destructive-strong font-medium tabular-nums'
                                 : 'tabular-nums'
                             }
                           >

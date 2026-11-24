@@ -135,7 +135,7 @@ export function SuperAdminSupportPage() {
         />
       ) : error ? (
         <div className="border-border bg-card flex flex-wrap items-center justify-between gap-3 rounded-xl border p-4">
-          <p className="text-destructive text-sm">Could not load support tickets.</p>
+          <p className="text-destructive-strong text-sm">Could not load support tickets.</p>
           <Button type="button" variant="outline" size="sm" onClick={() => void refetch()}>
             Retry
           </Button>

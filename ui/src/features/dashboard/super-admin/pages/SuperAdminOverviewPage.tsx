@@ -1,5 +1,7 @@
 import { useState } from 'react';
 
+import { RotateCw } from 'lucide-react';
+
 import { AdminPageHeader } from '@/features/dashboard/bookings/components/AdminPageHeader';
 import { SuperAdminAiCostChart } from '@/features/dashboard/super-admin/components/super-admin-overview/SuperAdminAiCostChart';
 import { SuperAdminAttentionPanel } from '@/features/dashboard/super-admin/components/super-admin-overview/SuperAdminAttentionPanel';
@@ -15,6 +17,7 @@ import {
 import { countFeaturesOff } from '@/features/dashboard/super-admin/lib/featureAvailabilityAdmin';
 
 import { SuperAdminOverviewBodySkeleton } from '@/components/skeletons/SuperAdminSkeletons';
+import { Button } from '@/components/ui/button';
 import { SegmentedControl } from '@/components/ui/sliding-tabs';
 
 const RANGE_LABELS: Record<SuperAdminOverviewRange, string> = {
@@ -25,7 +28,7 @@ const RANGE_LABELS: Record<SuperAdminOverviewRange, string> = {
 
 export function SuperAdminOverviewPage() {
   const [range, setRange] = useState<SuperAdminOverviewRange>('30d');
-  const { data, isLoading, error } = useSuperAdminOverview(range);
+  const { data, isLoading, error, refetch } = useSuperAdminOverview(range);
   const { data: featureAvailability } = useFeatureAvailabilityAdmin();
   const featuresOff = featureAvailability ? countFeaturesOff(featureAvailability.resolved) : 0;
 
@@ -53,9 +56,15 @@ export function SuperAdminOverviewPage() {
       {isLoading && !data ? (
         <SuperAdminOverviewBodySkeleton metricCount={12} />
       ) : error ? (
-        <p className="text-destructive text-sm">
-          {error instanceof Error ? error.message : 'Could not load the platform overview.'}
-        </p>
+        <div className="border-border bg-card flex flex-wrap items-center justify-between gap-3 rounded-xl border p-4">
+          <p className="text-destructive-strong text-sm">
+            {error instanceof Error ? error.message : 'Could not load the platform overview.'}
+          </p>
+          <Button type="button" variant="outline" size="sm" onClick={() => void refetch()}>
+            <RotateCw className="size-4" aria-hidden />
+            Retry
+          </Button>
+        </div>
       ) : data ? (
         <div className="space-y-3 sm:space-y-4">
           <SuperAdminOverviewKpis

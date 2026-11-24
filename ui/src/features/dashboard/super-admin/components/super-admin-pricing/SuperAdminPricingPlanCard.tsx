@@ -6,6 +6,7 @@ import type { PricingPlan } from '@/features/dashboard/super-admin/types/pricing
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { formatMoneyCompact } from '@/utils/format/currency';
 
 const CARD_CLASS =
   'border-border/50 bg-card relative flex flex-col gap-3 rounded-xl border p-4 shadow-card sm:p-5';
@@ -26,7 +27,12 @@ export function SuperAdminPricingPlanCard({ plan, onEdit }: Props) {
             <h3 className="text-foreground truncate text-sm font-semibold sm:text-base">
               {plan.name}
             </h3>
-            <p className="text-muted-foreground truncate text-xs">{plan.code}</p>
+            <p
+              className="text-muted-foreground truncate font-mono text-[11px]"
+              title="Internal plan code"
+            >
+              {plan.code}
+            </p>
           </div>
           <div className="flex flex-wrap gap-1">
             {plan.isDefault ? <Badge variant="secondary">Default</Badge> : null}
@@ -38,7 +44,16 @@ export function SuperAdminPricingPlanCard({ plan, onEdit }: Props) {
       <dl className="grid grid-cols-2 gap-2 text-sm">
         <div>
           <dt className="text-muted-foreground text-xs">Host price</dt>
-          <dd className="tabular-nums">{priceLabel}</dd>
+          <dd
+            className="tabular-nums"
+            title={
+              plan.discountPercent > 0 && plan.pricePhp
+                ? `List ${formatMoneyCompact(plan.pricePhp)}, ${Math.floor(plan.discountPercent)}% off applied`
+                : undefined
+            }
+          >
+            {priceLabel}
+          </dd>
         </div>
         <div>
           <dt className="text-muted-foreground text-xs">AI credits/month</dt>

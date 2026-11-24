@@ -38,7 +38,7 @@ function PlatformActionsView({ orgId }: { orgId: string }) {
   const events = data?.events ?? [];
 
   if (isLoading) return <SuperAdminAuditBodySkeleton />;
-  if (error) return <p className="text-destructive text-sm">Could not load activity.</p>;
+  if (error) return <p className="text-destructive-strong text-sm">Could not load activity.</p>;
 
   return events.length === 0 ? (
     <SuperAdminEmptyState icon={ScrollText} title="No recorded super-admin actions for this org" />
@@ -70,7 +70,7 @@ function OrgActivityView({ orgId }: { orgId: string }) {
   const events = useMemo(() => query.data?.pages.flatMap((p) => p.events) ?? [], [query.data]);
 
   if (query.isLoading) return <SuperAdminAuditBodySkeleton />;
-  if (query.isError) return <p className="text-destructive text-sm">Could not load activity.</p>;
+  if (query.isError) return <p className="text-destructive-strong text-sm">Could not load activity.</p>;
 
   return events.length === 0 ? (
     <SuperAdminEmptyState icon={ScrollText} title="No recorded org activity yet" />

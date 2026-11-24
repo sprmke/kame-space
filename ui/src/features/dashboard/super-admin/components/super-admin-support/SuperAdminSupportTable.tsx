@@ -86,7 +86,7 @@ export function SuperAdminSupportTable({ tickets, onSelect }: Props) {
               </span>
             </td>
             <td className={adminTableCell.action}>
-              <AdminTableRowAffordance />
+              <AdminTableRowAffordance icon="chevron" />
             </td>
           </tr>
         ))}

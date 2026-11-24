@@ -14,9 +14,10 @@ export function SuperAdminDevelopmentsSummaryCards({ developments }: Props) {
   return (
     <section
       aria-label="Development summary"
-      className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4 lg:gap-4"
+      className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3 lg:gap-4"
     >
       <AdminMetricCard
+        density="responsive"
         title="Total developments"
         value={String(summary.total)}
         icon={Landmark}
@@ -24,6 +25,7 @@ export function SuperAdminDevelopmentsSummaryCards({ developments }: Props) {
         iconBgClassName="bg-sky-100 dark:bg-sky-900/30"
       />
       <AdminMetricCard
+        density="responsive"
         title="Active"
         value={String(summary.active)}
         icon={Building2}
@@ -31,6 +33,7 @@ export function SuperAdminDevelopmentsSummaryCards({ developments }: Props) {
         iconBgClassName="bg-emerald-100 dark:bg-emerald-900/30"
       />
       <AdminMetricCard
+        density="responsive"
         title="Linked properties"
         value={String(summary.linkedProperties)}
         icon={Building2}
@@ -38,6 +41,7 @@ export function SuperAdminDevelopmentsSummaryCards({ developments }: Props) {
         iconBgClassName="bg-violet-100 dark:bg-violet-900/30"
       />
       <AdminMetricCard
+        density="responsive"
         title="Linked parking"
         value={String(summary.linkedParking)}
         icon={Car}

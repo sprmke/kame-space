@@ -45,7 +45,7 @@ export function SuperAdminAnnouncementCardGrid({ announcements, onSelect }: Prop
                   <Badge variant={announcement.active ? 'success' : 'secondary'}>
                     {announcement.active ? 'Active' : 'Inactive'}
                   </Badge>
-                  <AdminTableRowAffordance />
+                  <AdminTableRowAffordance icon="chevron" />
                 </div>
                 <p className="text-muted-foreground mt-1 line-clamp-1 text-[11px] leading-tight sm:text-xs">
                   {hostAnnouncementBodyPlainText(announcement.body)}

@@ -130,7 +130,7 @@ export function SuperAdminDevelopmentsPage() {
           metricTitles={['Total developments', 'Active', 'Linked properties', 'Linked parking']}
         />
       ) : error ? (
-        <p className="text-destructive text-sm">Could not load developments.</p>
+        <p className="text-destructive-strong text-sm">Could not load developments.</p>
       ) : (
         <>
           <SuperAdminDevelopmentsSummaryCards developments={developments} />

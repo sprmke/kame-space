@@ -159,7 +159,7 @@ export function SuperAdminOrgSubscriptionsPage() {
           metricTitles={['Organizations', 'Assigned', 'Unassigned', 'Properties']}
         />
       ) : error ? (
-        <p className="text-destructive text-sm">Could not load org subscriptions.</p>
+        <p className="text-destructive-strong text-sm">Could not load org subscriptions.</p>
       ) : (
         <>
           <SuperAdminOrgSubscriptionsSummaryCards summary={summary} />

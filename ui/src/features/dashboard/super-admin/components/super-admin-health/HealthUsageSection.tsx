@@ -245,7 +245,7 @@ function CapacityCard() {
         {isLoading ? (
           <Skeleton className="h-40 w-full" />
         ) : error || !data ? (
-          <p className="text-destructive text-sm">Could not load capacity</p>
+          <p className="text-destructive-strong text-sm">Could not load capacity</p>
         ) : (
           <div className="space-y-3">
             <CapacityBar used={data.db_size_bytes} total={DB_SIZE_REFERENCE_BYTES} />

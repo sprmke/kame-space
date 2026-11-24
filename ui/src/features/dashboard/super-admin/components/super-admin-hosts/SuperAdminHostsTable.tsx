@@ -14,6 +14,7 @@ import { hostDisplayInitial } from '@/features/dashboard/super-admin/lib/superAd
 import { superAdminPaths } from '@/features/dashboard/super-admin/lib/superAdminPaths';
 import type { HostSummary } from '@/features/dashboard/super-admin/types/host';
 
+import { pluralize } from '@/lib/pluralize';
 import { cn } from '@/lib/utils';
 
 function HostAvatar({ host, className }: { host: HostSummary; className?: string }) {
@@ -53,9 +54,9 @@ export function SuperAdminHostsTable({ hosts }: Props) {
     <AdminDataTable minWidth={640}>
       <AdminTableHeadRow>
         <AdminTableTh className="pl-4 pr-3 sm:pl-5">Host</AdminTableTh>
-        <AdminTableTh className="hidden px-3 sm:table-cell sm:px-4">Orgs</AdminTableTh>
-        <AdminTableTh className="hidden px-3 md:table-cell md:px-4">Properties</AdminTableTh>
-        <AdminTableTh className="hidden px-3 lg:table-cell lg:px-4">Parking</AdminTableTh>
+        <AdminTableTh className="hidden w-20 px-3 text-right sm:table-cell sm:px-4">Orgs</AdminTableTh>
+        <AdminTableTh className="hidden w-28 px-3 text-right md:table-cell md:px-4">Properties</AdminTableTh>
+        <AdminTableTh className="hidden w-24 px-3 text-right lg:table-cell lg:px-4">Parking</AdminTableTh>
         <AdminTableActionsTh><span className="sr-only">Open</span></AdminTableActionsTh>
       </AdminTableHeadRow>
       <tbody>
@@ -83,7 +84,7 @@ export function SuperAdminHostsTable({ hosts }: Props) {
                       <p className={cn('truncate', adminTableBodyText.secondary)}>{host.email}</p>
                     ) : null}
                     <p className={cn('mt-1 tabular-nums sm:hidden', adminTableBodyText.secondary)}>
-                      {host.stats.organizationCount} org · {host.stats.propertyCount} prop
+                      {pluralize(host.stats.organizationCount, 'org')} · {pluralize(host.stats.propertyCount, 'prop', 'props')}
                     </p>
                   </div>
                 </div>
@@ -104,7 +105,7 @@ export function SuperAdminHostsTable({ hosts }: Props) {
                 {host.stats.parkingCount}
               </td>
               <td className={adminTableCell.action}>
-                <AdminTableRowAffordance />
+                <AdminTableRowAffordance icon="chevron" />
               </td>
             </tr>
           );

@@ -127,11 +127,11 @@ export function SuperAdminDevelopmentCard({ development }: Props) {
 
         <div className="border-border/50 grid grid-cols-2 gap-2 border-t pt-2.5 text-center text-xs sm:text-sm">
           <div>
-            <p className="text-muted-foreground text-[10px] sm:text-xs">Properties</p>
+            <p className="text-muted-foreground text-[11px] sm:text-xs">Properties</p>
             <p className="font-semibold tabular-nums">{model.propertyCount}</p>
           </div>
           <div>
-            <p className="text-muted-foreground text-[10px] sm:text-xs">Parking</p>
+            <p className="text-muted-foreground text-[11px] sm:text-xs">Parking</p>
             <p className="font-semibold tabular-nums">{model.parkingCount}</p>
           </div>
         </div>

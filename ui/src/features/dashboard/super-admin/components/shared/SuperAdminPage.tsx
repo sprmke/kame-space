@@ -54,7 +54,7 @@ export function SuperAdminPage({
         (loadingBody ?? <SuperAdminPageLoading metricCount={loadingMetricCount} />)
       ) : error ? (
         <div className="border-border bg-card flex flex-wrap items-center justify-between gap-3 rounded-xl border p-4">
-          <p className="text-destructive text-sm">
+          <p className="text-destructive-strong text-sm">
             {errorMessage ?? `Could not load ${title.toLowerCase()}.`}
           </p>
           {onRetry ? (

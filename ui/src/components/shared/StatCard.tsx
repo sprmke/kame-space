@@ -38,7 +38,9 @@ export type StatCardProps = {
   to?: string;
   active?: boolean;
   /** Tighter padding and type for dense KPI rows (e.g. super-admin overview). */
-  density?: 'default' | 'compact';
+  density?: 'default' | 'compact' | 'responsive';
+  /** Render a value placeholder while the number is still loading. */
+  valueLoading?: boolean;
 };
 
 function formatChange(change: number, isPoints: boolean): string {
@@ -71,17 +73,20 @@ export function StatCard({
   to,
   active,
   density = 'default',
+  valueLoading = false,
 }: StatCardProps) {
   const hasChange = change !== undefined;
   const isPositive = change !== undefined && change >= 0;
   const interactive = onClick !== undefined || to !== undefined;
   const compactChrome = useDashboardCompactChrome();
   const compact = density === 'compact';
+  /** Compact on phones, the full card from `sm` up. Used by admin summary rows. */
+  const responsive = density === 'responsive';
   const showIcon = Boolean(Icon && !compactChrome);
 
   const shellClassName = cn(
     'surface-card group relative flex h-full w-full flex-col items-start justify-start overflow-hidden text-left transition-all duration-300',
-    compact ? 'p-2 sm:p-2.5' : 'p-3 sm:p-3.5 md:p-5',
+    compact ? 'p-2 sm:p-2.5' : responsive ? 'p-2.5 sm:p-3.5 md:p-5' : 'p-3 sm:p-3.5 md:p-5',
     interactive && 'native-press',
     'sm:hover:shadow-elevated-lg sm:hover:-translate-y-0.5',
     interactive &&
@@ -124,7 +129,11 @@ export function StatCard({
               <p
                 className={cn(
                   'text-muted-foreground line-clamp-2 font-medium leading-snug',
-                  compact ? 'text-[11px] sm:text-xs' : 'text-xs sm:line-clamp-none sm:text-sm'
+                  compact
+                    ? 'text-[11px] sm:text-xs'
+                    : responsive
+                      ? 'text-[11px] sm:text-xs sm:line-clamp-none md:text-sm'
+                      : 'text-xs sm:line-clamp-none sm:text-sm'
                 )}
               >
                 {title}
@@ -133,20 +142,32 @@ export function StatCard({
                 <span className="relative z-20 flex shrink-0">{titleAdornment}</span>
               ) : null}
             </div>
-            <p
-              className={cn(
-                valueClassName?.includes('line-clamp')
-                  ? 'font-bold tracking-tight'
-                  : compact
-                    ? 'text-foreground truncate text-sm font-bold tabular-nums tracking-tight sm:text-base lg:text-lg'
-                    : 'text-stat-value truncate',
-                // Color override only — do not append `text-foreground` (token already
-                // sets it; a trailing text-* color used to make twMerge drop the token).
-                valueClassName
-              )}
-            >
-              {value}
-            </p>
+            {valueLoading ? (
+              <Skeleton
+                className={cn(
+                  'w-16 sm:w-20',
+                  compact ? 'h-4 sm:h-5' : responsive ? 'h-5 sm:h-6' : 'h-6 sm:h-8'
+                )}
+                aria-hidden
+              />
+            ) : (
+              <p
+                className={cn(
+                  valueClassName?.includes('line-clamp')
+                    ? 'font-bold tracking-tight'
+                    : compact
+                      ? 'text-foreground truncate text-sm font-bold tabular-nums tracking-tight sm:text-base lg:text-lg'
+                      : responsive
+                        ? 'text-foreground truncate text-base font-bold tabular-nums tracking-tight sm:text-stat-value'
+                        : 'text-stat-value truncate',
+                  // Color override only — do not append `text-foreground` (token already
+                  // sets it; a trailing text-* color used to make twMerge drop the token).
+                  valueClassName
+                )}
+              >
+                {value}
+              </p>
+            )}
             {hasChange ? (
               <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
                 <span

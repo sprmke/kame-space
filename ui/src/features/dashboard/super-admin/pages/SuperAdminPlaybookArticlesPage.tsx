@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { useSearchParams } from 'react-router-dom';
 
-import { BookOpen, Pencil, Plus, Search, Trash2 } from 'lucide-react';
+import { BookOpen, Pencil, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import {
@@ -20,6 +20,7 @@ import {
   type PlaybookArticleStatusFilter,
 } from '@/features/dashboard/super-admin/hooks/useHostPlaybookArticlesAdmin';
 
+import { AdminSearchInput } from '@/components/navigation/AdminSearchInput';
 import { SuperAdminAdminListBodySkeleton } from '@/components/skeletons/SuperAdminSkeletons';
 import {
   AlertDialog,
@@ -32,7 +33,6 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -105,7 +105,7 @@ function ArticleRow({
           size="icon"
           aria-label="Delete article"
           onClick={onDeleteRequest}
-          className="text-destructive size-9"
+          className="text-destructive-strong size-9"
         >
           <Trash2 className="size-4" aria-hidden />
         </Button>
@@ -210,26 +210,20 @@ export function SuperAdminPlaybookArticlesPage() {
       {isLoading ? (
         <SuperAdminAdminListBodySkeleton metricCount={0} metricTitles={[]} view="grouped" />
       ) : error ? (
-        <p className="text-destructive text-sm">Could not load Playbook articles.</p>
+        <p className="text-destructive-strong text-sm">Could not load Playbook articles.</p>
       ) : (
         <>
           <div className="flex flex-wrap items-center gap-2">
-            <div className="relative min-w-[min(100%,14rem)] flex-1 sm:max-w-xs">
-              <Search
-                className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2"
-                aria-hidden
-              />
-              <Input
-                value={searchInput}
-                onChange={(event) => {
-                  setSearchInput(event.target.value);
-                  if (page !== 1) setPage(1);
-                }}
-                placeholder="Search articles…"
-                className="h-10 pl-9"
-                aria-label="Search Playbook articles"
-              />
-            </div>
+            <AdminSearchInput
+                  value={searchInput}
+                  onChange={(value) => {
+                    setSearchInput(value);
+                    if (page !== 1) setPage(1);
+                  }}
+                  placeholder="Search articles…"
+                  ariaLabel="Search Playbook articles"
+                  debounceMs={0}
+                />
             <Select
               value={statusFilter}
               onValueChange={(value) => {
