@@ -191,7 +191,7 @@ export function TemplateMoveDialog({
                 onClick={() => void choose(target.placement)}
                 className={cn(
                   'flex min-h-[48px] w-full items-center gap-3 rounded-lg px-3 text-left text-sm transition-colors',
-                  'hover:bg-muted focus-visible:bg-muted disabled:opacity-60',
+                  'hover:bg-muted focus-visible:bg-muted focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 disabled:opacity-60',
                   current && 'text-primary font-medium'
                 )}
               >
