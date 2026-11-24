@@ -52,13 +52,59 @@ export function buildStayLedgerEntry(row: FinanceBookingLedgerRow): FinanceLedge
     source: 'stay',
     date,
     description: `${name}: Stay`,
-    subDescription: `Booking ${row.id.slice(0, 8)}…`,
     category: STAY_NET_CATEGORY,
     type: net >= 0 ? 'income' : 'expense',
     status: stayLedgerStatus(row.status),
     netAmount: net,
     stay: row,
   };
+}
+
+export type LedgerAmountTone = 'income' | 'expense' | 'pending' | 'canceled';
+
+/**
+ * Money is only "collected" when the entry completed. Pending and canceled rows
+ * keep their status tone so a pending stay never reads as received cash.
+ */
+export function ledgerAmountTone(entry: FinanceLedgerEntry): LedgerAmountTone {
+  if (entry.status === 'canceled') return 'canceled';
+  if (entry.status === 'pending') return 'pending';
+  return entry.type === 'income' ? 'income' : 'expense';
+}
+
+/** Icon well tone for ledger rows: pending stays are amber, not collected green. */
+export function ledgerIconTone(entry: FinanceLedgerEntry): 'green' | 'red' | 'yellow' | 'neutral' {
+  if (entry.status === 'canceled') return 'neutral';
+  if (entry.status === 'pending') return 'yellow';
+  return entry.type === 'income' ? 'green' : 'red';
+}
+
+export function ledgerIconClassName(tone: ReturnType<typeof ledgerIconTone>): string {
+  switch (tone) {
+    case 'green':
+      return 'text-emerald-600 dark:text-emerald-400';
+    case 'red':
+      return 'text-red-600 dark:text-red-400';
+    case 'yellow':
+      return 'text-amber-600 dark:text-amber-400';
+    case 'neutral':
+    default:
+      return 'text-muted-foreground';
+  }
+}
+
+export function ledgerAmountClassName(tone: LedgerAmountTone): string {
+  switch (tone) {
+    case 'income':
+      return 'text-emerald-700 dark:text-emerald-300';
+    case 'expense':
+      return 'text-red-600 dark:text-red-400';
+    case 'pending':
+      return 'text-amber-700 dark:text-amber-300';
+    case 'canceled':
+    default:
+      return 'text-muted-foreground';
+  }
 }
 
 export function buildTransactionLedgerEntry(item: FinanceLineItem): FinanceLedgerEntry {

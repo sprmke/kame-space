@@ -28,6 +28,12 @@ type Props = {
   singleOccurrenceOnly?: boolean;
 };
 
+const DELETE_SCOPE_DESCRIPTION: Record<RecurrenceEditScope, string> = {
+  this: 'Delete only the selected date.',
+  this_and_future: 'Delete this date and every later occurrence.',
+  all: 'Delete every past and future occurrence in the series.',
+};
+
 export function RecurringDeleteDialog({
   item,
   open,
@@ -89,7 +95,7 @@ export function RecurringDeleteDialog({
                   <span className="min-w-0">
                     <span className="text-foreground block text-sm font-semibold">{opt.label}</span>
                     <span className="text-caption text-muted-foreground mt-0.5 block">
-                      {opt.description}
+                      {DELETE_SCOPE_DESCRIPTION[opt.value]}
                     </span>
                   </span>
                 </label>

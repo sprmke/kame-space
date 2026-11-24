@@ -84,6 +84,13 @@ describe('isRecurrenceScheduleDirty', () => {
   it('treats a cleared end date as a change', () => {
     expect(isRecurrenceScheduleDirty({ ...base, recurrenceUntil: undefined })).toBe(true);
   });
+
+  it('does not treat an unknown series end as a change', () => {
+    expect(isRecurrenceScheduleDirty({ ...base, initialUntil: null })).toBe(false);
+    expect(
+      isRecurrenceScheduleDirty({ ...base, initialUntil: null, recurrenceInterval: 'weekly' })
+    ).toBe(true);
+  });
 });
 
 describe('defaultRecurrenceUntil', () => {
@@ -144,7 +151,8 @@ describe('month-end series clamp instead of skipping short months', () => {
   // pinned in `financeRecurrence_test.ts`.
   function dates(
     anchorDate: string,
-    recurrenceInterval: 'monthly' | 'twice_monthly' | 'every_2_months' | 'quarterly' | 'every_6_months' | 'yearly',
+    recurrenceInterval:
+      'monthly' | 'twice_monthly' | 'every_2_months' | 'quarterly' | 'every_6_months' | 'yearly',
     recurrenceUntil: string
   ) {
     const preview = buildTelegramReminderSchedule({
@@ -224,7 +232,6 @@ describe('month-end series clamp instead of skipping short months', () => {
     expect(preview?.totalCount).toBe(3);
   });
 });
-
 
 describe('normalizeFinanceReminderInterval', () => {
   it('keeps a supported interval, trimmed and lower-cased', () => {
@@ -315,9 +322,7 @@ describe('buildTelegramReminderSchedule', () => {
   });
 
   it('builds one window for a single occurrence', () => {
-    expect(
-      buildTelegramReminderSchedule({ ...base, recurrenceInterval: 'none' })
-    ).toEqual({
+    expect(buildTelegramReminderSchedule({ ...base, recurrenceInterval: 'none' })).toEqual({
       windows: [{ windowStart: '2026-01-12', windowEnd: '2026-01-15' }],
       totalCount: 1,
       isRecurring: false,
@@ -338,9 +343,7 @@ describe('buildTelegramReminderSchedule', () => {
   });
 
   it('returns nothing when the series end is before the anchor', () => {
-    expect(
-      buildTelegramReminderSchedule({ ...base, recurrenceUntil: '2025-12-31' })
-    ).toBeNull();
+    expect(buildTelegramReminderSchedule({ ...base, recurrenceUntil: '2025-12-31' })).toBeNull();
     expect(buildTelegramReminderSchedule({ ...base, recurrenceUntil: undefined })).toBeNull();
   });
 

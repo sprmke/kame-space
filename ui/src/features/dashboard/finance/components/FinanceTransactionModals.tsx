@@ -16,6 +16,7 @@ import { useFinanceLineItemMutations } from '@/features/dashboard/finance/hooks/
 import { FINANCE_DEFAULT_REMINDER_TEMPLATE } from '@/features/dashboard/finance/lib/financeReminderTemplate';
 import { recurrenceScheduleUpdateFields } from '@/features/dashboard/finance/lib/recurrence';
 import type { FinanceLineItem, FinanceQuery } from '@/features/dashboard/finance/lib/types';
+import { useAdminAssetScope } from '@/features/dashboard/org/lib/adminAssetScope';
 
 import { UnsavedChangesDialog } from '@/components/forms/UnsavedChangesDialog';
 import {
@@ -66,6 +67,8 @@ export function FinanceTransactionModals({
   onDeletingChange,
   onSeriesAnchorChange,
 }: Props) {
+  const scope = useAdminAssetScope();
+  const { propertyId, parkingId } = scope;
   const { create, update, remove } = useFinanceLineItemMutations(query);
   const { data: financeSettings } = useTelegramFinanceSettings();
   const globalDefaultMessageTemplate =
@@ -92,7 +95,10 @@ export function FinanceTransactionModals({
     let cancelled = false;
     void (async () => {
       try {
-        const rows = await fetchRecurringSeriesItems(editingItem.recurrence_series_id!);
+        const rows = await fetchRecurringSeriesItems(editingItem.recurrence_series_id!, {
+          propertyId,
+          parkingId,
+        });
         if (cancelled) return;
         const last = rows[rows.length - 1];
         setEditingSeriesUntil(last?.occurred_on ?? null);
@@ -104,7 +110,7 @@ export function FinanceTransactionModals({
     return () => {
       cancelled = true;
     };
-  }, [editingItem?.id, editingItem?.recurrence_series_id]);
+  }, [editingItem?.id, editingItem?.recurrence_series_id, propertyId, parkingId]);
 
   useEffect(() => {
     if (createOpen && !editingItem) {
@@ -229,10 +235,7 @@ export function FinanceTransactionModals({
             ) : null}
           </ResponsiveModalHeader>
           <div
-            className={cn(
-              'min-h-0 flex-1 overflow-y-auto overscroll-contain',
-              MODAL_BODY_CLASS
-            )}
+            className={cn('min-h-0 flex-1 overflow-y-auto overscroll-contain', MODAL_BODY_CLASS)}
           >
             <OperatingLineItemForm
               ref={formRef}

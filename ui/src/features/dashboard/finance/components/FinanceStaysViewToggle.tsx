@@ -23,7 +23,7 @@ export function FinanceStaysViewToggle({
       options={ADMIN_LIST_VIEW_OPTIONS}
       hideValues={hideTableView ? ['table'] : []}
       className={className}
-      ariaLabel="Choose stays view"
+      ariaLabel="Choose ledger view"
     />
   );
 }

@@ -5,7 +5,13 @@ import { ArrowDownRight, ArrowUpRight, Pencil, Repeat, Trash2 } from 'lucide-rea
 
 import { FinanceLedgerStatusBadge } from '@/features/dashboard/finance/components/FinanceLedgerStatusBadge';
 import { StayFinanceModal } from '@/features/dashboard/finance/components/StayFinanceModal';
-import type { FinanceLedgerEntry } from '@/features/dashboard/finance/lib/financeLedger';
+import {
+  ledgerAmountClassName,
+  ledgerAmountTone,
+  ledgerIconClassName,
+  ledgerIconTone,
+  type FinanceLedgerEntry,
+} from '@/features/dashboard/finance/lib/financeLedger';
 import { recurrenceIntervalLabel } from '@/features/dashboard/finance/lib/recurrence';
 import type { FinanceBookingLedgerRow } from '@/features/dashboard/finance/lib/types';
 
@@ -49,6 +55,8 @@ export function FinanceLedgerCardGrid({
         {rows.map((entry) => {
           const isIncome = entry.type === 'income';
           const amountPrefix = isIncome ? '+' : '−';
+          const amountClass = ledgerAmountClassName(ledgerAmountTone(entry));
+          const iconTone = ledgerIconTone(entry);
           const recurrenceLabel = entry.transaction?.recurrence_series_id
             ? recurrenceIntervalLabel(entry.transaction.recurrence_interval)
             : null;
@@ -115,6 +123,9 @@ export function FinanceLedgerCardGrid({
               onKeyDown={
                 isInteractive
                   ? (e) => {
+                      // Only the card itself opens the entry. Keys pressed on an
+                      // inner action (delete, edit, series) must not bubble here.
+                      if (e.target !== e.currentTarget) return;
                       if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
                         handleOpen();
@@ -125,20 +136,15 @@ export function FinanceLedgerCardGrid({
             >
               {/* Phone: title + amount; status · meta; actions behind ⋯ */}
               <div className="flex items-start gap-2.5 sm:hidden">
-                <div
-                  className={cn(
-                    'mt-0.5 size-7 shrink-0',
-                    toneIconWrapClasses(isIncome ? 'green' : 'red')
-                  )}
-                >
+                <div className={cn('mt-0.5 size-7 shrink-0', toneIconWrapClasses(iconTone))}>
                   {isIncome ? (
                     <ArrowUpRight
-                      className="size-3.5 text-emerald-600 dark:text-emerald-400"
+                      className={cn('size-3.5', ledgerIconClassName(iconTone))}
                       aria-hidden
                     />
                   ) : (
                     <ArrowDownRight
-                      className="size-3.5 text-red-600 dark:text-red-400"
+                      className={cn('size-3.5', ledgerIconClassName(iconTone))}
                       aria-hidden
                     />
                   )}
@@ -151,9 +157,7 @@ export function FinanceLedgerCardGrid({
                     <span
                       className={cn(
                         'shrink-0 text-sm font-semibold tabular-nums leading-none',
-                        isIncome
-                          ? 'text-emerald-700 dark:text-emerald-300'
-                          : 'text-red-600 dark:text-red-400'
+                        amountClass
                       )}
                     >
                       {amountPrefix}
@@ -202,12 +206,7 @@ export function FinanceLedgerCardGrid({
               <div className="hidden h-full flex-col px-4 pb-3 pt-4 sm:flex">
                 <div className="flex shrink-0 items-start justify-between gap-2">
                   <div className="flex min-w-0 items-start gap-2">
-                    <div
-                      className={cn(
-                        'mt-0.5 size-8 shrink-0',
-                        toneIconWrapClasses(isIncome ? 'green' : 'red')
-                      )}
-                    >
+                    <div className={cn('mt-0.5 size-8 shrink-0', toneIconWrapClasses(iconTone))}>
                       {isIncome ? (
                         <ArrowUpRight
                           className="size-4 text-emerald-600 dark:text-emerald-400"
@@ -224,7 +223,7 @@ export function FinanceLedgerCardGrid({
                       <p className="text-foreground truncate text-base font-semibold leading-tight">
                         {entry.description}
                       </p>
-                      <p className="text-muted-foreground mt-1 text-sm leading-snug tabular-nums">
+                      <p className="text-muted-foreground mt-1 text-sm tabular-nums leading-snug">
                         {format(parseISO(entry.date), 'MMM d, yyyy')}
                       </p>
                     </div>
@@ -260,9 +259,7 @@ export function FinanceLedgerCardGrid({
                   <span
                     className={cn(
                       'text-base font-semibold tabular-nums tracking-tight',
-                      isIncome
-                        ? 'text-emerald-700 dark:text-emerald-300'
-                        : 'text-red-600 dark:text-red-400'
+                      amountClass
                     )}
                   >
                     {amountPrefix}

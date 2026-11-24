@@ -20,19 +20,9 @@ export const FINANCE_REMINDER_INTERVAL_OPTIONS: {
   description: string;
 }[] = [
   {
-    value: 'hourly',
-    label: 'Every hour',
-    description: 'Up to one reminder per hour in the days-before window through the due date.',
-  },
-  {
-    value: 'every_2_hours',
-    label: 'Every 2 hours',
-    description: 'Up to one reminder every 2 hours in that window.',
-  },
-  {
-    value: 'every_4_hours',
-    label: 'Every 4 hours',
-    description: 'Up to one reminder every 4 hours in that window.',
+    value: 'daily_noon',
+    label: 'Daily at 12:00 PM',
+    description: 'One reminder each day at noon, Manila time.',
   },
   {
     value: 'every_12_hours',
@@ -40,9 +30,19 @@ export const FINANCE_REMINDER_INTERVAL_OPTIONS: {
     description: 'Up to one reminder every 12 hours in that window.',
   },
   {
-    value: 'daily_noon',
-    label: 'Daily at 12:00 PM',
-    description: 'One reminder each day at noon, Manila time.',
+    value: 'every_4_hours',
+    label: 'Every 4 hours',
+    description: 'Up to one reminder every 4 hours in that window.',
+  },
+  {
+    value: 'every_2_hours',
+    label: 'Every 2 hours',
+    description: 'Up to one reminder every 2 hours in that window.',
+  },
+  {
+    value: 'hourly',
+    label: 'Every hour',
+    description: 'Up to one reminder per hour in the days-before window through the due date.',
   },
 ];
 
@@ -89,7 +89,7 @@ export const RECURRENCE_SCOPE_OPTIONS: {
   {
     value: 'this',
     label: 'This occurrence only',
-    description: 'Update or delete only the selected date.',
+    description: 'Update only the selected date.',
   },
   {
     value: 'this_and_future',
@@ -121,9 +121,13 @@ export function isRecurrenceScheduleDirty(params: {
   if (!params.isRecurringEdit) return false;
   const initial =
     !params.initialInterval || params.initialInterval === 'none' ? 'none' : params.initialInterval;
+  if (params.recurrenceInterval !== initial) return true;
+  // The series end can be unknown while it loads (or if the lookup fails).
+  // Treat that as "unchanged" so the schedule is not rewritten by accident.
+  if (!params.initialUntil) return false;
   const untilA = params.recurrenceUntil?.slice(0, 10) ?? '';
-  const untilB = params.initialUntil?.slice(0, 10) ?? '';
-  return params.recurrenceInterval !== initial || untilA !== untilB;
+  const untilB = params.initialUntil.slice(0, 10);
+  return untilA !== untilB;
 }
 
 /** Scope + recurrence patch when updating a recurring row. */

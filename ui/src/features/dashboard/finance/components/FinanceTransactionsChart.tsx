@@ -170,7 +170,8 @@ function CashFlowChartSkeleton() {
 
 function BreakdownChartSkeleton() {
   return (
-    <div role="status"
+    <div
+      role="status"
       className="flex min-h-0 flex-1 flex-col"
       aria-busy="true"
       aria-label="Loading breakdown chart"
@@ -300,7 +301,7 @@ export function FinanceTransactionsChart({
                     tickLine={false}
                     tick={chartAxisTick(isMobile)}
                     dy={10}
-                    interval="preserveStartEnd"
+                    interval="equidistantPreserveStart"
                     minTickGap={isMobile ? 28 : 20}
                   />
                   <YAxis

@@ -8,7 +8,11 @@ import { DateCalendarView } from '@/features/dashboard/bookings/components/calen
 import type { StatusTone } from '@/features/dashboard/bookings/lib/bookingStatus';
 import { FinanceLedgerStatusBadge } from '@/features/dashboard/finance/components/FinanceLedgerStatusBadge';
 import { StayFinanceModal } from '@/features/dashboard/finance/components/StayFinanceModal';
-import type { FinanceLedgerEntry } from '@/features/dashboard/finance/lib/financeLedger';
+import {
+  ledgerAmountClassName,
+  ledgerAmountTone,
+  type FinanceLedgerEntry,
+} from '@/features/dashboard/finance/lib/financeLedger';
 import { recurrenceIntervalLabel } from '@/features/dashboard/finance/lib/recurrence';
 import type { FinanceBookingLedgerRow } from '@/features/dashboard/finance/lib/types';
 
@@ -122,7 +126,7 @@ function LedgerCalendarDayCard({
         <span
           className={cn(
             'text-sm font-semibold tabular-nums tracking-tight sm:text-base',
-            isIncome ? 'text-emerald-700 dark:text-emerald-300' : 'text-red-600 dark:text-red-400'
+            ledgerAmountClassName(ledgerAmountTone(entry))
           )}
         >
           {isIncome ? '+' : '−'}

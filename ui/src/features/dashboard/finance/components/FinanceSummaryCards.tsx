@@ -1,10 +1,13 @@
-import { ArrowDownRight, ArrowUpRight, Clock, Wallet } from 'lucide-react';
+import type { ReactNode } from 'react';
+
+import { ArrowDownRight, ArrowUpRight, Clock, Hourglass, Wallet } from 'lucide-react';
 
 import { FINANCE_HELP_COPY } from '@/features/dashboard/finance/lib/financeHelpCopy';
 import type { FinanceSummaryCardStats } from '@/features/dashboard/finance/lib/financeSummaryStats';
 
 import { InfoHint } from '@/components/help/InfoHint';
 import { MoneyStatCard, StatCardGrid } from '@/components/shared/StatCard';
+import { formatMoney } from '@/utils/format/currency';
 
 import type { LucideIcon } from 'lucide-react';
 
@@ -17,6 +20,7 @@ type MoneyStatProps = {
   iconBgClassName: string;
   valueClassName?: string;
   hint?: string;
+  footer?: ReactNode;
 };
 
 function SummaryMoneyStat({
@@ -28,6 +32,7 @@ function SummaryMoneyStat({
   iconBgClassName,
   valueClassName,
   hint,
+  footer,
 }: MoneyStatProps) {
   return (
     <MoneyStatCard
@@ -39,6 +44,7 @@ function SummaryMoneyStat({
       iconBgClassName={iconBgClassName}
       valueClassName={valueClassName}
       titleAdornment={hint ? <InfoHint label={title} text={hint} variant="metric" /> : undefined}
+      footer={footer}
     />
   );
 }
@@ -50,12 +56,13 @@ export function FinanceSummaryCards({
   totalExpenses,
   netProfit,
   pendingAmount,
+  pipelineAmount,
   incomeChange,
   expensesChange,
   netChange,
 }: Props) {
   return (
-    <StatCardGrid>
+    <StatCardGrid className="items-stretch">
       <SummaryMoneyStat
         title="Net Profit"
         value={netProfit}
@@ -65,6 +72,14 @@ export function FinanceSummaryCards({
         iconBgClassName="bg-blue-100 dark:bg-blue-900/30"
         valueClassName={netProfit >= 0 ? 'text-foreground' : 'text-red-600 dark:text-red-400'}
         hint={FINANCE_HELP_COPY.netProfit.hint}
+        footer={
+          pipelineAmount > 0 ? (
+            <p className="text-[11px] font-medium leading-snug text-amber-800 dark:text-amber-300">
+              <Hourglass className="mr-1 inline size-3 align-[-2px]" aria-hidden />
+              {formatMoney(pipelineAmount)} in pipeline (estimate)
+            </p>
+          ) : undefined
+        }
       />
       <SummaryMoneyStat
         title="Total Income"

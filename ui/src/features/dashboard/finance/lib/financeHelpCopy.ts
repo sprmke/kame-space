@@ -10,15 +10,15 @@ import type { HelpCopyModule } from '@/lib/help/types';
  */
 export const FINANCE_HELP_COPY = {
   netProfit: {
-    hint: 'Income minus expenses for the selected dates. Booking amounts and your manual entries are both included.',
+    hint: 'Collected income minus expenses for the selected dates. Unpaid bookings are not counted here and are shown separately as pipeline.',
   },
   totalIncome: {
-    hint: 'Operating income plus what bookings earned in the selected dates, including completed stays and pipeline estimates.',
+    hint: 'Operating income plus stays that completed in the selected dates. Unpaid bookings stay out of this figure.',
   },
   totalExpenses: {
     hint: 'Operating expenses plus booking costs and security deposit expenses in the selected dates.',
   },
   pendingPayments: {
-    hint: 'Guest balances still unpaid plus ledger entries marked pending. These are not counted in Net Profit yet.',
+    hint: 'Guest balances still unpaid plus ledger entries marked pending. Excluded from collected income and Net Profit.',
   },
 } satisfies HelpCopyModule;

@@ -4,7 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { useQuery } from '@tanstack/react-query';
 import { endOfMonth, format, startOfMonth } from 'date-fns';
-import { Plus } from 'lucide-react';
+import { Plus, Receipt } from 'lucide-react';
 
 import { AdminListPagination } from '@/features/dashboard/bookings/components/AdminListToolbar';
 import { BookingDateRangeFilter } from '@/features/dashboard/bookings/components/BookingDateRangeFilter';
@@ -130,24 +130,39 @@ export function FinancePage() {
     setQuery({ ...query, page: 1, from: null, to: null });
   }, [query, setQuery]);
 
-  const chartBookingsQuery = useMemo(
-    (): FinanceQuery => ({
-      ...query,
+  /**
+   * Reporting query: the selected period only. Ledger controls (search, type,
+   * status, category, sort, view, page) must never change the summary cards or
+   * the charts, so they are pinned to their defaults here.
+   */
+  const reportingQuery = useMemo((): FinanceQuery => {
+    return {
+      basis: query.basis,
+      from: query.from,
+      to: query.to,
+      includeCancelled: query.includeCancelled,
+      completedOnly: query.completedOnly,
+      q: '',
       page: 1,
       limit: FINANCE_CHART_BOOKINGS_LIMIT,
-    }),
-    [query]
-  );
+      sort: 'date:desc',
+      view: 'table',
+      typeFilter: 'all',
+      statusFilter: [],
+      categoryFilter: [],
+    };
+  }, [query.basis, query.from, query.to, query.includeCancelled, query.completedOnly]);
 
   const previousPeriodQuery = useMemo((): FinanceQuery => {
-    const previous = previousFinancePeriodRange(query.from, query.to);
-    return { ...query, ...previous, page: 1 };
-  }, [query]);
+    const previous = previousFinancePeriodRange(reportingQuery.from, reportingQuery.to);
+    return { ...reportingQuery, ...previous, page: 1 };
+  }, [reportingQuery]);
 
-  const summaryQuery = useFinanceSummary(query);
+  const summaryQuery = useFinanceSummary(reportingQuery);
   const previousSummaryQuery = useFinanceSummary(previousPeriodQuery);
   const lineItemsQuery = useFinanceLineItems(query);
-  const chartBookingsQueryResult = useFinanceBookings(chartBookingsQuery);
+  const summaryLineItemsQuery = useFinanceLineItems(reportingQuery);
+  const chartBookingsQueryResult = useFinanceBookings(reportingQuery);
 
   const ledgerBookingsQuery = useQuery({
     queryKey: ['finance-ledger-bookings', scopeKey, query] as const,
@@ -207,23 +222,32 @@ export function FinancePage() {
   const chartData = useMemo(
     () =>
       buildFinanceChartData(
-        lineItemsQuery.data ?? [],
+        summaryLineItemsQuery.data ?? [],
         chartBookingsQueryResult.data?.rows ?? [],
-        query.from,
-        query.to,
-        query.basis
+        reportingQuery.from,
+        reportingQuery.to,
+        reportingQuery.basis
       ),
-    [lineItemsQuery.data, chartBookingsQueryResult.data?.rows, query.from, query.to, query.basis]
+    [
+      summaryLineItemsQuery.data,
+      chartBookingsQueryResult.data?.rows,
+      reportingQuery.from,
+      reportingQuery.to,
+      reportingQuery.basis,
+    ]
   );
 
   const summaryStats = useMemo(() => {
     if (!summaryQuery.data) return null;
-    const current = computeFinanceSummaryCardStats(summaryQuery.data, lineItemsQuery.data ?? []);
+    const current = computeFinanceSummaryCardStats(
+      summaryQuery.data,
+      summaryLineItemsQuery.data ?? []
+    );
     const previous = previousSummaryQuery.data
       ? computeFinanceSummaryCardStats(previousSummaryQuery.data, [])
       : undefined;
     return withPeriodComparison(current, previous);
-  }, [summaryQuery.data, previousSummaryQuery.data, lineItemsQuery.data]);
+  }, [summaryQuery.data, previousSummaryQuery.data, summaryLineItemsQuery.data]);
 
   const pageCount = Math.max(1, Math.ceil(pagedEntries.total / query.limit));
   const pageItems = useMemo(() => buildPageItems(query.page, pageCount), [query.page, pageCount]);
@@ -234,7 +258,7 @@ export function FinancePage() {
   const showPagination = !showCalendarView && pageCount > 1;
   const isLedgerLoading = ledgerBookingsQuery.isLoading || lineItemsQuery.isLoading;
   const isLedgerRefreshing = ledgerBookingsQuery.isFetching || lineItemsQuery.isFetching;
-  const chartsLoading = lineItemsQuery.isPending || chartBookingsQueryResult.isPending;
+  const chartsLoading = summaryLineItemsQuery.isPending || chartBookingsQueryResult.isPending;
 
   function handleEditEntry(entry: FinanceLedgerEntry) {
     if (!canEditTransaction || !entry.transaction) return;
@@ -275,7 +299,7 @@ export function FinancePage() {
         {canAddTransaction ? (
           <button type="button" className="native-cta sm:px-3.5" onClick={handleOpenCreate}>
             <Plus className="size-4" aria-hidden />
-            <span className="hidden sm:inline">Add Transaction</span>
+            <span className="hidden sm:inline">Add transaction</span>
             <span className="sm:hidden">Add</span>
           </button>
         ) : null}
@@ -366,8 +390,11 @@ export function FinancePage() {
         pagedEntries.rows.length === 0 && !isLedgerLoading ? (
           <FloatingPanel
             padding="lg"
-            className="flex flex-col items-center justify-center py-8 sm:py-12 text-center"
+            className="flex flex-col items-center justify-center gap-3 py-8 text-center sm:py-12"
           >
+            <div className="bg-muted flex size-9 items-center justify-center rounded-full">
+              <Receipt className="text-muted-foreground size-4" aria-hidden />
+            </div>
             <p className="text-foreground text-sm font-semibold">No transactions in this period</p>
           </FloatingPanel>
         ) : (
@@ -392,6 +419,9 @@ export function FinancePage() {
           ariaLabel="Finance ledger pagination"
         />
       ) : null}
+
+      {/* Keeps the last card clear of the floating quick-access button. */}
+      <div aria-hidden className="h-16 lg:hidden" />
 
       <FinanceTransactionModals
         query={query}

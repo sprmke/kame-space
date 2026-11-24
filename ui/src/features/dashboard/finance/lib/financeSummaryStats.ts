@@ -6,6 +6,8 @@ export type FinanceSummaryCardStats = {
   totalExpenses: number;
   netProfit: number;
   pendingAmount: number;
+  /** Expected net from stays that have not completed. Never part of income or net. */
+  pipelineAmount: number;
   incomeChange?: number;
   expensesChange?: number;
   netChange?: number;
@@ -16,10 +18,9 @@ export function calculatePercentageChange(current: number, previous: number): nu
   return ((current - previous) / Math.abs(previous)) * 100;
 }
 
-function positiveStayIncome(summary: FinanceSummary): number {
-  const completed = Math.max(0, summary.stays.hostNetCompleted);
-  const pipeline = Math.max(0, summary.stays.projectedNetPipeline);
-  return completed + pipeline;
+/** Collected stay income only: completed stays. Pipeline stays are reported separately. */
+function collectedStayIncome(summary: FinanceSummary): number {
+  return Math.max(0, summary.stays.hostNetCompleted);
 }
 
 function stayExpenseTotal(summary: FinanceSummary): number {
@@ -31,8 +32,7 @@ export function computeFinanceSummaryCardStats(
   summary: FinanceSummary,
   lineItems: FinanceLineItem[] = []
 ): FinanceSummaryCardStats {
-  const stayIncome = positiveStayIncome(summary);
-  const totalIncome = summary.operating.income + stayIncome;
+  const totalIncome = summary.operating.income + collectedStayIncome(summary);
   const totalExpenses = summary.operating.expenses + stayExpenseTotal(summary);
   const netProfit = totalIncome - totalExpenses;
 
@@ -45,6 +45,7 @@ export function computeFinanceSummaryCardStats(
     totalExpenses,
     netProfit,
     pendingAmount: summary.stays.outstandingGuestBalance + pendingTransactions,
+    pipelineAmount: Math.max(0, summary.stays.projectedNetPipeline),
   };
 }
 

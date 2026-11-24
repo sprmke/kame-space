@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Finance fixes: before and after</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 28px; background: #f6f7f8; color: #101828;
+    font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 14px; line-height: 1.5; }
+  .wrap { max-width: 980px; margin: 0 auto; }
+  header { background: #0f766e; color: #fff; border-radius: 16px; padding: 22px 24px; margin-bottom: 22px; }
+  header h1 { margin: 0 0 6px; font-size: 23px; }
+  header p { margin: 0; color: #ccfbf1; }
+  .pair { background: #fff; border: 1px solid #e4e7ec; border-radius: 14px; padding: 16px; margin-bottom: 16px; }
+  .pair h2 { margin: 0 0 4px; font-size: 16px; }
+  .pair p { margin: 0 0 10px; color: #475467; }
+  .pair img { width: 100%; display: block; border-radius: 10px; border: 1px solid #e4e7ec; }
+  .foot { color: #667085; font-size: 12px; margin-top: 10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Finance fixes: before and after</h1>
+    <p>Every changed surface, annotated. Click an image to open the full-size pair. Values come from the seeded November 2026 period.</p>
+  </header>
+  
+    <article class="pair">
+      <h2>Net Profit counts collected money only</h2>
+      <p>₱49,890 profit on a period with zero completed stays became ₱7,390 collected, with the ₱42,500 pipeline shown separately as an estimate.</p>
+      <a href="./01-money-truth.jpg" target="_blank" rel="noreferrer"><img src="./01-money-truth.jpg" alt="Net Profit counts collected money only" loading="lazy" /></a>
+    </article>
+
+    <article class="pair">
+      <h2>Ledger search no longer rewrites the KPIs</h2>
+      <p>Before, searching dropped Net Profit from ₱49,890 to ₱7,390 and emptied the charts. After, the cards stay on the period while only the
+ledger empties.</p>
+      <a href="./02-search-scope.jpg" target="_blank" rel="noreferrer"><img src="./02-search-scope.jpg" alt="Ledger search no longer rewrites the KPIs" loading="lazy" /></a>
+    </article>
+
+    <article class="pair">
+      <h2>Pending stays stop looking like received cash</h2>
+      <p>Pending amounts are amber, completed income is green, and the raw “Booking 5eed1000…” line is gone.</p>
+      <a href="./03-pending-rows.jpg" target="_blank" rel="noreferrer"><img src="./03-pending-rows.jpg" alt="Pending stays stop looking like received cash" loading="lazy" /></a>
+    </article>
+
+    <article class="pair">
+      <h2>Recurring edit offers all three scopes again</h2>
+      <p>The series lookup no longer 400s, so “This occurrence only” is back and a schedule change is no longer implied.</p>
+      <a href="./04-recurring-scope.jpg" target="_blank" rel="noreferrer"><img src="./04-recurring-scope.jpg" alt="Recurring edit offers all three scopes again" loading="lazy" /></a>
+    </article>
+
+    <article class="pair">
+      <h2>Reminders open on a visible default and warn when Telegram is off</h2>
+      <p>“Daily at 12:00 PM” is first and checked, with an inline warning when Finance Telegram is not connected.</p>
+      <a href="./05-reminders.jpg" target="_blank" rel="noreferrer"><img src="./05-reminders.jpg" alt="Reminders open on a visible default and warn when Telegram is off" loading="lazy" /></a>
+    </article>
+
+    <article class="pair">
+      <h2>Phone wizard: category field no longer clipped</h2>
+      <p>Category and Date stack on phone, and the amount field opens empty with a placeholder.</p>
+      <a href="./06-phone-wizard.jpg" target="_blank" rel="noreferrer"><img src="./06-phone-wizard.jpg" alt="Phone wizard: category field no longer clipped" loading="lazy" /></a>
+    </article>
+
+    <article class="pair">
+      <h2>Phone: the quick-access button stops covering the last card</h2>
+      <p>The page reserves space, so the last card and its actions scroll clear of the floating button.</p>
+      <a href="./07-phone-fab.jpg" target="_blank" rel="noreferrer"><img src="./07-phone-fab.jpg" alt="Phone: the quick-access button stops covering the last card" loading="lazy" /></a>
+    </article>
+
+    <article class="pair">
+      <h2>1280px: values fit and titles stay on one line</h2>
+      <p>All four values fit and share one baseline instead of truncating with “Pending Payments” wrapped.</p>
+      <a href="./08-1280-cards.jpg" target="_blank" rel="noreferrer"><img src="./08-1280-cards.jpg" alt="1280px: values fit and titles stay on one line" loading="lazy" /></a>
+    </article>
+
+    <article class="pair">
+      <h2>Delete dialog speaks delete, not edit</h2>
+      <p>“Apply from this date forward…” became “Delete this date and every later occurrence…”.</p>
+      <a href="./09-delete-copy.jpg" target="_blank" rel="noreferrer"><img src="./09-delete-copy.jpg" alt="Delete dialog speaks delete, not edit" loading="lazy" /></a>
+    </article>
+
+    <article class="pair">
+      <h2>Dark mode still renders the new values</h2>
+      <p>The pipeline note, amber pending amounts and recovered axis labels carry into dark mode.</p>
+      <a href="./10-dark.jpg" target="_blank" rel="noreferrer"><img src="./10-dark.jpg" alt="Dark mode still renders the new values" loading="lazy" /></a>
+    </article>
+
+    <article class="pair">
+      <h2>Card view: status tone and cleaner rows</h2>
+      <p>Pending cards use amber amounts and no longer print a truncated booking id.</p>
+      <a href="./11-cards.jpg" target="_blank" rel="noreferrer"><img src="./11-cards.jpg" alt="Card view: status tone and cleaner rows" loading="lazy" /></a>
+    </article>
+  <p class="foot">Raw captures: <code>after/</code> (17 screens at 390, 768, 1280, 1440 and dark). Evidence for the original review: <code>screenshots/</code>.</p>
+</div>
+</body>
+</html>

@@ -5,8 +5,8 @@ import { AdminSortMenu } from '@/components/navigation/AdminSortMenu';
 const SORT_OPTIONS = [
   { value: 'date:desc' as const, label: 'Newest first' },
   { value: 'date:asc' as const, label: 'Oldest first' },
-  { value: 'amount:desc' as const, label: 'Amount ↓' },
-  { value: 'amount:asc' as const, label: 'Amount ↑' },
+  { value: 'amount:desc' as const, label: 'Highest amount' },
+  { value: 'amount:asc' as const, label: 'Lowest amount' },
 ];
 
 type Props = {
