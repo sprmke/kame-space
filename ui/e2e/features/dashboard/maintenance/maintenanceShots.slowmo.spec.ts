@@ -73,6 +73,13 @@ test.describe('maintenance screenshots @demo', () => {
     await open(page);
     await shot('01-desktop-1440');
 
+    // Completed filter with a real status column.
+    await page.getByRole('button', { name: 'All statuses' }).click();
+    await page.getByRole('option', { name: 'Completed' }).click();
+    await shot('21-desktop-completed-filter');
+    await page.getByRole('option', { name: 'Completed' }).click();
+    await page.getByRole('heading', { name: 'Maintenance', exact: true }).first().click();
+
     // Filters popover.
     await page.getByRole('button', { name: /More reminder filters/i }).click();
     await shot('02-desktop-filters');
