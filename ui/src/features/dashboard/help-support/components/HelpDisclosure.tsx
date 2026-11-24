@@ -15,6 +15,7 @@ type Props = {
 
 export function HelpDisclosure({ title, children, defaultOpen = false, onFirstOpen }: Props) {
   const ref = React.useRef<HTMLDetailsElement>(null);
+  const firstOpenFired = React.useRef(false);
 
   React.useEffect(() => {
     if (defaultOpen && ref.current) ref.current.open = true;
@@ -25,7 +26,9 @@ export function HelpDisclosure({ title, children, defaultOpen = false, onFirstOp
       ref={ref}
       className="border-border/70 group border-b last:border-b-0"
       onToggle={(event) => {
-        if (event.currentTarget.open) onFirstOpen?.();
+        if (!event.currentTarget.open || firstOpenFired.current) return;
+        firstOpenFired.current = true;
+        onFirstOpen?.();
       }}
     >
       <summary

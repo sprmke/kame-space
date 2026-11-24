@@ -644,12 +644,7 @@ function AdminLayoutShell({ children, fillMain = false }: Props) {
     [navSections, openMoreSheet]
   );
 
-  const tabActiveKey = resolveBottomTabActiveKey(
-    activeNavHref,
-    primaryHrefs,
-    moreSheetOpen,
-    null
-  );
+  const tabActiveKey = resolveBottomTabActiveKey(activeNavHref, primaryHrefs, moreSheetOpen, null);
 
   const settingsIssueOnTabs =
     (propertySettingsHasIssues && isPropertyAdminPath(location.pathname)) ||
@@ -938,7 +933,7 @@ function AdminLayoutShell({ children, fillMain = false }: Props) {
                   }
                   setToolsOpen(open);
                 }}
-                showFab={!aiMode}
+                showFab={!aiMode && !location.pathname.includes('/help-support')}
                 unreadCount={unreadNotificationCount}
                 showAssistant={!aiMode && showAssistantFab}
                 messagesHref={quickAccessPaths.messagesHref}
@@ -1187,9 +1182,8 @@ function AdminSidebarNav({
   collapsed,
   superAdmin,
 }: AdminSidebarNavProps) {
-  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>(
-    readCollapsedGroups
-  );
+  const [collapsedGroups, setCollapsedGroups] =
+    useState<Record<string, boolean>>(readCollapsedGroups);
   const collapsedGroupsKey = Object.keys(collapsedGroups)
     .filter((key) => collapsedGroups[key])
     .sort()

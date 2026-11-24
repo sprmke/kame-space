@@ -1,5 +1,7 @@
 import * as React from 'react';
 
+import { Link } from 'react-router-dom';
+
 import { HelpCircle, Search } from 'lucide-react';
 
 import { HelpBackControl } from '@/features/dashboard/help-support/components/HelpBackControl';
@@ -17,14 +19,20 @@ import { sanitizeHelpBody } from '@/features/dashboard/help-support/lib/helpCont
 import {
   availableFaqCategories,
   browseFaqs,
+  faqQuestionCountLabel,
 } from '@/features/dashboard/help-support/lib/helpFaqModules';
-import { useHelpSupportAdminScope } from '@/features/dashboard/help-support/lib/helpSupportPaths';
+import {
+  helpSupportTicketsPath,
+  useHelpSupportAdminScope,
+  useHelpSupportBasePath,
+} from '@/features/dashboard/help-support/lib/helpSupportPaths';
 
+import { HelpTopicGridSkeleton } from '@/components/skeletons/HelpSupportSkeleton';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 
 export function HelpCenterFaqAccordion() {
   const scope = useHelpSupportAdminScope();
+  const basePath = useHelpSupportBasePath();
   const { data, isPending, isError, refetch } = useHelpCenterFaqs();
   const [search, setSearch] = React.useState('');
   const [selectedCategory, setSelectedCategory] = React.useState<string | null>(null);
@@ -63,14 +71,7 @@ export function HelpCenterFaqAccordion() {
 
   let body: React.ReactNode;
   if (isPending) {
-    body = (
-      <div className="px-4 sm:px-5">
-        <Skeleton className="my-3 h-12 w-full" />
-        <Skeleton className="my-3 h-12 w-full" />
-        <Skeleton className="my-3 h-12 w-full" />
-        <Skeleton className="my-3 h-12 w-full" />
-      </div>
-    );
+    body = <HelpTopicGridSkeleton withSearch />;
   } else if (isError) {
     body = (
       <HelpEmptyState
@@ -118,6 +119,13 @@ export function HelpCenterFaqAccordion() {
             <HelpEmptyState
               icon={term ? Search : HelpCircle}
               title={term ? 'No FAQs match that search' : 'No FAQs in this topic yet'}
+              action={
+                basePath ? (
+                  <Button asChild variant="outline" className="min-h-11">
+                    <Link to={`${helpSupportTicketsPath(basePath)}?compose=1`}>New ticket</Link>
+                  </Button>
+                ) : undefined
+              }
             />
           ) : (
             renderFaqs(browseResults)
@@ -150,7 +158,7 @@ export function HelpCenterFaqAccordion() {
                 <HelpTopicRow
                   key={category}
                   title={category}
-                  description={`${counts.get(category) ?? 0} questions`}
+                  description={faqQuestionCountLabel(counts.get(category) ?? 0)}
                   Icon={HelpCircle}
                   onClick={() => openCategory(category)}
                 />

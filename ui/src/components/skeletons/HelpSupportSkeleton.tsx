@@ -1,5 +1,10 @@
-import type { HelpSupportSection } from '@/features/dashboard/help-support/lib/helpSupportPaths';
+import { useLocation } from 'react-router-dom';
+
 import { useSupportTicketScope } from '@/features/dashboard/help-support/hooks/useSupportTicketScope';
+import {
+  isHelpSupportTicketDetailPath,
+  type HelpSupportSection,
+} from '@/features/dashboard/help-support/lib/helpSupportPaths';
 import {
   readTicketsWorkspaceLayoutHint,
   ticketsWorkspaceLayoutStorageKey,
@@ -67,6 +72,7 @@ function HelpSupportModuleNavSkeleton() {
 }
 
 function TicketsSectionRouteSkeleton() {
+  const location = useLocation();
   const scope = useSupportTicketScope();
   const hint = readTicketsWorkspaceLayoutHint(
     ticketsWorkspaceLayoutStorageKey([
@@ -77,11 +83,37 @@ function TicketsSectionRouteSkeleton() {
       scope.parkingId,
     ])
   );
+  // A deep link to one ticket opens the two-pane workspace, not the empty chrome.
+  const layout = isHelpSupportTicketDetailPath(location.pathname) ? 'list' : (hint ?? 'empty');
 
-  return <TicketsWorkspaceSkeleton layout={hint ?? 'empty'} />;
+  return <TicketsWorkspaceSkeleton layout={layout} />;
 }
 
 /** Content under the section intro: FAQ / guide rows in a card, or the tickets workspace. */
+/** Landing body parity: optional search field + 2-up topic tiles. */
+export function HelpTopicGridSkeleton({ withSearch = false }: { withSearch?: boolean }) {
+  return (
+    <div className="p-4 sm:p-5">
+      {withSearch ? <Skeleton className="h-11 w-full rounded-md" /> : null}
+      <div
+        className={cn('bg-border/70 grid grid-cols-1 gap-px sm:grid-cols-2', withSearch && 'mt-4')}
+      >
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div
+            key={i}
+            className="bg-card flex min-h-[7.5rem] flex-col items-center justify-center gap-2 px-4 py-5 sm:min-h-[8.5rem]"
+            style={{ opacity: 1 - i * 0.08 }}
+          >
+            <Skeleton className="size-9 rounded-lg" />
+            <Skeleton className="h-4 w-32 max-w-full" />
+            <Skeleton className="h-3 w-20 max-w-full" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function HelpSupportSectionSkeleton({ section }: { section: HelpSupportSection }) {
   if (section === 'tickets') {
     return <TicketsSectionRouteSkeleton />;
@@ -93,11 +125,7 @@ export function HelpSupportSectionSkeleton({ section }: { section: HelpSupportSe
       aria-busy="true"
       aria-label={section === 'guides' ? 'Loading guides' : 'Loading FAQs'}
     >
-      <div className="px-4 sm:px-5">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="my-3 h-12 w-full" style={{ opacity: 1 - i * 0.08 }} />
-        ))}
-      </div>
+      <HelpTopicGridSkeleton withSearch={section === 'faqs'} />
     </Card>
   );
 }

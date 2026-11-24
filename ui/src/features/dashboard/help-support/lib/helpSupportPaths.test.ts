@@ -11,7 +11,32 @@ import {
   resolveTicketsRouteSegment,
   ticketsComposeSearchParam,
   helpSupportSectionFromPath,
+  isHelpSupportTicketDetailPath,
 } from '@/features/dashboard/help-support/lib/helpSupportPaths';
+
+const TICKET_ID = 'a1111111-1111-4111-8111-111111111111';
+
+describe('isHelpSupportTicketDetailPath', () => {
+  it.each([
+    `/org/acme/property/villa/help-support/tickets/${TICKET_ID}`,
+    `/org/acme/property/villa/help-support/tickets/${TICKET_ID}/`,
+    `/org/acme/parking/slot-12a/help-support/tickets/${TICKET_ID}`,
+    `/org/acme/help-support/tickets/${TICKET_ID}`,
+  ])('recognises a ticket thread at %s', (path) => {
+    expect(isHelpSupportTicketDetailPath(path)).toBe(true);
+  });
+
+  it.each([
+    '/org/acme/property/villa/help-support',
+    '/org/acme/property/villa/help-support/docs',
+    '/org/acme/property/villa/help-support/tickets',
+    '/org/acme/property/villa/help-support/tickets/',
+    '/org/acme/property/villa/help-support/tickets/new',
+    '/org/acme/property/villa/help-support/tickets/not-a-ticket-id',
+  ])('does not treat %s as a ticket thread', (path) => {
+    expect(isHelpSupportTicketDetailPath(path)).toBe(false);
+  });
+});
 
 describe('useHelpSupportAdminScope', () => {
   it('useHelpSupportAdminScope is exported', () => {

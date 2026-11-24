@@ -39,6 +39,11 @@ export type StatCardProps = {
   active?: boolean;
   /** Tighter padding and type for dense KPI rows (e.g. super-admin overview). */
   density?: 'default' | 'compact';
+  /**
+   * KPI cards reserve the trend row so values share one baseline. Navigation cards
+   * are not KPIs and should not carry that dead space.
+   */
+  reserveTrendRow?: boolean;
 };
 
 function formatChange(change: number, isPoints: boolean): string {
@@ -71,6 +76,7 @@ export function StatCard({
   to,
   active,
   density = 'default',
+  reserveTrendRow = true,
 }: StatCardProps) {
   const hasChange = change !== undefined;
   const isPositive = change !== undefined && change >= 0;
@@ -147,27 +153,36 @@ export function StatCard({
             >
               {value}
             </p>
-            {hasChange ? (
-              <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                <span
-                  className={cn(
-                    'inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-semibold sm:text-xs sm:font-medium',
-                    isPositive
-                      ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                      : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                  )}
-                  title={changeLabel}
-                >
-                  {isPositive ? (
-                    <TrendingUp className="size-3" aria-hidden />
-                  ) : (
-                    <TrendingDown className="size-3" aria-hidden />
-                  )}
-                  {formatChange(change, changeIsPoints)}
-                </span>
-                <span className="text-muted-foreground hidden text-xs lg:inline">
-                  {changeLabel}
-                </span>
+            {reserveTrendRow || hasChange ? (
+              <div
+                className={cn(
+                  'flex flex-wrap items-center gap-1.5 pt-0.5',
+                  reserveTrendRow && 'min-h-[22px]'
+                )}
+              >
+                {hasChange ? (
+                  <>
+                    <span
+                      className={cn(
+                        'inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-semibold sm:text-xs sm:font-medium',
+                        isPositive
+                          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                          : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                      )}
+                      title={changeLabel}
+                    >
+                      {isPositive ? (
+                        <TrendingUp className="size-3" aria-hidden />
+                      ) : (
+                        <TrendingDown className="size-3" aria-hidden />
+                      )}
+                      {formatChange(change, changeIsPoints)}
+                    </span>
+                    <span className="text-muted-foreground hidden text-xs lg:inline">
+                      {changeLabel}
+                    </span>
+                  </>
+                ) : null}
               </div>
             ) : null}
           </div>

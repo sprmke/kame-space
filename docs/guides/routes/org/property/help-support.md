@@ -2,7 +2,7 @@
 title: 'Property Help & Support'
 status: active
 tags: [guides, routes, org, property, help-support]
-updated: 2026-11-19
+updated: 2026-11-24
 ---
 
 # Property Help & Support
@@ -22,10 +22,11 @@ Announcements moved to dedicated sidebar route: [Announcements](./announcements.
 | Tickets | Yes | Yes        | Yes  | Fill-height inbox: 400px list, docked composer                  |
 | Ask AI  | Yes | N/A        | Yes  | Opens assistant, upgrade modal, or unavailable sheet            |
 | App     | No  | N/A        | Yes  | App version, Check for updates, Install app entry               |
+| Mobile  | Yes | N/A        | Yes  | Ticket detail is full height below `lg`; 7 widths, no overflow  |
 
 ## Overview
 
-Property team members open Help & Support to find answers, chat with the AI assistant, and contact the Kame Space team. FAQs, Guides, and Tickets stay under the same Help & Support title. Four clickable summary cards (same style as Finance and Bookings) stay at the top, with Ask AI last; FAQs, Guides, and Tickets swap the content below. Platform and development **Announcements** live on the dedicated [Announcements](./announcements.md) sidebar item. Visible to **every** non–plan-limited property team member (same baseline as the Help nav item). Route guard (`RequirePropertyPermission`) does **not** require `bookings:view` — plan-limited members still hit the plan gate.
+Property team members open Help & Support to find answers, chat with the AI assistant, and contact the Kame Space team. FAQs, Guides, and Tickets stay under the same Help & Support title. Four compact navigation tiles (**FAQs**, **Guides**, **Tickets**, **Ask AI**) stay at the top; FAQs, Guides, and Tickets swap the content below. The tiles are navigation, not KPIs: they use the compact StatCard density and do not reserve a trend row, so the answer surface starts near the top of the page at every width. Platform and development **Announcements** live on the dedicated [Announcements](./announcements.md) sidebar item. Visible to **every** non–plan-limited property team member (same baseline as the Help nav item). Route guard (`RequirePropertyPermission`) does **not** require `bookings:view` — plan-limited members still hit the plan gate.
 
 ## App card
 
@@ -57,12 +58,14 @@ This is where you go if you're stuck, found something broken, or want to ask us 
   A: No. Every team member can see it, the same as the Dashboard.
 - Q: Why do these FAQs differ from the organization Help page?
   A: Each Help & Support page shows common answers for that level - organization, this property, or a parking listing.
+- Q: I searched Help & Support and nothing matched. What now?
+  A: Choose **New ticket** under the empty result, or open Tickets and tap New. Ask AI can also answer questions about your own bookings and property data.
 
 ## FAQs
 
 ### Sections
 
-Persistent **Help & Support** title and subtitle. Four clickable summary cards stay at the top: **FAQs**, **Guides**, **Tickets**, **Ask AI**. On desktop (`xl+`) they sit in one four-column row; below that they wrap as two columns (centered). The selected card uses a primary inset ring and tint. A centered title and one-line description sit under the cards for the active module. FAQs is selected on the default route. The default view shows up to ten common FAQs scoped to this **property** mount, then a category list. A search field covers every host FAQ on this mount, and opening a category shows its full set, newest-first by order. Guest-only categories are excluded. Matched via category plus `source_route_guide_path` under `org/property/…` for team, finance, and activity. Org portfolio and parking-slot FAQs are omitted from this mount. Guides and Tickets swap only the content below the cards. Clicking the already-selected Guides or Tickets card returns to FAQs. Accordion items are exclusive (one open at a time) with comfortable spacing.
+Persistent **Help & Support** title and subtitle. Four compact navigation tiles stay at the top: **FAQs**, **Guides**, **Tickets**, **Ask AI**. On desktop (`xl+`) they sit in one four-column row; below that they wrap as two columns (centered). The selected card uses a primary inset ring and tint. A centered title and one-line description sit under the cards for the active module. FAQs is selected on the default route. The default view is **search plus category tiles** scoped to this **property** mount, with a per-topic question count ("1 question", "3 questions"). A search field covers every host FAQ on this mount, and opening a category shows its full set, newest-first by order. A search with no matches offers **New ticket**, which opens the compose sheet for this mount instead of dead-ending. Guest-only categories are excluded. Matched via category plus `source_route_guide_path` under `org/property/…` for team, finance, and activity. Org portfolio and parking-slot FAQs are omitted from this mount. Guides and Tickets swap only the content below the cards. Clicking the already-selected Guides or Tickets card returns to FAQs. Accordion items are exclusive (one open at a time) with comfortable spacing.
 
 ### Behavior / edge cases
 
@@ -76,7 +79,7 @@ Topic tiles first (Organization, Property, Parking, Guest pages), each with a ce
 
 ## Tickets
 
-List, new ticket, and conversation live in one Tickets workspace (`/tickets`, `/tickets/new`, `/tickets/:ticketId`). The workspace fills remaining height under the Help cards (same fill-main pattern as Guest Inbox). Desktop is a split pane: ticket list at `lg:w-[min(100%,400px)]`, thread in the rest. The list header is **My Tickets** on the left only when there is at least one ticket; **New** is on the right in that header (the empty state uses a centered **New ticket** CTA and no title, including while the empty skeleton loads). **New** opens a modal (bottom sheet on phone) so the current thread stays visible; `/tickets/new` still opens that modal for deep links. Closing it without submitting asks to discard if the draft has content, then returns to the ticket you were on. Desktop with tickets auto-selects the first row so the idle “Pick a ticket” pane is skipped. Phone shows one pane at a time; Back lives in the thread header (`lg:hidden`), not above the split. Loading uses a layout-matched skeleton: empty chrome when this scope has no tickets (or on a cold first visit), list + thread chrome when a prior visit (or cached list) had tickets.
+List, new ticket, and conversation live in one Tickets workspace (`/tickets`, `/tickets/new`, `/tickets/:ticketId`). The workspace fills remaining height under the Help cards (same fill-main pattern as Guest Inbox). Desktop is a split pane: ticket list at `lg:w-[min(100%,400px)]`, thread in the rest. The list header is **My Tickets** on the left only when there is at least one ticket; **New** is on the right in that header (the empty state uses a centered **New ticket** CTA and no title, including while the empty skeleton loads). **New** opens a modal (bottom sheet on phone) so the current thread stays visible; `/tickets/new` still opens that modal for deep links. Closing it without submitting asks to discard if the draft has content, then returns to the ticket you were on. Desktop with tickets auto-selects the first row so the idle “Pick a ticket” pane is skipped. Phone shows one pane at a time; Back lives in the thread header (`lg:hidden`), not above the split. Below `lg`, opening a ticket hides the module tiles and section intro so the thread, messages and composer own the full height; Quick Access is not shown on any `/help-support` route, so nothing floats over Send. Loading uses a layout-matched skeleton: empty chrome when this scope has no tickets, list + thread chrome on a cold load or a cached list, and list chrome for any ticket detail URL.
 
 ### Fields
 
@@ -111,7 +114,7 @@ Lists the caller's own tickets with a status badge (Open / In progress / Resolve
 | Resolved           | Shown    | Banner explains resolution; placeholder “Reply to reopen…”; reply moves ticket to **In progress** |
 | Closed             | Hidden   | Banner + **Reopen ticket** button; reopen sets status to **Open**, then composer returns          |
 
-Empty and load-error states stay inside the list pane without a **My Tickets** header (icon well + title + short description + CTA, or retry). Empty copy explains that tickets are for something broken, an idea, or a question, and that replies show here. Closed rows in the list render slightly muted. New ticket compose is a modal, not a second pane.
+Empty and load-error states use the **full width**: no **My Tickets** header, no detail pane, and no hollow "Pick a ticket" invitation (icon well + title + short description + CTA, or retry). Empty copy explains that tickets are for something broken, an idea, or a question, and that replies show here. Closing a draft asks to discard; closing after a successful submit keeps the host on the new ticket instead of navigating back to the list. Closed rows in the list render slightly muted. New ticket compose is a modal, not a second pane.
 
 ## API reference
 
@@ -149,9 +152,13 @@ Empty and load-error states stay inside the list pane without a **My Tickets** h
 
 ## Testing
 
-| Layer | Path / spec            | Manual                      |
-| ----- | ---------------------- | --------------------------- |
-| N/A   | Help docs + tickets UI | Manual QA when copy changes |
+| Layer   | Path / spec                                                                                                      | Manual                        |
+| ------- | ---------------------------------------------------------------------------------------------------------------- | ----------------------------- |
+| Unit    | `ui/src/features/dashboard/help-support/lib/{helpSupportPaths,helpFaqModules}.test.ts`                           | —                             |
+| E2E     | `ui/e2e/features/help-support/helpSupportModule.spec.ts` (`@ci`, `bun run test:e2e:help`) — 17 tests, all mounts | —                             |
+| Tour    | `ui/e2e/features/help-support/helpSupportTour.slowmo.spec.ts` (`@demo`, `bun run test:e2e:help:tour:video`)      | —                             |
+| Screens | `ui/e2e/features/help-support/helpSupportScreens.spec.ts` (`@demo`, `bun run test:e2e:help:screens`)             | —                             |
+| Manual  | Compose attachments, Resend inbound replies, Ask AI plan states                                                  | When copy or providers change |
 
 ## Related docs
 

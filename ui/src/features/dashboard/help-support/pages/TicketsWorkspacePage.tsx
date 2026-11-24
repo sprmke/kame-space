@@ -13,6 +13,7 @@ import { useSupportTicketScope } from '@/features/dashboard/help-support/hooks/u
 import {
   helpSupportTicketDetailPath,
   helpSupportTicketsPath,
+  isHelpSupportTicketDetailPath,
   isSupportTicketId,
   resolveTicketsRouteSegment,
   ticketsComposeSearchParam,
@@ -106,6 +107,8 @@ export function TicketsWorkspacePage({ basePathOverride }: TicketsWorkspacePageP
     ticketCount: data ? data.tickets.length : undefined,
     hint: readTicketsWorkspaceLayoutHint(layoutStorageKey),
   });
+  /** A deep link to a ticket is a two-pane workspace even on a cold load. */
+  const skeletonLayout = ticketId ? 'list' : loadState === 'ready' ? 'empty' : loadState;
   const showHeaderNew = Boolean(basePath) && !isEmpty && loadState !== 'empty';
 
   useEffect(() => {
@@ -178,6 +181,10 @@ export function TicketsWorkspacePage({ basePathOverride }: TicketsWorkspacePageP
       return;
     }
 
+    // A successful submit has already navigated to the new ticket. The dialog's
+    // close event must not send the host back to the list and hide it.
+    if (isHelpSupportTicketDetailPath(location.pathname)) return;
+
     if (searchParams.has('subject')) {
       setSearchParams({}, { replace: true });
     }
@@ -242,7 +249,7 @@ export function TicketsWorkspacePage({ basePathOverride }: TicketsWorkspacePageP
   if (loadState === 'empty' || loadState === 'list') {
     return (
       <div className={workspaceShellClass}>
-        <TicketsWorkspaceSkeleton layout={loadState} className="min-h-0 flex-1" />
+        <TicketsWorkspaceSkeleton layout={skeletonLayout} className="min-h-0 flex-1" />
         {composeModal}
       </div>
     );
@@ -253,15 +260,13 @@ export function TicketsWorkspacePage({ basePathOverride }: TicketsWorkspacePageP
       <div
         className={cn(
           'flex min-h-0 flex-1 overflow-hidden',
-          isGuestAccount
-            ? 'flex-col'
-            : 'border-border/80 bg-card rounded-xl border shadow-sm'
+          isGuestAccount ? 'flex-col' : 'border-border/80 bg-card rounded-xl border shadow-sm'
         )}
       >
         <div
           className={cn(
             'border-border/80 flex h-full min-h-0 shrink-0 flex-col',
-            isEmpty
+            isEmpty || isError
               ? 'w-full'
               : cn(
                   'w-full lg:w-[min(100%,400px)]',
@@ -381,7 +386,7 @@ export function TicketsWorkspacePage({ basePathOverride }: TicketsWorkspacePageP
         <div
           className={cn(
             'flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden',
-            isEmpty ? 'hidden' : paneOpen ? 'flex' : 'hidden lg:flex'
+            isEmpty || isError ? 'hidden' : paneOpen ? 'flex' : 'hidden lg:flex'
           )}
         >
           {visibleTicketId ? (

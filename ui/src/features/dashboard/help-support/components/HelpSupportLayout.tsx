@@ -7,6 +7,7 @@ import { HelpSectionIntro } from '@/features/dashboard/help-support/components/H
 import { HelpSupportModuleNav } from '@/features/dashboard/help-support/components/HelpSupportModuleNav';
 import {
   helpSupportSectionFromPath,
+  isHelpSupportTicketDetailPath,
   useHelpSupportBasePath,
 } from '@/features/dashboard/help-support/lib/helpSupportPaths';
 import { useOptionalOrgContext } from '@/features/dashboard/org/components/RequireOrgContext';
@@ -15,6 +16,7 @@ import { useOrganizations } from '@/features/dashboard/org/hooks/useOrganization
 
 import { AdminMobilePage } from '@/components/mobile/MobileBrandHero';
 import { HelpSupportSectionSkeleton } from '@/components/skeletons/HelpSupportSkeleton';
+import { useIsBelowLg } from '@/hooks/useMediaQuery';
 import {
   orgPageTitle,
   parkingDashboardPageTitle,
@@ -49,6 +51,15 @@ export function HelpSupportLayout() {
   const basePath = useHelpSupportBasePath();
   const section = helpSupportSectionFromPath(location.pathname);
   const isTickets = section === 'tickets';
+  const isMobile = useIsBelowLg();
+  /**
+   * A phone has ~700px of fill-main height. The module tiles and the section intro
+   * would eat ~340 of it, which collapses the message list inside a ticket thread.
+   * A ticket detail is a workspace, so it takes the full height and keeps the
+   * thread's own back control for the way out.
+   */
+  const isTicketDetail = isTickets && isHelpSupportTicketDetailPath(location.pathname);
+  const hideChrome = isMobile && isTicketDetail;
 
   useAdminLayoutFillMain(isTickets);
 
@@ -80,7 +91,7 @@ export function HelpSupportLayout() {
           isTickets && 'min-h-0 flex-1 overflow-hidden'
         )}
       >
-        {basePath ? (
+        {basePath && !hideChrome ? (
           <div className="shrink-0">
             <HelpSupportModuleNav />
           </div>
@@ -91,12 +102,14 @@ export function HelpSupportLayout() {
             isTickets && 'min-h-0 flex-1 overflow-hidden'
           )}
         >
-          <div className="shrink-0">
-            <HelpSectionIntro
-              title={SECTION_INTRO[section].title}
-              description={SECTION_INTRO[section].description}
-            />
-          </div>
+          {hideChrome ? null : (
+            <div className="shrink-0">
+              <HelpSectionIntro
+                title={SECTION_INTRO[section].title}
+                description={SECTION_INTRO[section].description}
+              />
+            </div>
+          )}
           <div className={cn(isTickets && 'flex min-h-0 flex-1 flex-col overflow-hidden')}>
             <Suspense fallback={<HelpSupportSectionSkeleton section={section} />}>
               <Outlet />
