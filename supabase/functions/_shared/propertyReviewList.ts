@@ -13,8 +13,10 @@ export async function getHostReviewDueCounts(propertyIds: string[]): Promise<Map
     p_property_ids: propertyIds,
   });
   if (error) {
-    console.warn('[propertyReviewList] due counts failed:', error.message);
-    return counts;
+    // Throwing beats returning an empty map: a silent 0 makes the To write badge and
+    // card say the queue is clear when the query actually failed.
+    console.error('[propertyReviewList] due counts failed:', error.message);
+    throw new Error('Could not load review windows');
   }
   for (const row of (data ?? []) as Array<{ property_id: string; due_count: number }>) {
     counts.set(row.property_id, Number(row.due_count) || 0);
@@ -40,7 +42,10 @@ export async function getPropertyReviewSummary(propertyId: string): Promise<Prop
     p_property_id: propertyId,
   });
   if (error) {
-    console.warn('[propertyReviewList] summary failed:', error.message);
+    // Never degrade to an empty summary: the page would show "no reviews" and a dash
+    // average for a host who has reviews. The UI renders its error state on a 500.
+    console.error('[propertyReviewList] summary failed:', error.message);
+    throw new Error('Could not load review summary');
   }
   const summary = (data as PropertyReviewSummary | null) ?? {
     count: 0,
@@ -190,8 +195,8 @@ export async function listReceivedReviews(
   const { from, to } = pageRange(params);
   const { data, error, count } = await ordered.range(from, to);
   if (error) {
-    console.warn('[propertyReviewList] received failed:', error.message);
-    return { items: [], total: 0 };
+    console.error('[propertyReviewList] received failed:', error.message);
+    throw new Error('Could not load reviews');
   }
 
   return {
@@ -256,8 +261,8 @@ export async function listWrittenReviews(
   const { from, to } = pageRange(params);
   const { data, error, count } = await ordered.range(from, to);
   if (error) {
-    console.warn('[propertyReviewList] written failed:', error.message);
-    return { items: [], total: 0 };
+    console.error('[propertyReviewList] written failed:', error.message);
+    throw new Error('Could not load reviews');
   }
 
   return {
@@ -303,8 +308,8 @@ export async function listToWriteReviews(
     p_limit: TO_WRITE_SCAN_CAP,
   });
   if (error) {
-    console.warn('[propertyReviewList] to_write failed:', error.message);
-    return { items: [], total: 0 };
+    console.error('[propertyReviewList] to_write failed:', error.message);
+    throw new Error('Could not load reviews');
   }
   const rows = (data ?? []) as Array<{ booking_id: string; closes_at: string }>;
   if (rows.length === 0) return { items: [], total: 0 };

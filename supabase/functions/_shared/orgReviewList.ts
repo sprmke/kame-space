@@ -40,6 +40,9 @@ export async function listOrgReviewScopeProperties(
     .from('properties')
     .select('id, slug, name')
     .eq('organization_id', scope.organizationId)
+    // Archived listings are closed to everything except settings, so their published
+    // reviews must not keep counting toward the org average or the listing filter.
+    .or('inactive_reason.is.null,inactive_reason.neq.archived')
     .order('name')
     .limit(MAX_ORG_PROPERTIES);
   if (scope.assignedPropertyIds) query = query.in('id', scope.assignedPropertyIds);
@@ -93,8 +96,15 @@ export async function getOrgReviewSummary(properties: ScopedProperty[]): Promise
       supabase.rpc('review_stats_by_property', { p_property_ids: propertyIds }),
       getHostReviewDueCounts(propertyIds),
     ]);
-  if (headlineErr) console.warn('[orgReviewList] summary failed:', headlineErr.message);
-  if (statsErr) console.warn('[orgReviewList] per-property stats failed:', statsErr.message);
+  // Silent degradation here paints "0 reviews" over a real portfolio.
+  if (headlineErr) {
+    console.error('[orgReviewList] summary failed:', headlineErr.message);
+    throw new Error('Could not load review summary');
+  }
+  if (statsErr) {
+    console.error('[orgReviewList] per-property stats failed:', statsErr.message);
+    throw new Error('Could not load review summary');
+  }
 
   const headline = {
     ...EMPTY_SUMMARY,
@@ -200,8 +210,8 @@ export async function listOrgReceivedReviews(
   const { from, to } = pageRange(params);
   const { data, error, count } = await ordered.range(from, to);
   if (error) {
-    console.warn('[orgReviewList] received failed:', error.message);
-    return { items: [], total: 0 };
+    console.error('[orgReviewList] received failed:', error.message);
+    throw new Error('Could not load reviews');
   }
 
   return {
@@ -275,8 +285,8 @@ export async function listOrgWrittenReviews(
   const { from, to } = pageRange(params);
   const { data, error, count } = await ordered.range(from, to);
   if (error) {
-    console.warn('[orgReviewList] written failed:', error.message);
-    return { items: [], total: 0 };
+    console.error('[orgReviewList] written failed:', error.message);
+    throw new Error('Could not load reviews');
   }
 
   return {
@@ -330,8 +340,8 @@ export async function listOrgToWriteReviews(
     p_limit: TO_WRITE_SCAN_CAP,
   });
   if (error) {
-    console.warn('[orgReviewList] to_write failed:', error.message);
-    return { items: [], total: 0 };
+    console.error('[orgReviewList] to_write failed:', error.message);
+    throw new Error('Could not load reviews');
   }
   const rows = (data ?? []) as Array<{
     booking_id: string;
