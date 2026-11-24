@@ -19,6 +19,7 @@ import { addDaysYmd, manilaTodayYmd } from './calendarAvailabilityManila.ts';
 import { createServiceClient } from './orgAuth.ts';
 import { createNotification } from './notificationService.ts';
 import { capturePostHogEvent } from './posthog.ts';
+import { cancelLinkedParkingForStay } from './linkedParkingCancellation.ts';
 import { buildActorContext, logActivity, type ActorContext } from './activityLog.ts';
 import {
   findAdoptableManualBooking,
@@ -366,7 +367,10 @@ export async function loadDueCalendarFeeds(
     .select(FEED_SELECT)
     .eq('is_active', true)
     // A row from before Vrbo / Other were removed must never reach the engine.
-    .in('provider', CALENDAR_CHANNELS.map((c) => c.provider));
+    .in(
+      'provider',
+      CALENDAR_CHANNELS.map((c) => c.provider)
+    );
   // Filter in SQL, not after loading: a full batch of not-yet-due feeds would starve the tail.
   if (opts.cutoffIso) {
     query = query.or(`last_attempted_at.is.null,last_attempted_at.lt.${opts.cutoffIso}`);
@@ -1658,6 +1662,7 @@ async function reconcileExternalBookings(
     }
 
     try {
+      const cancelActor = buildActorContext('cron', { cron: 'calendar-sync-cron' });
       await WorkflowOrchestrator.transition(
         row.id,
         'CANCELLED',
@@ -1671,8 +1676,14 @@ async function reconcileExternalBookings(
         },
         {},
         false,
-        buildActorContext('cron', { cron: 'calendar-sync-cron' })
+        cancelActor
       );
+      // An OTA cancellation ends the stay, so a paid linked parking must be refunded too.
+      try {
+        await cancelLinkedParkingForStay({ stayBookingId: row.id, actor: cancelActor });
+      } catch (parkingError) {
+        console.error('[calendar-sync] linked parking cancel failed (non-fatal):', parkingError);
+      }
       result.bookingsCancelled++;
       await writeEvent(supabase, {
         feedId: feed.id,

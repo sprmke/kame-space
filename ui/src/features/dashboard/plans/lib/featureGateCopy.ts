@@ -85,7 +85,7 @@ export const FEATURE_GATE_COPY: Record<PlanFeatureKey, FeatureGateCopy> = {
   automatedBookingFlow: {
     title: 'Automated booking emails',
     description:
-      'Automatic GAF/pet request, booking acknowledgement, ready-for-check-in, and check-out & SD refund emails are available on Starter and above. On Free you send these manually.',
+      'Automatic GAF and pet requests, booking acknowledgement, pre-arrival reminders and building-admin cancellation emails are available on Starter and above. Ready-for-check-in and check-out/SD refund emails send on every plan.',
     ctaLabel: 'View plans',
   },
   verifiedBadgeEligible: {

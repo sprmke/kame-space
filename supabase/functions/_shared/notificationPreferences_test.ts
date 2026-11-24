@@ -89,11 +89,17 @@ Deno.test('quiet hours: disabled, equal endpoints, and invalid zones never silen
 Deno.test('quiet hours use the stored zone, not the server zone', () => {
   // 23:00 UTC is 07:00 the next day in Manila → outside 22:00-07:00.
   assertEquals(localMinutesOfDay(new Date(Date.UTC(2026, 0, 15, 23)), 'Asia/Manila'), 7 * 60);
-  assertEquals(isWithinQuietHours(new Date(Date.UTC(2026, 0, 15, 23)), prefs({
-    quietHoursEnabled: true,
-    quietHoursStart: '22:00',
-    quietHoursEnd: '07:00',
-  })), false);
+  assertEquals(
+    isWithinQuietHours(
+      new Date(Date.UTC(2026, 0, 15, 23)),
+      prefs({
+        quietHoursEnabled: true,
+        quietHoursStart: '22:00',
+        quietHoursEnd: '07:00',
+      })
+    ),
+    false
+  );
 });
 
 Deno.test('shouldDeliverPush: muted group wins over quiet hours', () => {
@@ -154,9 +160,7 @@ Deno.test('normalizeTimeValue rejects out-of-range values', () => {
 });
 
 Deno.test('parseNotificationPreferencesPayload accepts defaults and full payloads', async () => {
-  const { parseNotificationPreferencesPayload } = await import(
-    './notificationPreferences.ts'
-  );
+  const { parseNotificationPreferencesPayload } = await import('./notificationPreferences.ts');
   assertEquals(parseNotificationPreferencesPayload({}), {
     ok: true,
     value: {
@@ -189,12 +193,26 @@ Deno.test('parseNotificationPreferencesPayload accepts defaults and full payload
 });
 
 Deno.test('parseNotificationPreferencesPayload rejects unknown groups and bad times', async () => {
-  const { parseNotificationPreferencesPayload } = await import(
-    './notificationPreferences.ts'
-  );
+  const { parseNotificationPreferencesPayload } = await import('./notificationPreferences.ts');
   assertEquals(parseNotificationPreferencesPayload({ mutedGroups: ['nope'] }).ok, false);
   assertEquals(parseNotificationPreferencesPayload({ mutedGroups: 'inbox' }).ok, false);
   assertEquals(parseNotificationPreferencesPayload({ quietHoursStart: '9:00' }).ok, false);
   assertEquals(parseNotificationPreferencesPayload({ quietHoursEnd: '24:00' }).ok, false);
   assertEquals(parseNotificationPreferencesPayload({ quietHoursTimezone: 'Mars/Base' }).ok, false);
+});
+
+Deno.test('urgent guest help bypasses muted groups and quiet hours', () => {
+  const night = prefs({
+    mutedGroups: ['bookings', 'system'],
+    quietHoursEnabled: true,
+    quietHoursStart: '22:00',
+    quietHoursEnd: '07:00',
+  });
+  assertEquals(notificationTypeGroup('booking_help_requested'), 'bookings');
+  assertEquals(shouldDeliverPush('booking_help_requested', night, manila(2)), { deliver: true });
+  // A normal booking notification in the same state is still suppressed.
+  assertEquals(shouldDeliverPush('booking_pending_review', night, manila(2)), {
+    deliver: false,
+    reason: 'muted_group',
+  });
 });

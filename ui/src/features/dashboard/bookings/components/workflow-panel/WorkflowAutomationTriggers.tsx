@@ -87,9 +87,7 @@ export function WorkflowAutomationTriggers({
   if (isModal || !hasContent) return null;
 
   const leadPhrase = formatSdRefundLeadPhrase(sdRefundEmailLeadMinutes);
-  const sdCronButtonLabel = planSkipHint
-    ? 'Run check-out move (no email on Free)'
-    : 'Run check-out automation';
+  const sdCronButtonLabel = 'Run check-out automation';
 
   const sdResendUi = resolveWorkflowEmailManualSendUi('sd_refund_form_request', {
     enforceCooldown: planSkipHint,
@@ -145,24 +143,14 @@ export function WorkflowAutomationTriggers({
       {automationHelpOpen && (
         <div className="text-muted-foreground space-y-2 px-4 pb-3 text-[11.5px] leading-relaxed">
           {showSdCron ? (
-            planSkipHint ? (
+            <>
               <p>
-                <PlanGatedText
-                  feature="automatedBookingFlow"
-                  text="After guest balance is settled, run check-out move below when the cron has not run yet. On Free it does not send email. Use Send Check-out Instructions when enabled, or Upgrade for automatic emails."
-                />
+                {leadPhrase}, the guest gets the Check-out Instructions email automatically, even if
+                the balance is unpaid. If the remaining balance is settled with a receipt uploaded,
+                the booking also moves automatically to Ready for Check-out at that time.
               </p>
-            ) : (
-              <>
-                <p>
-                  {leadPhrase}, the guest gets the Check-out Instructions email automatically, even
-                  if the balance is unpaid. If the remaining balance is settled with a receipt
-                  uploaded, the booking also moves automatically to Ready for Check-out at that
-                  time.
-                </p>
-                <p>If the email or move did not happen, run the check-out automation below.</p>
-              </>
-            )
+              <p>If the email or move did not happen, run the check-out automation below.</p>
+            </>
           ) : null}
           {showSdFormResend ? (
             <p>

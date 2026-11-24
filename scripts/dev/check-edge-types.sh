@@ -43,6 +43,17 @@ targets=(
   _shared/reviewLifecycle.ts
   _shared/reviewAutomation.ts
   _shared/propertyAutomationToggles.ts
+  # Guest safety, data-subject export and ops alerting — added after the 2026-11-21
+  # self-review found a 201 passed as the wrong argument and no type gate on the new handlers.
+  guest-trip-help/index.ts
+  booking-help/index.ts
+  _shared/bookingHelp.ts
+  _shared/bookingHelpWindow.ts
+  data-subject-request/index.ts
+  _shared/dataSubjectService.ts
+  ops-alert-ingest/index.ts
+  _shared/ops/opsAlert.ts
+  _shared/ops/opsAlertIngest.ts
   send-parking-reminders/index.ts
   _shared/parkingReminderCron.ts
   _shared/parkingReminderEligibility.ts

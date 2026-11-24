@@ -494,7 +494,7 @@ Per-property operational settings in `app_settings` (below Building Forms in the
 
 Compact summary row on the Email automations card (`N of 12 on`) with **Manage**. **Manage** opens a `ResponsiveModal` (bottom sheet below `lg`) with the grouped list (`PropertyEmailAutomationTogglePanel`): **Your team**, **Building admin**, **Guest**, **Guest reviews**. Each row shows the recipient, a one-line **When** trigger, and an **Edit template** link straight to that email in Templates. Toggles edit the page draft live; the modal footer is **Done**, so the save still happens through the page **Save Changes**. Master switches in `app_settings.automation_toggles` (JSONB). Missing keys default to **enabled**, and a stored retired key (`emailParkingBroadcast`) is ignored. Saved via **`app-settings` PATCH**.
 
-Seven rows are plan-gated (`emailGafRequest`, `emailBookingAcknowledgement`, `emailPetRequest`, `emailReadyForCheckin`, `emailSdRefundCheckout`, `emailPreArrivalReminder`, `emailBuildingAdminCancellation`): they show a plan pill and a disabled switch that opens the upgrade modal. **New booking alert**, **Review request**, **Review reminder** and **Parking reminder** stay free.
+Five rows are plan-gated (`emailGafRequest`, `emailBookingAcknowledgement`, `emailPetRequest`, `emailPreArrivalReminder`, `emailBuildingAdminCancellation`): they show a plan pill and a disabled switch that opens the upgrade modal. **New booking alert**, **Review request**, **Review reminder**, **Parking reminder**, **Ready-for-check-in** and **Check-out/SD refund** stay free. The last two are guest-critical: a downgrade never silences them for a guest who already booked.
 
 ---
 

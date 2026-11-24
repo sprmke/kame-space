@@ -355,11 +355,12 @@ export async function installPropertyBookingParkingMocks(
         status_updated_at: new Date().toISOString(),
       });
     }
+    // The check-out/SD refund email is deliberately not plan-gated, so Free still sends it.
     await fulfillJson(route, {
       success: true,
       transitioned,
-      checkoutEmailsSent: workflow.freePlan ? 0 : transitioned,
-      transitionedSdEmailSuppressed: workflow.freePlan && transitioned ? 1 : 0,
+      checkoutEmailsSent: transitioned,
+      transitionedSdEmailSuppressed: 0,
     });
   });
 
@@ -434,6 +435,17 @@ export async function installPropertyBookingParkingMocks(
       return;
     }
     await fulfillJson(route, { success: false, error: 'Booking not found' }, 404);
+  });
+
+  await page.route('**/functions/v1/booking-help**', async (route) => {
+    if (route.request().method() === 'GET') {
+      await fulfillJson(route, { success: true, data: { request: null } });
+      return;
+    }
+    await fulfillJson(route, {
+      success: true,
+      data: { request: { id: 'e2e-help-request', status: 'resolved' } },
+    });
   });
 
   await page.route('**/rest/v1/guest_submissions*', async (route) => {

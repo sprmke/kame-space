@@ -96,6 +96,7 @@ export function guestTripMock(overrides: Partial<GuestTrip> = {}): GuestTrip {
       sdFormAvailable: false,
       reviewAvailable: false,
       reviewSubmitted: false,
+      helpAvailable: false,
     },
     review: {
       state: 'unavailable',

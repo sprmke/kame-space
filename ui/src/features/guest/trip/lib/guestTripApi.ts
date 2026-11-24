@@ -76,12 +76,7 @@ export type GuestTrip = {
     };
     nonRefundable: boolean;
     outcome: {
-      mode:
-        | 'computed'
-        | 'host_decides'
-        | 'external'
-        | 'after_checkin'
-        | 'not_cancellable';
+      mode: 'computed' | 'host_decides' | 'external' | 'after_checkin' | 'not_cancellable';
       refundPercent: number | null;
       checkInInstantIso: string;
       cancellableUntilIso: string;
@@ -134,6 +129,7 @@ export type GuestTrip = {
     sdFormAvailable: boolean;
     reviewAvailable: boolean;
     reviewSubmitted: boolean;
+    helpAvailable: boolean;
   };
   review: {
     state: 'open' | 'submitted' | 'published' | 'closed' | 'unavailable';
@@ -277,16 +273,16 @@ export type CancellationActionInput = {
 };
 
 export async function cancelGuestBooking(input: CancellationActionInput) {
-  return postGuestCancellation<{ cancelled: boolean; outcome: GuestTrip['cancellation']['outcome'] }>(
-    'guest-cancel-booking',
-    {
-      bookingId: input.bookingId,
-      accessToken: readGuestBookingAccessToken(input.bookingId) ?? undefined,
-      reasonCode: input.reasonCode,
-      reasonNote: input.reasonNote ?? '',
-      confirm: true,
-    }
-  );
+  return postGuestCancellation<{
+    cancelled: boolean;
+    outcome: GuestTrip['cancellation']['outcome'];
+  }>('guest-cancel-booking', {
+    bookingId: input.bookingId,
+    accessToken: readGuestBookingAccessToken(input.bookingId) ?? undefined,
+    reasonCode: input.reasonCode,
+    reasonNote: input.reasonNote ?? '',
+    confirm: true,
+  });
 }
 
 export async function requestGuestCancellation(input: CancellationActionInput) {
@@ -358,4 +354,34 @@ export async function uploadGuestTripPaymentReceipt(
     throw new Error(json.error ?? 'We could not send your receipt.');
   }
   return { url: String(json.data?.url ?? ''), aiVerdict: json.data?.aiVerdict ?? null };
+}
+
+// ─── Urgent help (SAFE-01) ───────────────────────────────────────────────────
+
+export type GuestTripHelpKind = 'cant_get_in' | 'not_as_described' | 'unsafe' | 'other';
+
+/** File a booking-linked urgent help request. Returns whether an open one already exists. */
+export async function requestGuestTripHelp(input: {
+  bookingId: string;
+  kind: GuestTripHelpKind;
+  note?: string;
+}): Promise<{ alreadyOpen: boolean }> {
+  const res = await fetch(`${FUNCTIONS_URL}/guest-trip-help`, {
+    method: 'POST',
+    headers: {
+      ...(await guestEdgeAuthHeaders()),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(input),
+  });
+  const json = (await res.json().catch(() => ({}))) as {
+    success?: boolean;
+    error?: string;
+    message?: string;
+    data?: { alreadyOpen?: boolean };
+  };
+  if (!res.ok || !json.success) {
+    throw new Error(json.error ?? json.message ?? 'Could not send the request');
+  }
+  return { alreadyOpen: Boolean(json.data?.alreadyOpen) };
 }

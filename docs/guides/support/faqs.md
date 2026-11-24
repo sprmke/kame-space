@@ -1851,3 +1851,35 @@ Yes. After you pick your check-in and check-out, choose ± 1 day, ± 2 days, ± 
 - source: docs/guides/routes/search.md
 
 Tap Map at the bottom of the list on search results, Properties or Developments. The map fills the screen and you can move or zoom it to update the results. To go back to the list, drag the bar at the bottom up or tap it.
+
+### I can't get into my stay. What do I do?
+
+- category: Guest Portal
+- audience: guest
+- source: docs/guides/routes/trip.md
+
+Open your trip and choose **Get help now**. It appears from the day before check-in through check-out. Pick **I can't get in**, add a short note and send. Your host is notified and our support team is alerted. Use it for arrival problems, not general questions.
+
+### What happens if a host cancels my booking?
+
+- category: Guest Portal
+- audience: guest
+- source: docs/guides/routes/trip.md
+
+You get an email and your trip shows Cancelled. A host cancellation refunds everything you paid for the stay, including before check-in. Your notification settings do not block this email. If you also paid for parking, the parking booking is cancelled and its refund is reviewed with the stay refund.
+
+### Can I cancel a booking on a guest's behalf as the host?
+
+- category: Bookings
+- audience: host
+- source: docs/guides/routes/org/property/bookings-detail.md
+
+Yes, from the booking's **Cancel booking** action. Choose a host reason and confirm. Before check-in the guest is refunded in full and always emailed. If the guest asked to cancel, approve their request instead so the record says so. Cancelling inside 24 hours shows a warning and is reviewed by support.
+
+### When can I mark a parking payout as sent?
+
+- category: Parking
+- audience: host
+- source: docs/guides/routes/admin/parking-payouts.md
+
+A payout becomes eligible 24 hours after the parking start. Until then the payout shows **Payout held** and support can only disburse early with a written reason. Once eligible, **Mark disbursed** records the reference once; a second click cannot overwrite it.

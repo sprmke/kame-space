@@ -27,6 +27,7 @@ import { isSeededTemplateName, seedPropertyTeamTemplates } from './propertyTeamT
 import { readPropertyIdFromUrl } from './propertyScope.ts';
 import { sendPropertyTeamInviteEmail } from './propertyTeamInviteEmail.ts';
 import { assertAllowedTeamInviteEmail } from './teamInviteEmail.ts';
+import { assertInvitePermissionsWithinInviter } from './teamInvitePermissions.ts';
 import { parseTeamInviteContactFields } from './teamInviteContact.ts';
 import {
   reconcileTeamSeatsForProperty,
@@ -585,6 +586,11 @@ export async function createPropertyInvitation(
   await assertCustomRoleForProperty(supabase, propertyId, roleId, customRoles);
 
   const permissions = resolveAssignPermissions(roleId, customRoles, undefined);
+  assertInvitePermissionsWithinInviter({
+    requested: permissions,
+    granted: ctx.permissions,
+    accessKind: ctx.accessKind,
+  });
   const contact = parseTeamInviteContactFields(body);
 
   if (await findActiveMemberByEmail(supabase, propertyId, email)) {
@@ -676,6 +682,11 @@ export async function resendPropertyInvitation(
   if (existing.status !== 'pending') {
     throw new Error('Only pending invitations can be resent');
   }
+  assertInvitePermissionsWithinInviter({
+    requested: normalizePermissionIds(existing.permissions),
+    granted: ctx.permissions,
+    accessKind: ctx.accessKind,
+  });
 
   const previousToken = existing.token as string;
   const previousExpiresAt = existing.expires_at as string;

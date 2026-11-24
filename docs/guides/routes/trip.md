@@ -24,7 +24,7 @@ submission redirects here with `&welcome=1`)
 | Getting in          | —        | —          | Documented | Inline check-in / check-out steps, every plan   |
 | From your host      | —        | —          | Documented | Guest-visible custom templates, collapsed       |
 | Stay / docs / pay   | ✅       | —          | Documented | Receipt upload lives in Payment                 |
-| Host / cancellation | —        | —          | Documented | Contact + listing cancellation policy           |
+| Host / cancellation | —        | Server     | Documented | Contact, policy, Get help now (arrival window)  |
 | Entry points        | —        | —          | Documented | Submission, Trips tab, emails, SD form, review  |
 
 ---
@@ -46,6 +46,31 @@ bottom tabs on phone) like `/success`, `/sd-form` and `/guest-review`.
 ---
 
 > **Legal notice:** Cancellation refund details show the same refund privacy line above Save, unless cash pickup is chosen. Pattern and full list: [legal.md](legal.md#in-app-notices).
+
+## Get help now (SAFE-01)
+
+From 24 hours before check-in through the check-out day, the left column shows **Get help now**
+when `get-guest-trip` returns `actions.helpAvailable`. That flag comes from the same window
+rule the write endpoint enforces, so the button never appears days before the window opens
+(`GuestTripHelpButton`). It opens a bottom sheet with four issues: **I can't get in**, **Not as
+described**, **Unsafe or emergency**, **Something else**, plus a short note. Submitting calls
+`POST guest-trip-help` with `{ bookingId, kind, note? }`.
+
+- The trip page only renders the button in the arriving / arrival day / staying / checkout day
+  phases; the server also enforces the 24-hour window and rejects a cancelled booking.
+- A token-only guest sees the action too. Sending asks them to sign in with the booking email;
+  the request endpoint is account-scoped, so the case always has an owner.
+- After sending, the guest sees the time and "The host has been notified", not just a toast. The
+  **Unsafe or emergency** branch shows "If anyone is in danger, call 911 first."
+- The host sees an open case at the top of the booking **Overview** (kind, note, time, **Mark
+  resolved**). Read-only members can see it; only `bookings.detail.workflow:edit` can close it.
+- One open request per booking. A repeat tap returns the open request instead of creating a
+  second one.
+- The host gets an in-app/push notification on that booking. The ops channel gets a P0 alert for
+  `cant_get_in` / `unsafe` and a P1 for the others (`ops_alerts` key `guest_help:<bookingId>`, so a repeat on the same stay aggregates).
+- The request row (`booking_help_requests`) is the audit trail. It is service-role only.
+- The 30-minute no-reply escalation and the super-admin refund decision are the next slice; the
+  first alert and the host notification are live now.
 
 ## Guest status words
 

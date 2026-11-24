@@ -2,7 +2,7 @@
 title: 'Super Admin parking payouts — operator guide'
 status: active
 tags: [guides, routes, admin, parking]
-updated: 2026-11-19
+updated: 2026-11-21
 ---
 
 # Super Admin parking payouts — operator guide
@@ -41,7 +41,11 @@ Two things on one page, per Phase 4 of the parking marketplace build:
    net (guest charge minus host payout minus processor fee). `record_refund` is a bookkeeping
    action only (issue the money in the PayMongo dashboard); it moves the row to `refunded`. A host
    cancel after payment already moved it to `refund_review`, which blocks `mark_disbursed` until
-   the refund is recorded. There is no automated payout yet — PayMongo Platforms split-payout
+   the refund is recorded. Payouts are also **held for 24 hours after the parking start**
+   (PRK-04): the row shows **Payout held**, the dialog shows **Eligible <date>**, and
+   **Mark disbursed** is a 409 until then. A super admin can still **Disburse early** with a
+   required note, recorded in the audit trail. A second click cannot rewrite an existing
+   disbursement. There is no automated payout yet — PayMongo Platforms split-payout
    requires a business application Kame Space hasn't made; this is the day-one manual path until
    that ships.
 

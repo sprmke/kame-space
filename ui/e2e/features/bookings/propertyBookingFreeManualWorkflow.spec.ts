@@ -205,9 +205,7 @@ test.describe('@ci property booking Free-tier manual workflow', () => {
       'sd_refund_form_request',
     ]);
 
-    await expect(
-      page.getByRole('button', { name: 'Run check-out move (no email on Free)' })
-    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Run check-out automation' })).toBeVisible();
     await demoPause(page);
   });
 
@@ -237,8 +235,8 @@ test.describe('@ci property booking Free-tier manual workflow', () => {
     expect(workflow.workflowEmailsSent.map((entry) => entry.kind)).toEqual(['pet_request']);
   });
 
-  test('Run check-out move on Free toasts plan email skip', async ({ page }) => {
-    setParkingScreenSuite('property-free-manual-workflow-sd-cron-skip');
+  test('Run check-out automation on Free sends the check-out email', async ({ page }) => {
+    setParkingScreenSuite('property-free-manual-workflow-sd-cron');
     const parkingState = createParkingFlowState();
     const propertyState = createPropertyBookingParkingState({ linked: true });
     await installPropertyBookingParkingMocks(page, parkingState, propertyState, {
@@ -251,11 +249,12 @@ test.describe('@ci property booking Free-tier manual workflow', () => {
 
     await openPropertyBookingDetail(page);
     await expandAutomationTriggers(page);
-    await page.getByRole('button', { name: 'Run check-out move (no email on Free)' }).click();
-    await expect(page.getByText(/Not sent automatically on your plan/i)).toBeVisible({
+    await page.getByRole('button', { name: 'Run check-out automation' }).click();
+    // Guest-critical check-out emails are not plan-gated, so no plan-skip toast appears.
+    await expect(page.getByText(/Not sent automatically on your plan/i)).toHaveCount(0);
+    await expect(page.getByText('1 booking moved to Ready for Check-out')).toBeVisible({
       timeout: 10_000,
     });
-    await expect(page.getByText(/Check-out & SD refund email/i)).toBeVisible();
     await demoPause(page);
   });
 

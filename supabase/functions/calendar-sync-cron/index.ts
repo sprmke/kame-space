@@ -25,12 +25,7 @@ import { calendarChannel, type CalendarFeedProvider } from '../_shared/calendarC
 import { groupFeedsByProperty, runFeedPool } from '../_shared/calendarSyncPool.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 import { recordJobHeartbeat } from '../_shared/systemHealth/jobHeartbeat.ts';
-import {
-  catchPlanFeatureError,
-  requirePropertyFeature,
-  resolvePropertyEntitlements,
-} from '../_shared/planEntitlements.ts';
-import { isFeatureEnabled } from '../_shared/planFeatures.ts';
+import { catchPlanFeatureError, requirePropertyFeature } from '../_shared/planEntitlements.ts';
 import { createServiceClient } from '../_shared/orgAuth.ts';
 import { resolveScopedPropertyAccess } from '../_shared/propertyScope.ts';
 import { verifyCronSecret } from '../_shared/cronSecretGate.ts';
@@ -201,7 +196,6 @@ serveHandler('calendar-sync-cron', async (req) => {
       skippedNoEntitlement: 0,
       skippedLifecycle: 0,
     };
-    const entitlementCache = new Map<string, boolean>();
     const lifecycleStates = await loadPropertyLifecycleStates(
       feeds.map((feed) => feed.property_id)
     );
@@ -218,24 +212,10 @@ serveHandler('calendar-sync-cron', async (req) => {
           return feed.id;
         }
 
-        let entitled = entitlementCache.get(feed.property_id);
-        if (entitled === undefined) {
-          try {
-            entitled = isFeatureEnabled(
-              await resolvePropertyEntitlements(feed.property_id),
-              'calendarSync'
-            );
-          } catch (err) {
-            console.error('[calendar-sync-cron] entitlement check failed:', err);
-            entitled = false;
-          }
-          entitlementCache.set(feed.property_id, entitled);
-        }
-        if (!entitled) {
-          summary.skippedNoEntitlement++;
-          return feed.id;
-        }
-
+        // Inbound import is deliberately NOT plan-gated (readiness BIL-02): a downgraded or
+        // suspended org with existing feeds must keep seeing OTA reservations, or direct
+        // bookings would double-book nights the OTA already sold. Creating a feed, running a
+        // manual sync, and outbound export stay gated in their own handlers.
         if (pausedChannels.has(feed.provider)) return feed.id;
 
         const feedStartedAt = Date.now();

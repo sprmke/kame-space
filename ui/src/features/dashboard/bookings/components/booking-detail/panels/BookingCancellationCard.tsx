@@ -105,10 +105,7 @@ export function BookingCancellationCard({
     Boolean(snapshot?.propertyPolicyVersionId) &&
     currentPolicyVersionId !== snapshot?.propertyPolicyVersionId;
 
-  const approve = async (input?: {
-    refundOverridePhp?: number | null;
-    overrideNote?: string;
-  }) => {
+  const approve = async (input?: { refundOverridePhp?: number | null; overrideNote?: string }) => {
     if (!openRequest) return;
     try {
       await respond.mutateAsync({
@@ -207,7 +204,9 @@ export function BookingCancellationCard({
               {format(new Date(String(openRequest.requested_at)), 'MMM d, h:mm a')}
             </p>
             {openRequest.reason_note ? (
-              <p className="text-muted-foreground mt-1 text-sm">{String(openRequest.reason_note)}</p>
+              <p className="text-muted-foreground mt-1 text-sm">
+                {String(openRequest.reason_note)}
+              </p>
             ) : null}
           </div>
           {canEdit ? (
@@ -217,6 +216,7 @@ export function BookingCancellationCard({
                   value={declineMessage}
                   rows={2}
                   placeholder="Tell the guest why"
+                  aria-label="Message to the guest"
                   onChange={(event) => setDeclineMessage(event.target.value)}
                 />
                 <div className="flex gap-2">
@@ -330,6 +330,7 @@ export function BookingCancellationCard({
           booking={booking}
           checkInTime={checkInTime}
           defaultInitiator="guest"
+          allowGuestInitiator
           defaultReasonCode={String(openRequest.reason_code ?? 'other')}
           defaultReasonNote={openRequest.reason_note ? String(openRequest.reason_note) : null}
           isPending={respond.isPending}

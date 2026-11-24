@@ -30,6 +30,7 @@ export type NotificationType =
   | 'review_response_received'
   | 'maintenance_guest_reported'
   | 'guest_request_submitted'
+  | 'booking_help_requested'
   | 'booking_receipt_uploaded'
   | 'booking_trip_viewed'
   | 'billing_notice';

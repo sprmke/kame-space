@@ -18,7 +18,7 @@ export const BOOKING_WORKFLOW_EMAIL_TRIGGER_HELP: Record<BookingWorkflowEmailKin
 
 export const SD_CHECKOUT_AUTOMATION_TRIGGER_HELP = {
   paid: 'Runs check-out automation for this booking and sends Check-out Instructions when enabled.',
-  free: 'Moves this booking to Ready for Check-out only. Email Check-out Instructions separately below.',
+  free: 'Runs check-out automation for this booking and sends Check-out Instructions when enabled.',
 } as const;
 
 export const SD_CHECKOUT_INSTRUCTIONS_RESEND_HELP =

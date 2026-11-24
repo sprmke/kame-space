@@ -48,6 +48,12 @@ export const DASHBOARD_ASSISTANT_PARITY: Record<string, ParityEntry> = {
   'accept-org-invite': account,
   'accept-parking-invite': account,
   'accept-property-invite': account,
+  'booking-help': {
+    kind: 'excluded',
+    routeKey: 'property.booking',
+    reason:
+      'Guest help cases are opened from the trip page and closed on the booking detail; the assistant does not resolve them.',
+  },
   'data-subject-request': account,
   'notification-preferences': account,
   'push-subscribe': account,
@@ -57,6 +63,7 @@ export const DASHBOARD_ASSISTANT_PARITY: Record<string, ParityEntry> = {
   // ── Guest portal / guest-side ─────────────────────────────────────────────────────────────
   'guest-messages': guest,
   'guest-profile': guest,
+  'guest-trip-help': guest,
   'guest-trips': guest,
   'guest-web-chat-feedback': guest,
   'guest-web-chat-messages': guest,

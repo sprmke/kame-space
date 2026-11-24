@@ -1372,6 +1372,11 @@ verify_jwt = false
 
 [functions.dashboard-assistant-confirm]
 verify_jwt = false
+static_files = [
+  "./functions/_shared/email-templates/*.html",
+  "./functions/_shared/email-templates/fragments/*.html",
+  "./functions/_shared/email-assets/kame-home-gcash-qr-payment.jpg",
+]
 
 [functions.dashboard-assistant-conversations]
 verify_jwt = false
@@ -1569,4 +1574,13 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.data-subject-requests-cron]
+verify_jwt = false
+
+[functions.guest-trip-help]
+verify_jwt = false
+
+[functions.data-subject-request]
+verify_jwt = false
+
+[functions.booking-help]
 verify_jwt = false

@@ -13,11 +13,14 @@ const {
   CancellationNotAllowedError,
   CANCELLATION_REASON_CODES,
   PolicyChangedError,
+  assertHostRefundFloor,
   computeOutcomeForBooking,
   guestMustRequestCancellation,
   isCancellationReasonCode,
   isGuestCancellable,
   isHostCancellable,
+  resolveHostCancellationInitiator,
+  shouldNotifyGuestOnCancellation,
 } = await import('../_shared/cancellationService.ts');
 const { buildCancellationPreset } = await import('../_shared/cancellationPolicy.ts');
 
@@ -67,7 +70,10 @@ Deno.test('isGuestCancellable stops at the Manila check-in instant, not UTC midn
   const oneSecondBefore = new Date('2026-11-20T05:59:59.000Z');
   const exactly = new Date('2026-11-20T06:00:00.000Z');
 
-  assertEquals(isGuestCancellable('PENDING_REVIEW', CHECK_IN, CHECK_IN_TIME, oneSecondBefore), true);
+  assertEquals(
+    isGuestCancellable('PENDING_REVIEW', CHECK_IN, CHECK_IN_TIME, oneSecondBefore),
+    true
+  );
   assertEquals(isGuestCancellable('PENDING_REVIEW', CHECK_IN, CHECK_IN_TIME, exactly), false);
 });
 
@@ -185,4 +191,140 @@ Deno.test('cancellation errors carry the HTTP status and code the wrapper return
   assertThrows(() => {
     throw policyChanged;
   }, PolicyChangedError);
+});
+
+Deno.test('host cancel: a guest label needs an open guest request', () => {
+  assertEquals(
+    resolveHostCancellationInitiator({ requested: 'guest', hasOpenGuestRequest: true }),
+    'guest'
+  );
+  assertEquals(
+    resolveHostCancellationInitiator({ requested: 'guest', hasOpenGuestRequest: false }),
+    'host'
+  );
+  assertEquals(
+    resolveHostCancellationInitiator({ requested: 'host', hasOpenGuestRequest: true }),
+    'host'
+  );
+  assertEquals(
+    resolveHostCancellationInitiator({ requested: undefined, hasOpenGuestRequest: true }),
+    'host'
+  );
+});
+
+Deno.test('host cancel: the guest is always notified except for duplicate or test cleanup', () => {
+  assertEquals(shouldNotifyGuestOnCancellation({ reasonCode: 'host_unavailable' }), true);
+  assertEquals(
+    shouldNotifyGuestOnCancellation({ reasonCode: 'emergency', requested: false }),
+    true
+  );
+  assertEquals(
+    shouldNotifyGuestOnCancellation({ reasonCode: 'duplicate_or_test', requested: false }),
+    false
+  );
+  assertEquals(
+    shouldNotifyGuestOnCancellation({ reasonCode: 'duplicate_or_test', requested: true }),
+    true
+  );
+  assertEquals(shouldNotifyGuestOnCancellation({ reasonCode: 'duplicate_or_test' }), true);
+});
+
+Deno.test('host cancel: a pre-check-in override cannot go below the full refund', () => {
+  const beforeCheckIn = new Date('2026-11-18T00:00:00.000Z');
+  const base = {
+    initiator: 'host' as const,
+    cancelledAt: beforeCheckIn,
+    checkInDate: CHECK_IN,
+    checkInTime: CHECK_IN_TIME,
+  };
+
+  assertThrows(
+    () => assertHostRefundFloor({ ...base, baseRefundDuePhp: 5000, overrideRefundPhp: 0 }),
+    CancellationNotAllowedError
+  );
+  assertThrows(
+    () => assertHostRefundFloor({ ...base, baseRefundDuePhp: 5000, overrideRefundPhp: 4999.99 }),
+    CancellationNotAllowedError
+  );
+
+  assertHostRefundFloor({ ...base, baseRefundDuePhp: 5000, overrideRefundPhp: 5000 });
+  assertHostRefundFloor({ ...base, baseRefundDuePhp: 5000, overrideRefundPhp: 6000 });
+  assertHostRefundFloor({ ...base, baseRefundDuePhp: 5000, overrideRefundPhp: null });
+});
+
+Deno.test('host cancel: after check-in a partial override stays allowed', () => {
+  assertHostRefundFloor({
+    initiator: 'host',
+    cancelledAt: new Date('2026-11-21T00:00:00.000Z'),
+    checkInDate: CHECK_IN,
+    checkInTime: CHECK_IN_TIME,
+    baseRefundDuePhp: 0,
+    overrideRefundPhp: 1200,
+  });
+});
+
+Deno.test('host cancel: guest overrides are not subject to the host floor', () => {
+  assertHostRefundFloor({
+    initiator: 'guest',
+    cancelledAt: new Date('2026-11-18T00:00:00.000Z'),
+    checkInDate: CHECK_IN,
+    checkInTime: CHECK_IN_TIME,
+    baseRefundDuePhp: 5000,
+    overrideRefundPhp: 0,
+  });
+});
+
+Deno.test(
+  'computeOutcomeForBooking refunds everything when the platform cancels before check-in',
+  () => {
+    const outcome = computeOutcomeForBooking({
+      booking: booking(),
+      policy: buildCancellationPreset('non_refundable'),
+      checkInTime: CHECK_IN_TIME,
+      initiator: 'system',
+      cancelledAt: '2026-11-01T00:00:00.000Z',
+    });
+
+    assertEquals(outcome.initiator, 'system');
+    assertEquals(outcome.appliedRule?.kind, 'host');
+    assertEquals(outcome.refundDuePhp, 5000);
+    assertEquals(outcome.retainedPhp, 0);
+  }
+);
+
+Deno.test('host cancel refunds in full even when the property has no policy', () => {
+  const outcome = computeOutcomeForBooking({
+    booking: booking(),
+    policy: null,
+    checkInTime: CHECK_IN_TIME,
+    initiator: 'host',
+    cancelledAt: '2026-11-01T00:00:00.000Z',
+  });
+  assertEquals(outcome.mode, 'computed');
+  assertEquals(outcome.refundDuePhp, 5000);
+  assertEquals(outcome.appliedRule?.kind, 'host');
+});
+
+Deno.test('an expired request refunds in full even when the property has no policy', () => {
+  const outcome = computeOutcomeForBooking({
+    booking: booking(),
+    policy: null,
+    checkInTime: CHECK_IN_TIME,
+    initiator: 'system',
+    cancelledAt: '2026-11-01T00:00:00.000Z',
+  });
+  assertEquals(outcome.mode, 'computed');
+  assertEquals(outcome.refundDuePhp, 5000);
+});
+
+Deno.test('a guest cancel on an unset policy still asks the host to decide', () => {
+  const outcome = computeOutcomeForBooking({
+    booking: booking(),
+    policy: null,
+    checkInTime: CHECK_IN_TIME,
+    initiator: 'guest',
+    cancelledAt: '2026-11-01T00:00:00.000Z',
+  });
+  assertEquals(outcome.mode, 'host_decides');
+  assertEquals(outcome.refundDuePhp, 0);
 });

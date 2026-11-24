@@ -46,6 +46,12 @@ export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
  */
 const QUIET_HOURS_BYPASS_TYPES = new Set(['calendar_sync_failing']);
 
+/**
+ * A guest who cannot get in, or reports an unsafe unit, must reach the host even when they
+ * muted the group or set quiet hours. Same reasoning as the ops P0 channel.
+ */
+const CRITICAL_PUSH_TYPES = new Set(['booking_help_requested']);
+
 /** Map a notification type onto one preference group. Unknown types are `system`. */
 export function notificationTypeGroup(type: string): NotificationPreferenceGroup {
   if (type.startsWith('booking_') || type === 'calendar_conflict') return 'bookings';
@@ -128,6 +134,7 @@ export function shouldDeliverPush(
   prefs: NotificationPreferences,
   now: Date = new Date()
 ): { deliver: boolean; reason?: 'muted_group' | 'quiet_hours' } {
+  if (CRITICAL_PUSH_TYPES.has(type)) return { deliver: true };
   const group = notificationTypeGroup(type);
   if (prefs.mutedGroups.includes(group)) return { deliver: false, reason: 'muted_group' };
   if (!QUIET_HOURS_BYPASS_TYPES.has(type) && isWithinQuietHours(now, prefs)) {
@@ -166,7 +173,9 @@ export async function loadNotificationPreferences(
 ): Promise<NotificationPreferences> {
   const { data, error } = await sb
     .from('notification_preferences')
-    .select('muted_groups, quiet_hours_enabled, quiet_hours_start, quiet_hours_end, quiet_hours_timezone')
+    .select(
+      'muted_groups, quiet_hours_enabled, quiet_hours_start, quiet_hours_end, quiet_hours_timezone'
+    )
     .eq('user_id', userId)
     .maybeSingle();
   if (error) {
@@ -176,7 +185,7 @@ export async function loadNotificationPreferences(
   return normalizeNotificationPreferences(data as Record<string, unknown> | null);
 }
 
-/** Preferences for a batch of users; missing users fall back to defaults. */export async function loadNotificationPreferencesForUsers(
+/** Preferences for a batch of users; missing users fall back to defaults. */ export async function loadNotificationPreferencesForUsers(
   sb: SupabaseClient,
   userIds: string[]
 ): Promise<Map<string, NotificationPreferences>> {
@@ -186,7 +195,9 @@ export async function loadNotificationPreferences(
 
   const { data, error } = await sb
     .from('notification_preferences')
-    .select('user_id, muted_groups, quiet_hours_enabled, quiet_hours_start, quiet_hours_end, quiet_hours_timezone')
+    .select(
+      'user_id, muted_groups, quiet_hours_enabled, quiet_hours_start, quiet_hours_end, quiet_hours_timezone'
+    )
     .in('user_id', userIds)
     // A recipient set is one booking or one org's staff, never the whole table. The cap is a
     // guard, not a page size: 500 preferences rows is far past any real fan-out.

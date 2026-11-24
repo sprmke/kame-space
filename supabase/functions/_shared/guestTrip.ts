@@ -48,6 +48,7 @@ import { buildStayGuideCheckInDocuments } from './stayGuideCheckInDocuments.ts';
 import { resolveDocumentRequirements } from './documentRequirements.ts';
 import { computeTotalGuestBalanceFromBooking } from './totalGuestBalance.ts';
 import { countStayNights } from './utils.ts';
+import { isWithinBookingHelpWindow } from './bookingHelpWindow.ts';
 import type { GuestSubmission } from './types.ts';
 
 type BookingRow = Record<string, unknown>;
@@ -134,6 +135,8 @@ export type GuestTripDetailDto = {
     sdFormAvailable: boolean;
     reviewAvailable: boolean;
     reviewSubmitted: boolean;
+    /** Inside the 24h-before-check-in to check-out urgent help window. */
+    helpAvailable: boolean;
   };
   review: {
     state: 'open' | 'submitted' | 'published' | 'closed' | 'unavailable';
@@ -468,6 +471,7 @@ export async function buildGuestTripPayload(input: {
       sdFormAvailable,
       reviewAvailable,
       reviewSubmitted,
+      helpAvailable: !cancelled && isWithinBookingHelpWindow({ checkInDate, checkOutDate }),
     },
     review: {
       state: reviewState,

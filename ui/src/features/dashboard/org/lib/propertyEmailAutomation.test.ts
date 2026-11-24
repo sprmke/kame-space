@@ -24,13 +24,14 @@ describe('PROPERTY_AUTOMATION_TOGGLE_KEYS', () => {
 });
 
 describe('PLAN_GATED_AUTOMATION_TOGGLE_KEYS', () => {
-  it('gates 7 toggles and keeps the new booking alert free', () => {
-    expect(PLAN_GATED_AUTOMATION_TOGGLE_KEYS.size).toBe(7);
+  it('gates 5 toggles and keeps guest check-in and SD refund emails free', () => {
+    expect(PLAN_GATED_AUTOMATION_TOGGLE_KEYS.size).toBe(5);
     expect(PLAN_GATED_AUTOMATION_TOGGLE_KEYS.has('emailNewBookingRequest')).toBe(false);
     expect(PLAN_GATED_AUTOMATION_TOGGLE_KEYS.has('emailReviewRequest')).toBe(false);
     expect(PLAN_GATED_AUTOMATION_TOGGLE_KEYS.has('emailReviewReminder')).toBe(false);
     expect(PLAN_GATED_AUTOMATION_TOGGLE_KEYS.has('emailGafRequest')).toBe(true);
-    expect(PLAN_GATED_AUTOMATION_TOGGLE_KEYS.has('emailSdRefundCheckout')).toBe(true);
+    expect(PLAN_GATED_AUTOMATION_TOGGLE_KEYS.has('emailReadyForCheckin')).toBe(false);
+    expect(PLAN_GATED_AUTOMATION_TOGGLE_KEYS.has('emailSdRefundCheckout')).toBe(false);
     expect(PLAN_GATED_AUTOMATION_TOGGLE_KEYS.has('emailPreArrivalReminder')).toBe(true);
   });
 });

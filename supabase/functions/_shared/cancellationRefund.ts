@@ -20,11 +20,7 @@ import type { CancellationPolicy } from './cancellationPolicy.ts';
 export type CancellationInitiator = 'guest' | 'host' | 'ota' | 'system';
 
 export type CancellationOutcomeMode =
-  | 'computed'
-  | 'host_decides'
-  | 'external'
-  | 'after_checkin'
-  | 'not_cancellable';
+  'computed' | 'host_decides' | 'external' | 'after_checkin' | 'not_cancellable';
 
 export type CancellationMoneyInput = {
   bookingRate: number | null;
@@ -140,7 +136,10 @@ function parseHm(value: string | null | undefined): { hours: number; minutes: nu
  * Check-in instant in Asia/Manila. Manila has no DST, so a fixed +08:00 offset
  * is exact. `Date.UTC` normalizes negative hours (e.g. 02:00 → previous day).
  */
-export function manilaCheckInInstant(checkInDate: string, checkInTime?: string | null): Date | null {
+export function manilaCheckInInstant(
+  checkInDate: string,
+  checkInTime?: string | null
+): Date | null {
   const ymd = parseYmd(checkInDate);
   if (!ymd) return null;
   const hm = parseHm(checkInTime ?? DEFAULT_CHECK_IN_TIME);
@@ -193,9 +192,7 @@ function paidAmounts(input: {
   const cashPaidCents = Math.max(0, toCents(input.downPayment) + toCents(input.guestBalancePaid));
   const balancePaidCents = Math.max(0, toCents(input.guestBalancePaid));
   const securityDepositCents =
-    balancePaidCents > 0
-      ? Math.min(Math.max(0, toCents(input.securityDeposit)), cashPaidCents)
-      : 0;
+    balancePaidCents > 0 ? Math.min(Math.max(0, toCents(input.securityDeposit)), cashPaidCents) : 0;
   return {
     cashPaidCents,
     securityDepositCents,
@@ -296,8 +293,16 @@ export function computeCancellationOutcome(input: CancellationOutcomeInput): Can
   }
 
   const policy = input.policy;
+  const afterCheckIn = Number.isFinite(checkInMs) && cancelledMs >= checkInMs;
+  // A host cancellation (or a platform cancellation before check-in) is not the guest's
+  // fault, so it refunds everything paid even when the property has no policy configured.
+  const hostOrPlatformFullRefund =
+    input.initiator === 'host' || (input.initiator === 'system' && !afterCheckIn);
 
-  if (!policy || policy.needsReview || (policy.presetId === 'custom' && policy.tiers.length === 0)) {
+  if (
+    !hostOrPlatformFullRefund &&
+    (!policy || policy.needsReview || (policy.presetId === 'custom' && policy.tiers.length === 0))
+  ) {
     return {
       ...baseOutcome,
       mode: 'host_decides',
@@ -308,8 +313,8 @@ export function computeCancellationOutcome(input: CancellationOutcomeInput): Can
     };
   }
 
-  const deadlines = checkInInstant ? buildCancellationDeadlines(policy, checkInInstant) : [];
-  const afterCheckIn = Number.isFinite(checkInMs) && cancelledMs >= checkInMs;
+  const deadlines =
+    checkInInstant && policy ? buildCancellationDeadlines(policy, checkInInstant) : [];
 
   let refundPercent = 0;
   let appliedRule: CancellationAppliedRule = {
@@ -332,21 +337,27 @@ export function computeCancellationOutcome(input: CancellationOutcomeInput): Can
         deadlineIso: matched.deadlineIso,
       };
     } else {
-      refundPercent = policy.fallbackRefundPercent;
+      refundPercent = policy?.fallbackRefundPercent ?? 0;
       appliedRule = {
         kind: 'fallback',
         label:
-          policy.fallbackRefundPercent > 0
-            ? `${policy.fallbackRefundPercent}% of what you paid`
+          (policy?.fallbackRefundPercent ?? 0) > 0
+            ? `${policy?.fallbackRefundPercent}% of what you paid`
             : 'No refund at this time',
       };
     }
   }
 
   let policyRefundCents = 0;
-  if (input.initiator === 'host') {
+  if (hostOrPlatformFullRefund) {
     refundPercent = 100;
-    appliedRule = { kind: 'host', label: 'Host cancelled, full refund' };
+    appliedRule = {
+      kind: 'host',
+      label:
+        input.initiator === 'host'
+          ? 'Host cancelled, full refund'
+          : 'Cancelled by the platform, full refund',
+    };
     policyRefundCents = paid.cashPaidCents;
   } else {
     policyRefundCents =

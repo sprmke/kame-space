@@ -2,10 +2,11 @@
  * Per-property automation master switches (`app_settings.automation_toggles`).
  * Email only — Telegram is controlled per property in telegram_*_settings.
  *
- * Plan gate: all keys except `emailNewBookingRequest` (the "a guest submitted a form" ops
- * alert, which stays free like the rest of the core booking loop) additionally require the
- * `automatedBookingFlow` plan feature — see PLAN_GATED_AUTOMATION_TOGGLE_KEYS. When a property
- * isn't entitled, those keys are forced off regardless of the property's own saved setting.
+ * Plan gate: `PLAN_GATED_AUTOMATION_TOGGLE_KEYS` requires the `automatedBookingFlow` plan
+ * feature. `emailNewBookingRequest` stays free (core loop), and the guest-critical
+ * `emailReadyForCheckin` / `emailSdRefundCheckout` are intentionally never gated so a plan
+ * lapse cannot silence a guest who already booked. When a property isn't entitled, only the
+ * gated keys are forced off, regardless of the property's own saved setting.
  */
 
 import { createClient } from './supabaseJs.ts';
@@ -32,8 +33,9 @@ export const PLAN_GATED_AUTOMATION_TOGGLE_KEYS: readonly PropertyAutomationToggl
   'emailGafRequest',
   'emailBookingAcknowledgement',
   'emailPetRequest',
-  'emailReadyForCheckin',
-  'emailSdRefundCheckout',
+  // Guest-critical lifecycle emails are deliberately NOT gated: a downgrade or suspension must
+  // never silence check-in instructions or the security-deposit refund form for a guest who
+  // already booked (readiness BIL-01). Those two keys stay available on every plan.
   'emailPreArrivalReminder',
   'emailBuildingAdminCancellation',
 ];
