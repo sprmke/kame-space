@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 
 import { Link, useNavigate } from 'react-router-dom';
 
-import { Building, Building2, Car, ChevronRight, Search } from 'lucide-react';
+import { Building, Building2, Car, ChevronRight } from 'lucide-react';
 
 import {
   AdminListPagination,
@@ -18,11 +18,11 @@ import {
 } from '@/features/dashboard/super-admin/hooks/useSuperAdminOrgs';
 import { superAdminPaths } from '@/features/dashboard/super-admin/lib/superAdminPaths';
 
+import { AdminSearchInput } from '@/components/navigation/AdminSearchInput';
 import { StatCard } from '@/components/shared/StatCard';
 import { SuperAdminAdminListBodySkeleton } from '@/components/skeletons/SuperAdminSkeletons';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import {
   Table,
   TableBody,
@@ -31,6 +31,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { pluralize } from '@/lib/pluralize';
 import { buildPageItems } from '@/lib/table/pagination';
 
 function PlanBadge({ row }: { row: SuperAdminOrgRow }) {
@@ -81,7 +82,7 @@ export function SuperAdminOrgsPage() {
   return (
     <SuperAdminPage
       title="Organizations"
-      subtitle="Every organization on the platform. Open one to manage its subscription, listings, team, approvals, and support in one place."
+      subtitle="Plans, listings, and support for every organization."
       isLoading={isLoading && !data}
       loadingBody={
         <SuperAdminAdminListBodySkeleton
@@ -94,32 +95,40 @@ export function SuperAdminOrgsPage() {
     >
       <section
         aria-label="Organization summary"
-        className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4 lg:gap-4"
+        className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3 lg:gap-4"
       >
         <StatCard
+          density="responsive"
           title="Organizations"
           value={String(summary?.total ?? total)}
+          valueLoading={!summary && !data}
           icon={Building2}
           iconClassName="text-emerald-600 dark:text-emerald-400"
           iconBgClassName="bg-emerald-100 dark:bg-emerald-900/30"
         />
         <StatCard
+          density="responsive"
           title="With a plan"
-          value={String(summary?.subscribed ?? '-')}
+          value={String(summary?.subscribed ?? 0)}
+          valueLoading={!summary}
           icon={Building2}
           iconClassName="text-sky-600 dark:text-sky-400"
           iconBgClassName="bg-sky-100 dark:bg-sky-900/30"
         />
         <StatCard
+          density="responsive"
           title="Properties"
-          value={String(summary?.properties ?? '-')}
+          value={String(summary?.properties ?? 0)}
+          valueLoading={!summary}
           icon={Building}
           iconClassName="text-violet-600 dark:text-violet-400"
           iconBgClassName="bg-violet-100 dark:bg-violet-900/30"
         />
         <StatCard
+          density="responsive"
           title="Parkings"
-          value={String(summary?.parkings ?? '-')}
+          value={String(summary?.parkings ?? 0)}
+          valueLoading={!summary}
           icon={Car}
           iconClassName="text-amber-600 dark:text-amber-400"
           iconBgClassName="bg-amber-100 dark:bg-amber-900/30"
@@ -127,19 +136,12 @@ export function SuperAdminOrgsPage() {
       </section>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative min-w-0 flex-1 sm:max-w-xs">
-          <Search
-            className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2"
-            aria-hidden
-          />
-          <Input
-            value={q}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search organizations…"
-            className="h-10 pl-9"
-            aria-label="Search organizations"
-          />
-        </div>
+        <AdminSearchInput
+          value={q}
+          onChange={setSearch}
+          placeholder="Search organizations…"
+          ariaLabel="Search organizations"
+        />
         <AdminListPerPageSelect limit={limit} onChange={setLimit} />
       </div>
 
@@ -183,7 +185,7 @@ export function SuperAdminOrgsPage() {
                         <PlanBadge row={row} />
                       </TableCell>
                       <TableCell className="text-sm">
-                        {row.propertyCount} prop · {row.parkingCount} parking
+                        {pluralize(row.propertyCount, 'prop', 'props')} · {pluralize(row.parkingCount, 'parking')}
                       </TableCell>
                       <TableCell className="text-sm tabular-nums">
                         {row.mrrPhp > 0 ? `₱${row.mrrPhp.toLocaleString('en-PH')}` : '-'}
@@ -216,7 +218,7 @@ export function SuperAdminOrgsPage() {
                     <PlanBadge row={row} />
                   </div>
                   <div className="text-muted-foreground text-xs">
-                    {row.propertyCount} properties · {row.parkingCount} parkings
+                    {pluralize(row.propertyCount, 'property', 'properties')} · {pluralize(row.parkingCount, 'parking')}
                     {row.mrrPhp > 0 ? ` · ₱${row.mrrPhp.toLocaleString('en-PH')} MRR` : ''}
                   </div>
                 </Card>

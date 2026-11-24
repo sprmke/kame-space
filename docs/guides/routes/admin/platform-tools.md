@@ -168,3 +168,7 @@ The AI usage page shows what AI costs the platform and how reliable each AI feat
 ## Testing
 
 Audit filters, metadata expansion, palette page search and the unknown-route redirect are covered by `ui/e2e/features/admin/adminConsoleAuditFixes.spec.ts`.
+
+## 2026-11-24 UX pass
+
+Audit log: actions and targets use operator labels (raw keys stay in Details), the relative time has an absolute tooltip, and Details lists the raw action key. Rate limits: disabled destructive actions use the muted disabled style. Platform settings: helper copy is trimmed to one short line per control.

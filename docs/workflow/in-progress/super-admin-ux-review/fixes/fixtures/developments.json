@@ -1,0 +1,42 @@
+{
+  "success": true,
+  "data": {
+    "developments": [
+      {
+        "id": "8c536574-c268-4a6c-9870-bc639874d463",
+        "slug": "azure-north-residences",
+        "name": "Azure North Residences",
+        "developerName": "Century Properties",
+        "type": "CONDOMINIUM",
+        "status": "ACTIVE",
+        "location": "San Fernando, Pampanga",
+        "city": "San Fernando",
+        "description": "Lagoon-themed resort residences in San Fernando, Pampanga.",
+        "coverImageUrl": "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1200&q=85",
+        "settings": {
+          "images": [
+            "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1200&q=85",
+            "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1200&q=85",
+            "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=85"
+          ],
+          "amenities": ["Lagoon pool", "Function room", "Gym", "24/7 security"],
+          "announcements": [
+            {
+              "id": "ann-mock-dev-001",
+              "body": "The lagoon pool is closed for cleaning every first Tuesday, 6am to 10am.",
+              "title": "Lagoon maintenance window",
+              "severity": "info",
+              "createdAt": "2026-11-22T12:04:53+00"
+            }
+          ]
+        },
+        "stats": { "propertyCount": 1, "parkingCount": 1 },
+        "createdAt": "2026-11-08T05:40:56.104559+00:00",
+        "updatedAt": "2026-11-22T12:04:53.617816+00:00"
+      }
+    ],
+    "total": 1,
+    "page": 1,
+    "limit": 25
+  }
+}

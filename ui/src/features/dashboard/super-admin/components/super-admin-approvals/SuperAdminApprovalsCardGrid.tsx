@@ -130,7 +130,7 @@ export function SuperAdminApprovalsCardGrid({ approvals, onSelect }: Props) {
                   </p>
                 ) : null}
               </div>
-              <AdminTableRowAffordance />
+              <AdminTableRowAffordance icon="chevron" />
             </div>
 
             <div className="sm:border-border/50 mt-1 flex min-w-0 items-center justify-between gap-2 sm:mt-auto sm:flex-wrap sm:border-t sm:pt-3">
@@ -183,13 +183,13 @@ function OrgApprovalQueueStatusCell({
     return (
       <div className="flex flex-col items-end gap-1 whitespace-nowrap">
         <div className="flex flex-nowrap items-center gap-1.5">
-          <span className="text-muted-foreground shrink-0 text-[10px] font-semibold uppercase tracking-wide">
+          <span className="text-muted-foreground shrink-0 text-[11px] font-semibold uppercase tracking-wide">
             Verified
           </span>
           <VerificationStatusBadge status={approval.baseStatus} kind={approval.baseRejectionKind} />
         </div>
         <div className="flex flex-nowrap items-center gap-1.5">
-          <span className="text-muted-foreground shrink-0 text-[10px] font-semibold uppercase tracking-wide">
+          <span className="text-muted-foreground shrink-0 text-[11px] font-semibold uppercase tracking-wide">
             Recommended
           </span>
           <VerificationStatusBadge status={approval.enhancedStatus} />
@@ -216,13 +216,13 @@ function ListingApprovalQueueStatusCell({
     return (
       <div className="flex flex-col items-end gap-1 whitespace-nowrap">
         <div className="flex flex-nowrap items-center gap-1.5">
-          <span className="text-muted-foreground shrink-0 text-[10px] font-semibold uppercase tracking-wide">
+          <span className="text-muted-foreground shrink-0 text-[11px] font-semibold uppercase tracking-wide">
             Verified
           </span>
           <VerificationStatusBadge status={approval.baseStatus} kind={approval.baseRejectionKind} />
         </div>
         <div className="flex flex-nowrap items-center gap-1.5">
-          <span className="text-muted-foreground shrink-0 text-[10px] font-semibold uppercase tracking-wide">
+          <span className="text-muted-foreground shrink-0 text-[11px] font-semibold uppercase tracking-wide">
             Recommended
           </span>
           <VerificationStatusBadge

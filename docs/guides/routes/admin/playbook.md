@@ -115,3 +115,7 @@ ordering (articles are matched/filtered by condition, not browsed top-to-bottom 
 | Edge functions     | `supabase/functions/{list,create,update,delete}-host-playbook-article*`                                           |
 | Route registration | `ui/src/features/dashboard/super-admin/routes/index.tsx`, `superAdminPaths.ts`                                    |
 | Matcher (consumer) | `supabase/functions/_shared/hostPlaybook.ts`, `_shared/analyticsAiReview.ts` (`articleSlugs` citation allow-list) |
+
+## 2026-11-24 UX pass
+
+Search has a clear control; answers clamp to one line in the FAQ list.

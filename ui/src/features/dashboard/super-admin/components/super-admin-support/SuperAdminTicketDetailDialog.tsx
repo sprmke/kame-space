@@ -171,7 +171,7 @@ export function SuperAdminTicketDetailDialog({
             </div>
           ) : isError || !data ? (
             <div className="flex flex-1 flex-col items-center justify-center gap-3 py-8 text-center">
-              <p className="text-destructive text-sm">Could not load this ticket.</p>
+              <p className="text-destructive-strong text-sm">Could not load this ticket.</p>
               <Button
                 type="button"
                 variant="outline"

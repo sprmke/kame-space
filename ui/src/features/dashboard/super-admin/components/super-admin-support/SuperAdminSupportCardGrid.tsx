@@ -41,7 +41,7 @@ export function SuperAdminSupportCardGrid({ tickets, onSelect }: Props) {
                     {ticket.subject}
                   </p>
                   <SupportTicketStatusBadge status={ticket.status} />
-                  <AdminTableRowAffordance />
+                  <AdminTableRowAffordance icon="chevron" />
                 </div>
                 <p className="text-muted-foreground mt-1 truncate text-[11px] leading-tight sm:text-xs">
                   <span className="sm:hidden">

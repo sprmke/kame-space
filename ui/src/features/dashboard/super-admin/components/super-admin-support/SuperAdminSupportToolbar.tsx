@@ -1,4 +1,4 @@
-import { Filter, Search } from 'lucide-react';
+import { Filter } from 'lucide-react';
 
 import { AdminListPerPageSelect } from '@/features/dashboard/bookings/components/AdminListToolbar';
 import { SUPPORT_TICKET_CATEGORY_LABELS } from '@/features/dashboard/help-support/lib/supportTicketSchema';
@@ -9,7 +9,7 @@ import {
   type SuperAdminSupportViewMode,
 } from '@/features/dashboard/super-admin/lib/superAdminSupportFilters';
 
-import { Input } from '@/components/ui/input';
+import { AdminSearchInput } from '@/components/navigation/AdminSearchInput';
 import {
   Select,
   SelectContent,
@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+
 
 type Props = {
   filters: SuperAdminSupportFilters;
@@ -45,19 +46,12 @@ export function SuperAdminSupportToolbar({
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-        <div className="relative min-w-[min(100%,16rem)] flex-1 sm:max-w-xs">
-          <Search
-            className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2"
-            aria-hidden
-          />
-          <Input
-            value={filters.search}
-            onChange={(event) => onSearchChange(event.target.value)}
-            placeholder="Search tickets…"
-            className="h-10 pl-9"
-            aria-label="Search tickets"
-          />
-        </div>
+        <AdminSearchInput
+          value={filters.search}
+          onChange={onSearchChange}
+          placeholder="Search tickets…"
+          ariaLabel="Search tickets"
+        />
 
         <Select
           value={filters.category}

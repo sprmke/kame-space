@@ -54,7 +54,7 @@ export function AiPlanUsageCard({ rows }: { rows: SuperAdminAiPlanUsage[] }) {
                     <TableCell
                       className={
                         r.orgsAtAllowance > 0
-                          ? 'text-destructive hidden font-medium tabular-nums md:table-cell'
+                          ? 'text-destructive-strong hidden font-medium tabular-nums md:table-cell'
                           : 'hidden tabular-nums md:table-cell'
                       }
                     >

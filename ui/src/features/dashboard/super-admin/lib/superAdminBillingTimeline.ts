@@ -94,8 +94,13 @@ export function buildBillingTimeline(input: {
   ledger: BillingLedgerRow[];
 }): BillingTimelineEntry[] {
   const entries: BillingTimelineEntry[] = [];
+  // Partial or failed payloads reach this pure function; a missing list means "nothing
+  // to show", not a crash that takes down the organization page.
+  const events = input.events ?? [];
+  const transactions = input.transactions ?? [];
+  const ledger = input.ledger ?? [];
 
-  for (const event of input.events) {
+  for (const event of events) {
     const statusChange =
       event.previous_status && event.new_status && event.previous_status !== event.new_status
         ? `${event.previous_status} to ${event.new_status}`
@@ -116,7 +121,7 @@ export function buildBillingTimeline(input: {
     });
   }
 
-  for (const txn of input.transactions) {
+  for (const txn of transactions) {
     const amount = Number(txn.amount);
     const keptAsCredit = txn.status === 'paid' && txn.applied === false;
     const title =
@@ -145,7 +150,7 @@ export function buildBillingTimeline(input: {
     });
   }
 
-  for (const row of input.ledger) {
+  for (const row of ledger) {
     const amount = Number(row.amount_php);
     entries.push({
       id: `credit-${row.id}`,

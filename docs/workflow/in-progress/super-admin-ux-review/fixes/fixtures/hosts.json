@@ -1,0 +1,19 @@
+{
+  "success": true,
+  "data": {
+    "hosts": [
+      {
+        "id": "d74b9d44-6244-40f0-9160-7c281738e8c0",
+        "name": "seed-owner",
+        "email": "seed-owner@example.com",
+        "avatarUrl": null,
+        "stats": { "organizationCount": 1, "propertyCount": 1, "parkingCount": 1 },
+        "memberSince": "2026-11-08T05:40:57.297788+00:00"
+      }
+    ],
+    "total": 1,
+    "page": 1,
+    "limit": 25,
+    "summary": { "total": 1, "totalOrgs": 1, "totalProperties": 1, "totalParking": 1 }
+  }
+}

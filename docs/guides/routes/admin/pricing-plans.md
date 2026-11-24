@@ -85,3 +85,7 @@ Hosts do not use this page. They manage plans for their whole organization on th
 ## Testing
 
 The edit dialog layout is covered by the admin axe sweep; plan writes stay step-up gated.
+
+## 2026-11-24 UX pass
+
+The internal plan code is monospace with a tooltip; a discounted host price explains the list price on hover. Summary cards are four across from 640px.

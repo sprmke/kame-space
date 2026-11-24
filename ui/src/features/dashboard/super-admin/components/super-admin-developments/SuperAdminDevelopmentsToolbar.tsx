@@ -1,4 +1,4 @@
-import { Filter, Landmark, Search } from 'lucide-react';
+import { Filter, Landmark } from 'lucide-react';
 
 import { AdminListPerPageSelect } from '@/features/dashboard/bookings/components/AdminListToolbar';
 import { SuperAdminListViewToggle } from '@/features/dashboard/super-admin/components/shared/SuperAdminListViewToggle';
@@ -11,7 +11,7 @@ import type {
   SuperAdminDevelopmentsViewMode,
 } from '@/features/dashboard/super-admin/lib/superAdminDevelopmentsFilters';
 
-import { Input } from '@/components/ui/input';
+import { AdminSearchInput } from '@/components/navigation/AdminSearchInput';
 import {
   Select,
   SelectContent,
@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+
 
 type Props = {
   filters: SuperAdminDevelopmentsFilters;
@@ -47,19 +48,12 @@ export function SuperAdminDevelopmentsToolbar({
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-        <div className="relative min-w-[min(100%,16rem)] flex-1 sm:max-w-xs">
-          <Search
-            className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2"
-            aria-hidden
-          />
-          <Input
-            value={filters.search}
-            onChange={(event) => onSearchChange(event.target.value)}
-            placeholder="Search developments…"
-            className="h-10 pl-9"
-            aria-label="Search developments"
-          />
-        </div>
+        <AdminSearchInput
+          value={filters.search}
+          onChange={onSearchChange}
+          placeholder="Search developments…"
+          ariaLabel="Search developments"
+        />
 
         <Select
           value={filters.status}

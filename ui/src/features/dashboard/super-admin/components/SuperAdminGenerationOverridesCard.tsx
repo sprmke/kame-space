@@ -170,11 +170,11 @@ export function SuperAdminGenerationOverridesCard({ orgId }: { orgId: string }) 
         <SettingsRowsSkeleton rows={3} label="Loading generate caps" />
       ) : isError || !data ? (
         <p className="text-muted-foreground text-sm">Could not load Generate caps</p>
-      ) : data.properties.length === 0 ? (
+      ) : (data.properties ?? []).length === 0 ? (
         <p className="text-muted-foreground text-sm">No properties</p>
       ) : (
         <div className="space-y-3">
-          {data.properties.map((row) => (
+          {(data.properties ?? []).map((row) => (
             <PropertyOverrideRow key={row.propertyId} row={row} orgId={orgId} />
           ))}
         </div>

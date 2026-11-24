@@ -68,3 +68,7 @@ Calls (daily, monthly), daily cost USD, credits (daily, monthly), assistant mess
 ## Testing
 
 AI limits profile labels, mobile data parity and the bulk-assign select inside the dialog are covered by `adminAiConsole.spec.ts`.
+
+## 2026-11-24 UX pass
+
+Tab pills scroll horizontally on phones instead of wrapping 4 + 1. Controls has an effective-state summary, a single-column switch list and Inherit/Default placeholders.

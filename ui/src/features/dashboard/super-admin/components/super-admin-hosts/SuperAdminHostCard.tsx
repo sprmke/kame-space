@@ -67,15 +67,15 @@ export function SuperAdminHostCard({ host }: Props) {
 
         <div className="border-border/50 grid grid-cols-3 gap-2 border-t pt-3 text-center text-xs sm:text-sm">
           <div>
-            <p className="text-muted-foreground text-[10px] sm:text-xs">Orgs</p>
+            <p className="text-muted-foreground text-[11px] sm:text-xs">Orgs</p>
             <p className="font-semibold tabular-nums">{host.stats.organizationCount}</p>
           </div>
           <div>
-            <p className="text-muted-foreground text-[10px] sm:text-xs">Properties</p>
+            <p className="text-muted-foreground text-[11px] sm:text-xs">Properties</p>
             <p className="font-semibold tabular-nums">{host.stats.propertyCount}</p>
           </div>
           <div>
-            <p className="text-muted-foreground text-[10px] sm:text-xs">Parking</p>
+            <p className="text-muted-foreground text-[11px] sm:text-xs">Parking</p>
             <p className="font-semibold tabular-nums">{host.stats.parkingCount}</p>
           </div>
         </div>

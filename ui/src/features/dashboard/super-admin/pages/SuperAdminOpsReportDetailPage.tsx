@@ -193,7 +193,7 @@ export function SuperAdminOpsReportDetailPage() {
             {report.email_sent_at ? (
               <span className="text-muted-foreground text-xs">Emailed</span>
             ) : report.email_error ? (
-              <span className="text-destructive text-xs">{report.email_error}</span>
+              <span className="text-destructive-strong text-xs">{report.email_error}</span>
             ) : null}
           </div>
 

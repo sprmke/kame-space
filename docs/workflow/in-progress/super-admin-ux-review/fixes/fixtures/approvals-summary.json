@@ -1,0 +1,12 @@
+{
+  "success": true,
+  "data": {
+    "summary": {
+      "total": 3,
+      "pending": 0,
+      "orgVerifications": 1,
+      "listingVerifications": 2,
+      "reviews": 0
+    }
+  }
+}

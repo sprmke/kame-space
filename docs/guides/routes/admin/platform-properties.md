@@ -120,3 +120,7 @@ Standard admin-list pagination (same pattern as the bookings list): `page`/`limi
 ## Pending / follow-ups
 
 - [ ] Consider adding booking/revenue stats if the platform team needs cross-org totals later.
+
+## 2026-11-24 UX pass
+
+Phone rows are compact (56px thumbnail, name, status, chevron) instead of photo-first cards.

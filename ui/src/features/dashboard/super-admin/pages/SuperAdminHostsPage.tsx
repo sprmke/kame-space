@@ -68,7 +68,7 @@ export function SuperAdminHostsPage() {
           metricTitles={['Total hosts', 'Organizations', 'Properties', 'Parking slots']}
         />
       ) : error ? (
-        <p className="text-destructive text-sm">Could not load hosts.</p>
+        <p className="text-destructive-strong text-sm">Could not load hosts.</p>
       ) : (
         <>
           <SuperAdminHostsSummaryCards summary={summary} />

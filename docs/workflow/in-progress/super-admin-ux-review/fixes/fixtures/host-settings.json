@@ -1,0 +1,44 @@
+{
+  "success": true,
+  "data": {
+    "announcements": [
+      {
+        "id": "ann-mock-platform-critical",
+        "body": "Some hosts must reconfirm payout details before the next billing cycle. Open Finance if you see a banner.",
+        "title": "Verify payout account",
+        "active": true,
+        "endsAt": null,
+        "linkUrl": null,
+        "severity": "critical",
+        "startsAt": null,
+        "linkLabel": null,
+        "updatedAt": "2026-11-19T19:21:40.938Z"
+      },
+      {
+        "id": "ann-mock-platform-warning",
+        "body": "Facebook and Instagram channels show Disconnected until you re-authorize from Inbox, Channels.",
+        "title": "Meta inbox reconnect",
+        "active": true,
+        "endsAt": null,
+        "linkUrl": null,
+        "severity": "warning",
+        "startsAt": null,
+        "linkLabel": null,
+        "updatedAt": "2026-11-19T19:21:40.938Z"
+      },
+      {
+        "id": "ann-mock-platform-info",
+        "body": "Dashboard and API may be briefly unavailable this Sunday, 2:00 to 4:00 AM Asia/Manila.",
+        "title": "Platform maintenance window",
+        "active": true,
+        "endsAt": null,
+        "linkUrl": "https://kamespace.com/help-support/announcements",
+        "severity": "info",
+        "startsAt": null,
+        "linkLabel": "Learn more",
+        "updatedAt": "2026-11-19T19:21:40.938Z"
+      }
+    ],
+    "updatedAt": "2026-11-19T19:21:40.938633+00:00"
+  }
+}

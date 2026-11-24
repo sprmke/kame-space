@@ -45,7 +45,7 @@ function LatencyRows({
             <span
               className={cn(
                 'w-14 shrink-0 text-right tabular-nums',
-                overBudget ? 'text-destructive' : 'text-muted-foreground'
+                overBudget ? 'text-destructive-strong' : 'text-muted-foreground'
               )}
             >
               {formatMs(bucket.p95Ms)}

@@ -62,7 +62,7 @@ export function AdminPageHeader({
           {badge}
         </div>
         {subtitle ? (
-          <p className="text-admin-page-subtitle max-sm:line-clamp-2">{subtitle}</p>
+          <p className="text-admin-page-subtitle max-sm:line-clamp-3">{subtitle}</p>
         ) : null}
       </div>
       {actions ? (

@@ -19,9 +19,10 @@ export function SuperAdminOrgSubscriptionsSummaryCards({ summary }: Props) {
   return (
     <section
       aria-label="Org subscription summary"
-      className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4 lg:gap-4"
+      className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3 lg:gap-4"
     >
       <AdminMetricCard
+        density="responsive"
         title="Organizations"
         value={String(totals.total)}
         icon={Building2}
@@ -29,6 +30,7 @@ export function SuperAdminOrgSubscriptionsSummaryCards({ summary }: Props) {
         iconBgClassName="bg-sky-100 dark:bg-sky-900/30"
       />
       <AdminMetricCard
+        density="responsive"
         title="Assigned"
         value={String(totals.assigned)}
         icon={CheckCircle2}
@@ -36,6 +38,7 @@ export function SuperAdminOrgSubscriptionsSummaryCards({ summary }: Props) {
         iconBgClassName="bg-emerald-100 dark:bg-emerald-900/30"
       />
       <AdminMetricCard
+        density="responsive"
         title="Unassigned"
         value={String(totals.unassigned)}
         icon={CircleDashed}
@@ -43,6 +46,7 @@ export function SuperAdminOrgSubscriptionsSummaryCards({ summary }: Props) {
         iconBgClassName="bg-amber-100 dark:bg-amber-900/30"
       />
       <AdminMetricCard
+        density="responsive"
         title="Properties"
         value={String(totals.properties)}
         icon={Home}

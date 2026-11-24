@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react';
 import { useEffect } from 'react';
 
 import { Link, Navigate, useLocation, useParams } from 'react-router-dom';
@@ -24,6 +23,7 @@ import {
 import { orgDashboardPath } from '@/features/dashboard/org/lib/tenantPaths';
 import { SuperAdminRecordNotFound } from '@/features/dashboard/super-admin/components/shared/SuperAdminRecordNotFound';
 import { SuperAdminOrgContext } from '@/features/dashboard/super-admin/components/super-admin-orgs/superAdminOrgContext';
+import { SuperAdminOrgHubSection } from '@/features/dashboard/super-admin/components/super-admin-orgs/SuperAdminOrgHubSection';
 import { useSuperAdminOrgDetail } from '@/features/dashboard/super-admin/hooks/useSuperAdminOrgs';
 import { superAdminPaths } from '@/features/dashboard/super-admin/lib/superAdminPaths';
 import { SuperAdminOrgActivitySection } from '@/features/dashboard/super-admin/pages/SuperAdminOrgActivitySection';
@@ -42,8 +42,6 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
-import type { LucideIcon } from 'lucide-react';
-
 const ORG_HUB_SECTIONS: AdminSectionNavItem[] = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
   { id: 'subscription', label: 'Subscription', icon: CreditCard },
@@ -54,29 +52,6 @@ const ORG_HUB_SECTIONS: AdminSectionNavItem[] = [
   { id: 'activity', label: 'Activity', icon: ScrollText },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
-
-/** One anchored block in the hub — heading matches the left nav, content is free-form. */
-function HubSection({
-  id,
-  title,
-  icon: Icon,
-  children,
-}: {
-  id: string;
-  title: string;
-  icon: LucideIcon;
-  children: ReactNode;
-}) {
-  return (
-    <div id={`section-${id}`} className="scroll-mt-2 space-y-3">
-      <h2 className="text-section-title flex items-center gap-2">
-        <Icon className="size-4 shrink-0" aria-hidden />
-        {title}
-      </h2>
-      {children}
-    </div>
-  );
-}
 
 export function SuperAdminOrgShell() {
   const { orgSlug = '' } = useParams<{ orgSlug: string }>();
@@ -155,30 +130,30 @@ export function SuperAdminOrgShell() {
           </div>
         }
       >
-        <HubSection id="overview" title="Overview" icon={LayoutDashboard}>
+        <SuperAdminOrgHubSection id="overview" title="Overview" icon={LayoutDashboard}>
           <SuperAdminOrgOverviewSection />
-        </HubSection>
-        <HubSection id="subscription" title="Subscription" icon={CreditCard}>
+        </SuperAdminOrgHubSection>
+        <SuperAdminOrgHubSection id="subscription" title="Subscription" icon={CreditCard}>
           <SuperAdminOrgSubscriptionSection />
-        </HubSection>
-        <HubSection id="listings" title="Listings" icon={Building2}>
+        </SuperAdminOrgHubSection>
+        <SuperAdminOrgHubSection id="listings" title="Listings" icon={Building2}>
           <SuperAdminOrgListingsSection />
-        </HubSection>
-        <HubSection id="approvals" title="Approvals" icon={BadgeCheck}>
+        </SuperAdminOrgHubSection>
+        <SuperAdminOrgHubSection id="approvals" title="Approvals" icon={BadgeCheck}>
           <SuperAdminOrgApprovalsSection />
-        </HubSection>
-        <HubSection id="ai" title="AI credits" icon={Sparkles}>
+        </SuperAdminOrgHubSection>
+        <SuperAdminOrgHubSection id="ai" title="AI credits" icon={Sparkles}>
           <SuperAdminOrgAiSection />
-        </HubSection>
-        <HubSection id="support" title="Support" icon={LifeBuoy}>
+        </SuperAdminOrgHubSection>
+        <SuperAdminOrgHubSection id="support" title="Support" icon={LifeBuoy}>
           <SuperAdminOrgSupportSection />
-        </HubSection>
-        <HubSection id="activity" title="Activity" icon={ScrollText}>
+        </SuperAdminOrgHubSection>
+        <SuperAdminOrgHubSection id="activity" title="Activity" icon={ScrollText}>
           <SuperAdminOrgActivitySection />
-        </HubSection>
-        <HubSection id="settings" title="Settings" icon={Settings}>
+        </SuperAdminOrgHubSection>
+        <SuperAdminOrgHubSection id="settings" title="Settings" icon={Settings}>
           <SuperAdminOrgSettingsSection />
-        </HubSection>
+        </SuperAdminOrgHubSection>
       </AdminSectionNavLayout>
     </SuperAdminOrgContext.Provider>
   );

@@ -165,6 +165,14 @@ export function AiPlatformKillSwitchCard() {
         </div>
       </div>
 
+      <p className="text-muted-foreground text-xs" role="status">
+        {data?.enabled
+          ? data?.enforceQuotas !== false
+            ? 'On and enforcing quotas.'
+            : 'On. Quotas are logged, not enforced.'
+          : 'Off. Hosts cannot use any AI feature.'}
+      </p>
+
       <div className="flex flex-col gap-1">
         <label className="flex min-h-[44px] items-center justify-between gap-3 text-sm">
           <span>Enabled</span>
@@ -194,7 +202,7 @@ export function AiPlatformKillSwitchCard() {
               data?.voiceReceptionistHealthStatus === 'healthy'
                 ? 'text-success'
                 : data?.voiceReceptionistHealthStatus === 'unhealthy'
-                  ? 'text-destructive'
+                  ? 'text-destructive-strong'
                   : 'text-muted-foreground'
             }
           >
@@ -229,7 +237,7 @@ export function AiPlatformKillSwitchCard() {
             <span>Completion {data.voiceReceptionistMetrics.completionRatePct ?? 'n/a'}%</span>
           </div>
           {Object.values(data.voiceReceptionistMetrics.alerts).some(Boolean) ? (
-            <p role="alert" className="text-destructive mt-2 text-xs">
+            <p role="alert" className="text-destructive-strong mt-2 text-xs">
               Voice reliability threshold exceeded.
             </p>
           ) : null}
@@ -238,7 +246,7 @@ export function AiPlatformKillSwitchCard() {
 
       <div className="space-y-2">
         <p className="text-sm font-medium">Allowed features</p>
-        <div className="grid grid-cols-1 gap-x-8 gap-y-1 sm:grid-cols-2">
+        <div className="grid max-w-2xl grid-cols-1 gap-y-1">
           {AI_FEATURE_TOGGLES.map((feature) => {
             const checked = allEnabled || feature.ids.every((id) => allowed.has(id));
             return (
@@ -266,6 +274,7 @@ export function AiPlatformKillSwitchCard() {
             type="number"
             min={1}
             className="h-10"
+            placeholder="Inherit"
             value={data?.defaultDailyCallLimit ?? ''}
             disabled={featuresDisabled}
             onChange={(e) => handleNumberChange('defaultDailyCallLimit', e.target.value)}
@@ -277,6 +286,7 @@ export function AiPlatformKillSwitchCard() {
             type="number"
             min={1}
             className="h-10"
+            placeholder="Inherit"
             value={data?.defaultMonthlyCallLimit ?? ''}
             disabled={featuresDisabled}
             onChange={(e) => handleNumberChange('defaultMonthlyCallLimit', e.target.value)}
@@ -289,6 +299,7 @@ export function AiPlatformKillSwitchCard() {
             min={0.01}
             step={0.01}
             className="h-10"
+            placeholder="Inherit"
             value={data?.defaultDailyCostUsdLimit ?? ''}
             disabled={featuresDisabled}
             onChange={(e) => handleNumberChange('defaultDailyCostUsdLimit', e.target.value)}
@@ -301,6 +312,7 @@ export function AiPlatformKillSwitchCard() {
             min={0.0001}
             step={0.0001}
             className="h-10"
+            placeholder="Default"
             value={data?.creditUnitUsd ?? ''}
             disabled={featuresDisabled}
             onChange={(e) => handleNumberChange('creditUnitUsd', e.target.value)}
@@ -313,6 +325,7 @@ export function AiPlatformKillSwitchCard() {
             min={0.0001}
             step={0.0001}
             className="h-10"
+            placeholder="Default"
             value={data?.voiceReceptionistCostPerMinuteUsd ?? ''}
             disabled={featuresDisabled}
             onChange={(e) =>
@@ -327,6 +340,7 @@ export function AiPlatformKillSwitchCard() {
             min={0}
             max={100}
             className="h-10"
+            placeholder="Default"
             value={data?.voiceReceptionistRolloutPercentage ?? ''}
             disabled={featuresDisabled}
             onChange={(e) =>

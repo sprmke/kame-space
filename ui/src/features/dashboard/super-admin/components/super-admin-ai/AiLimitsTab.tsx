@@ -236,7 +236,7 @@ export function AiLimitsTab() {
           ))}
         </div>
       ) : error ? (
-        <p className="text-destructive text-sm">Could not load AI limits.</p>
+        <p className="text-destructive-strong text-sm">Could not load AI limits.</p>
       ) : rows.length === 0 ? (
         <SuperAdminEmptyState icon={Sparkles} title="No organizations match" />
       ) : (

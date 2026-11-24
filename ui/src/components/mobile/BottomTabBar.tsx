@@ -76,7 +76,7 @@ export function BottomTabBar({
 }: Props) {
   const dense = items.length > 5;
   const keyboardOpen = useVirtualKeyboardOpen();
-  const { containerRef, setItemRef, bounds } = useSlidingActivePill(activeKey, [
+  const { containerRef, setItemRef, bounds } = useSlidingActivePill<HTMLUListElement>(activeKey, [
     items.map((i) => i.key).join('\0'),
   ]);
 
@@ -88,14 +88,13 @@ export function BottomTabBar({
       className={cn('fixed inset-x-0 bottom-0 z-40', mobileBottomBarClassName, className)}
       aria-label={ariaLabel}
     >
-      <div
+      <ul
         ref={containerRef}
         className={cn(
           'mobile-bottom-bar-row relative flex items-stretch justify-around',
           mobileBottomBarRowClassName,
           dense ? 'gap-0' : 'gap-0.5'
         )}
-        role="list"
       >
         {bounds ? (
           <SlidingActivePill
@@ -172,42 +171,42 @@ export function BottomTabBar({
 
           if (item.onClick || !item.href) {
             return (
-              <button
-                key={item.key}
-                ref={setItemRef(item.key)}
-                type="button"
-                role="listitem"
-                onClick={item.onClick}
-                onPointerDown={item.onIntent}
-                onFocus={item.onIntent}
-                aria-current={active ? 'page' : undefined}
-                aria-label={itemAriaLabel}
-                aria-expanded={item.onClick ? active : undefined}
-                className={sharedClass}
-              >
-                {content}
-              </button>
+              <li key={item.key} aria-label={itemAriaLabel} className="flex min-w-0 flex-1">
+                <button
+                  ref={setItemRef(item.key)}
+                  type="button"
+                  onClick={item.onClick}
+                  onPointerDown={item.onIntent}
+                  onFocus={item.onIntent}
+                  aria-current={active ? 'page' : undefined}
+                  aria-label={itemAriaLabel}
+                  aria-expanded={item.onClick ? active : undefined}
+                  className={sharedClass}
+                >
+                  {content}
+                </button>
+              </li>
             );
           }
 
           return (
-            <Link
-              key={item.key}
-              ref={setItemRef(item.key)}
-              to={item.href}
-              role="listitem"
-              aria-current={active ? 'page' : undefined}
-              aria-label={itemAriaLabel}
-              className={sharedClass}
-              onPointerDown={item.onIntent}
-              onFocus={item.onIntent}
-              onClick={() => scrollAdminViewToTop('auto')}
-            >
-              {content}
-            </Link>
+            <li key={item.key} aria-label={itemAriaLabel} className="flex min-w-0 flex-1">
+              <Link
+                ref={setItemRef(item.key)}
+                to={item.href}
+                aria-current={active ? 'page' : undefined}
+                aria-label={itemAriaLabel}
+                className={sharedClass}
+                onPointerDown={item.onIntent}
+                onFocus={item.onIntent}
+                onClick={() => scrollAdminViewToTop('auto')}
+              >
+                {content}
+              </Link>
+            </li>
           );
         })}
-      </div>
+      </ul>
     </nav>
   );
 }

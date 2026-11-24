@@ -21,9 +21,10 @@ export function SuperAdminApprovalsSummaryCards({ approvals, summary: serverSumm
   return (
     <section
       aria-label="Approval summary"
-      className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4 lg:gap-4"
+      className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3 lg:gap-4"
     >
       <AdminMetricCard
+        density="responsive"
         title="Awaiting review"
         value={String(summary.pending)}
         icon={ClipboardCheck}
@@ -31,6 +32,7 @@ export function SuperAdminApprovalsSummaryCards({ approvals, summary: serverSumm
         iconBgClassName="bg-amber-100 dark:bg-amber-900/30"
       />
       <AdminMetricCard
+        density="responsive"
         title="Org verifications"
         value={String(summary.orgVerifications)}
         icon={Building2}
@@ -38,6 +40,7 @@ export function SuperAdminApprovalsSummaryCards({ approvals, summary: serverSumm
         iconBgClassName="bg-sky-100 dark:bg-sky-900/30"
       />
       <AdminMetricCard
+        density="responsive"
         title="Listing verifications"
         value={String(summary.listingVerifications)}
         icon={Home}
@@ -45,6 +48,7 @@ export function SuperAdminApprovalsSummaryCards({ approvals, summary: serverSumm
         iconBgClassName="bg-emerald-100 dark:bg-emerald-900/30"
       />
       <AdminMetricCard
+        density="responsive"
         title="Reviews"
         value={String(summary.reviews)}
         icon={Star}

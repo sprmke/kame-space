@@ -16,9 +16,10 @@ export function SuperAdminSupportSummaryCards({ tickets, summary: serverSummary 
   return (
     <section
       aria-label="Support ticket summary"
-      className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4 lg:gap-4"
+      className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3 lg:gap-4"
     >
       <AdminMetricCard
+        density="responsive"
         title="Total tickets"
         value={String(summary.total)}
         icon={LifeBuoy}
@@ -26,6 +27,7 @@ export function SuperAdminSupportSummaryCards({ tickets, summary: serverSummary 
         iconBgClassName="bg-sky-100 dark:bg-sky-900/30"
       />
       <AdminMetricCard
+        density="responsive"
         title="Open"
         value={String(summary.open)}
         icon={MessageSquare}
@@ -33,6 +35,7 @@ export function SuperAdminSupportSummaryCards({ tickets, summary: serverSummary 
         iconBgClassName="bg-amber-100 dark:bg-amber-900/30"
       />
       <AdminMetricCard
+        density="responsive"
         title="In progress"
         value={String(summary.inProgress)}
         icon={Clock}
@@ -40,6 +43,7 @@ export function SuperAdminSupportSummaryCards({ tickets, summary: serverSummary 
         iconBgClassName="bg-violet-100 dark:bg-violet-900/30"
       />
       <AdminMetricCard
+        density="responsive"
         title="Resolved"
         value={String(summary.resolved)}
         icon={CheckCircle2}

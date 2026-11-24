@@ -14,23 +14,25 @@ const buttonVariants = cva(
         default:
           'gradient-primary text-primary-foreground shadow-soft hover:shadow-primary-glow hover:brightness-[1.03]',
         destructive:
-          'bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm hover:shadow-md',
+          'bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm hover:shadow-md disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100 disabled:shadow-none',
         outline:
           'border-input bg-card hover:bg-accent hover:text-accent-foreground hover:border-primary/30 border-2',
         secondary:
-          'bg-secondary text-secondary-foreground shadow-soft-xs hover:bg-secondary/80 hover:shadow-soft-sm',
+          'bg-secondary text-secondary-foreground shadow-soft-xs hover:bg-secondary/80 hover:shadow-soft-sm disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100 disabled:shadow-none',
         ghost: 'hover:bg-accent hover:text-accent-foreground',
         link: 'text-primary underline-offset-4 hover:underline',
-        success: 'bg-success text-success-foreground hover:bg-success/90 shadow-sm hover:shadow-md',
-        warning: 'bg-warning text-warning-foreground hover:bg-warning/90 shadow-sm hover:shadow-md',
+        success:
+          'bg-success text-success-foreground hover:bg-success/90 shadow-sm hover:shadow-md disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100 disabled:shadow-none',
+        warning:
+          'bg-warning text-warning-foreground hover:bg-warning/90 shadow-sm hover:shadow-md disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100 disabled:shadow-none',
         'outline-primary':
           'border-primary text-brand-ink hover:bg-primary-strong hover:text-primary-foreground border-2 bg-transparent',
         'outline-destructive':
-          'border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground border-2 bg-transparent',
+          'border-destructive text-destructive-strong hover:bg-destructive hover:text-destructive-foreground border-2 bg-transparent',
         'outline-success':
           'border-success text-success hover:bg-success hover:text-success-foreground border-2 bg-transparent',
         soft: 'bg-primary/10 text-brand-ink hover:bg-primary/20',
-        'soft-destructive': 'bg-destructive/10 text-destructive hover:bg-destructive/20',
+        'soft-destructive': 'bg-destructive/10 text-destructive-strong hover:bg-destructive/20',
       },
       size: {
         default: 'h-10 px-4 py-2',

@@ -36,9 +36,10 @@ export function OpsSeverityBadge({
         SEVERITY_CLASS[severity],
         className
       )}
+      aria-label={count != null ? `${count} ${severity} findings` : `${severity} findings`}
     >
-      {severity}
       {count != null ? <span className="tabular-nums">{count}</span> : null}
+      {severity}
     </span>
   );
 }

@@ -1,0 +1,563 @@
+{
+  "success": true,
+  "data": {
+    "runs": [
+      {
+        "id": "5eedc001-0000-4000-8000-000000000001",
+        "run_date": "2026-11-20",
+        "status": "published",
+        "trigger": "cron",
+        "source_stats": {
+          "netflix": { "ms": 0, "ok": false, "count": 0, "error": "cached rows are stale" },
+          "apple_music": { "ms": 640, "ok": true, "count": 25, "error": null },
+          "wikimedia_ph": { "ms": 310, "ok": true, "count": 20, "error": null },
+          "wikimedia_tl": { "ms": 280, "ok": true, "count": 20, "error": null },
+          "google_trends": { "ms": 420, "ok": true, "count": 10, "error": null }
+        },
+        "ai_provider": "gemini",
+        "ai_model": "gemini-3.1-flash-lite",
+        "ai_error": null,
+        "candidate_count": 34,
+        "topic_count": 6,
+        "ai_input_tokens": null,
+        "ai_output_tokens": null,
+        "ai_cost_usd": null,
+        "started_at": "2026-11-19T19:21:52.13326+00:00",
+        "finished_at": "2026-11-19T19:21:52.13326+00:00"
+      },
+      {
+        "id": "743c3d9d-ade2-4a0a-87a7-3b07c5657014",
+        "run_date": "2026-11-11",
+        "status": "published",
+        "trigger": "cron",
+        "source_stats": {
+          "netflix": { "ms": 0, "ok": true, "count": 20, "error": null },
+          "apple_music": {
+            "ms": 8006,
+            "ok": false,
+            "count": 0,
+            "error": "request failed: Signal timed out."
+          },
+          "wikimedia_ph": { "ms": 185, "ok": true, "count": 25, "error": null },
+          "wikimedia_tl": { "ms": 201, "ok": true, "count": 954, "error": null },
+          "google_trends": { "ms": 461, "ok": true, "count": 10, "error": null }
+        },
+        "ai_provider": "gemini",
+        "ai_model": "gemini-3.1-flash-lite",
+        "ai_error": null,
+        "candidate_count": 96,
+        "topic_count": 12,
+        "ai_input_tokens": 2319,
+        "ai_output_tokens": 5878,
+        "ai_cost_usd": 0.009397,
+        "started_at": "2026-11-11T04:23:27.865349+00:00",
+        "finished_at": "2026-11-11T04:23:52.505242+00:00"
+      },
+      {
+        "id": "cfef19ce-08b6-43ce-93f4-747b984add2f",
+        "run_date": "2026-11-11",
+        "status": "failed",
+        "trigger": "cron",
+        "source_stats": {
+          "netflix": { "ms": 0, "ok": true, "count": 20, "error": null },
+          "apple_music": { "ms": 1330, "ok": true, "count": 25, "error": null },
+          "wikimedia_ph": { "ms": 318, "ok": true, "count": 25, "error": null },
+          "wikimedia_tl": { "ms": 329, "ok": true, "count": 954, "error": null },
+          "google_trends": { "ms": 830, "ok": true, "count": 10, "error": null }
+        },
+        "ai_provider": null,
+        "ai_model": null,
+        "ai_error": "classify failed: marketing_trends_classify: model output failed schema validation",
+        "candidate_count": 120,
+        "topic_count": 0,
+        "ai_input_tokens": null,
+        "ai_output_tokens": null,
+        "ai_cost_usd": null,
+        "started_at": "2026-11-11T04:21:54.103536+00:00",
+        "finished_at": "2026-11-11T04:22:38.846+00:00"
+      },
+      {
+        "id": "be8ba641-084e-43a0-b824-f0d7def312bd",
+        "run_date": "2026-11-11",
+        "status": "skipped",
+        "trigger": "cron",
+        "source_stats": {
+          "netflix": { "ms": 0, "ok": false, "count": 0, "error": "no cached rows" },
+          "apple_music": { "ms": 2215, "ok": true, "count": 25, "error": null },
+          "wikimedia_ph": { "ms": 437, "ok": true, "count": 25, "error": null },
+          "wikimedia_tl": { "ms": 436, "ok": true, "count": 954, "error": null },
+          "google_trends": { "ms": 724, "ok": true, "count": 10, "error": null }
+        },
+        "ai_provider": "gemini",
+        "ai_model": "gemini-3.1-flash-lite",
+        "ai_error": null,
+        "candidate_count": 101,
+        "topic_count": 16,
+        "ai_input_tokens": 2333,
+        "ai_output_tokens": 8089,
+        "ai_cost_usd": 0.012717,
+        "started_at": "2026-11-11T04:17:20.627246+00:00",
+        "finished_at": "2026-11-11T04:23:52.505242+00:00"
+      },
+      {
+        "id": "4d217477-7bf3-4021-a26c-f5c5949b2580",
+        "run_date": "2026-11-11",
+        "status": "skipped",
+        "trigger": "cron",
+        "source_stats": {
+          "netflix": { "ms": 0, "ok": false, "count": 0, "error": "no cached rows" },
+          "apple_music": { "ms": 1139, "ok": true, "count": 25, "error": null },
+          "wikimedia_ph": { "ms": 204, "ok": true, "count": 25, "error": null },
+          "wikimedia_tl": { "ms": 179, "ok": true, "count": 954, "error": null },
+          "google_trends": { "ms": 626, "ok": true, "count": 10, "error": null }
+        },
+        "ai_provider": "gemini",
+        "ai_model": "gemini-3.1-flash-lite",
+        "ai_error": null,
+        "candidate_count": 101,
+        "topic_count": 9,
+        "ai_input_tokens": 2364,
+        "ai_output_tokens": 5499,
+        "ai_cost_usd": 0.00884,
+        "started_at": "2026-11-11T04:16:47.331013+00:00",
+        "finished_at": "2026-11-11T04:17:40.897179+00:00"
+      },
+      {
+        "id": "bb45fd13-4d96-40b5-a607-1c6011e8427c",
+        "run_date": "2026-11-11",
+        "status": "skipped",
+        "trigger": "manual",
+        "source_stats": {
+          "netflix": { "ms": 0, "ok": false, "count": 0, "error": "no cached rows" },
+          "apple_music": { "ms": 2128, "ok": true, "count": 25, "error": null },
+          "wikimedia_ph": { "ms": 254, "ok": true, "count": 25, "error": null },
+          "wikimedia_tl": { "ms": 252, "ok": true, "count": 954, "error": null },
+          "google_trends": { "ms": 546, "ok": true, "count": 10, "error": null }
+        },
+        "ai_provider": "gemini",
+        "ai_model": "gemini-3.1-flash-lite",
+        "ai_error": null,
+        "candidate_count": 101,
+        "topic_count": 16,
+        "ai_input_tokens": 2333,
+        "ai_output_tokens": 7656,
+        "ai_cost_usd": 0.012067,
+        "started_at": "2026-11-11T04:16:12.688429+00:00",
+        "finished_at": "2026-11-11T04:17:17.570236+00:00"
+      },
+      {
+        "id": "5c220b56-9e2f-4d72-9fdd-0a22946317ca",
+        "run_date": "2026-11-11",
+        "status": "skipped",
+        "trigger": "manual",
+        "source_stats": {
+          "netflix": { "ms": 0, "ok": false, "count": 0, "error": "no cached rows" },
+          "apple_music": { "ms": 1359, "ok": true, "count": 25, "error": null },
+          "wikimedia_ph": { "ms": 245, "ok": true, "count": 25, "error": null },
+          "wikimedia_tl": { "ms": 256, "ok": true, "count": 954, "error": null },
+          "google_trends": { "ms": 674, "ok": true, "count": 10, "error": null }
+        },
+        "ai_provider": "gemini",
+        "ai_model": "gemini-3.1-flash-lite",
+        "ai_error": null,
+        "candidate_count": 101,
+        "topic_count": 15,
+        "ai_input_tokens": 2333,
+        "ai_output_tokens": 7296,
+        "ai_cost_usd": 0.011527,
+        "started_at": "2026-11-11T04:15:41.053174+00:00",
+        "finished_at": "2026-11-11T04:16:34.384822+00:00"
+      },
+      {
+        "id": "9ec4f963-f159-4de5-a6eb-7feef6d9c8f6",
+        "run_date": "2026-11-11",
+        "status": "skipped",
+        "trigger": "manual",
+        "source_stats": {
+          "netflix": { "ms": 0, "ok": false, "count": 0, "error": "no cached rows" },
+          "apple_music": { "ms": 2791, "ok": true, "count": 25, "error": null },
+          "wikimedia_ph": { "ms": 294, "ok": true, "count": 25, "error": null },
+          "wikimedia_tl": { "ms": 292, "ok": true, "count": 954, "error": null },
+          "google_trends": { "ms": 657, "ok": true, "count": 10, "error": null }
+        },
+        "ai_provider": "gemini",
+        "ai_model": "gemini-3.1-flash-lite",
+        "ai_error": null,
+        "candidate_count": 101,
+        "topic_count": 13,
+        "ai_input_tokens": 2314,
+        "ai_output_tokens": 7130,
+        "ai_cost_usd": 0.011273,
+        "started_at": "2026-11-11T04:14:56.587225+00:00",
+        "finished_at": "2026-11-11T04:15:59.888824+00:00"
+      },
+      {
+        "id": "84cb1aa7-0f41-4555-80bc-0c2f2f9d8827",
+        "run_date": "2026-11-11",
+        "status": "failed",
+        "trigger": "manual",
+        "source_stats": {
+          "netflix": { "ms": 0, "ok": false, "count": 0, "error": "no cached rows" },
+          "apple_music": {
+            "ms": 8001,
+            "ok": false,
+            "count": 0,
+            "error": "request failed: The operation was aborted due to timeout"
+          },
+          "wikimedia_ph": { "ms": 254, "ok": true, "count": 25, "error": null },
+          "wikimedia_tl": { "ms": 253, "ok": true, "count": 954, "error": null },
+          "google_trends": { "ms": 495, "ok": true, "count": 10, "error": null }
+        },
+        "ai_provider": null,
+        "ai_model": null,
+        "ai_error": "classify failed: marketing_trends_classify: model output failed schema validation",
+        "candidate_count": 77,
+        "topic_count": 0,
+        "ai_input_tokens": null,
+        "ai_output_tokens": null,
+        "ai_cost_usd": null,
+        "started_at": "2026-11-11T04:13:34.87579+00:00",
+        "finished_at": "2026-11-11T04:14:14.184+00:00"
+      },
+      {
+        "id": "6eeb883d-7664-400f-8bd8-400aed8f7308",
+        "run_date": "2026-11-11",
+        "status": "failed",
+        "trigger": "manual",
+        "source_stats": {
+          "netflix": { "ms": 0, "ok": false, "count": 0, "error": "no cached rows" },
+          "apple_music": { "ms": 3036, "ok": true, "count": 25, "error": null },
+          "wikimedia_ph": { "ms": 543, "ok": true, "count": 25, "error": null },
+          "wikimedia_tl": { "ms": 543, "ok": true, "count": 954, "error": null },
+          "google_trends": { "ms": 715, "ok": true, "count": 10, "error": null }
+        },
+        "ai_provider": null,
+        "ai_model": null,
+        "ai_error": "classify failed: No AI provider is configured (GEMINI_API_KEY)",
+        "candidate_count": 101,
+        "topic_count": 0,
+        "ai_input_tokens": null,
+        "ai_output_tokens": null,
+        "ai_cost_usd": null,
+        "started_at": "2026-11-11T04:13:10.583907+00:00",
+        "finished_at": "2026-11-11T04:13:13.744+00:00"
+      },
+      {
+        "id": "05b25a88-f2bf-4b01-b10a-a555a4f527fd",
+        "run_date": "2026-11-11",
+        "status": "failed",
+        "trigger": "cron",
+        "source_stats": {
+          "netflix": { "ms": 0, "ok": false, "count": 0, "error": "no cached rows" },
+          "apple_music": {
+            "ms": 8017,
+            "ok": false,
+            "count": 0,
+            "error": "request failed: Signal timed out."
+          },
+          "wikimedia_ph": { "ms": 146, "ok": true, "count": 25, "error": null },
+          "wikimedia_tl": { "ms": 161, "ok": true, "count": 954, "error": null },
+          "google_trends": { "ms": 431, "ok": true, "count": 10, "error": null }
+        },
+        "ai_provider": null,
+        "ai_model": null,
+        "ai_error": "classify failed: marketing_trends_classify: model output failed schema validation",
+        "candidate_count": 77,
+        "topic_count": 0,
+        "ai_input_tokens": null,
+        "ai_output_tokens": null,
+        "ai_cost_usd": null,
+        "started_at": "2026-11-11T04:09:35.945457+00:00",
+        "finished_at": "2026-11-11T04:10:19.215+00:00"
+      },
+      {
+        "id": "f0d27ef2-3d69-4a46-b26d-c2f412ad7294",
+        "run_date": "2026-11-11",
+        "status": "skipped",
+        "trigger": "cron",
+        "source_stats": {
+          "netflix": { "ms": 0, "ok": false, "count": 0, "error": "no cached rows" },
+          "apple_music": {
+            "ms": 8011,
+            "ok": false,
+            "count": 0,
+            "error": "request failed: Signal timed out."
+          },
+          "wikimedia_ph": { "ms": 410, "ok": true, "count": 25, "error": null },
+          "wikimedia_tl": { "ms": 197, "ok": true, "count": 954, "error": null },
+          "google_trends": { "ms": 675, "ok": true, "count": 10, "error": null }
+        },
+        "ai_provider": "gemini",
+        "ai_model": "gemini-3.1-flash-lite",
+        "ai_error": null,
+        "candidate_count": 942,
+        "topic_count": 16,
+        "ai_input_tokens": 2748,
+        "ai_output_tokens": 7575,
+        "ai_cost_usd": 0.01205,
+        "started_at": "2026-11-11T04:07:32.589554+00:00",
+        "finished_at": "2026-11-11T04:15:13.883433+00:00"
+      }
+    ],
+    "topics": [
+      {
+        "id": "5eedc002-0000-4000-8000-000000000001",
+        "topic_key": "pinoy-big-brother-collab-3-0",
+        "title": "PBB Collab 3.0",
+        "summary": "Fans are following the new housemates this week.",
+        "category": "tv_film",
+        "stay_fit": 3,
+        "score": 2.1843,
+        "momentum": "new",
+        "days_trending": 1,
+        "sources": [
+          {
+            "rank": 2,
+            "views": null,
+            "source": "google_trends",
+            "traffic": "500+",
+            "newsHeadlines": []
+          },
+          {
+            "rank": 6,
+            "views": 5100,
+            "source": "wikimedia_ph",
+            "traffic": null,
+            "newsHeadlines": []
+          }
+        ],
+        "angles": [
+          {
+            "goal": "vibe",
+            "hook": "Big night on screen, better from a proper stay.",
+            "title": "Watch party staycation",
+            "format": "instagram-portrait",
+            "output": "post",
+            "prompt": "A cozy living room with the TV on and snacks out. No logos, no real people."
+          },
+          {
+            "goal": "vibe",
+            "hook": "A group night in, with the group to stay over.",
+            "title": "Game night staycation",
+            "format": "1:1",
+            "output": "image",
+            "prompt": "A warm living room set for a group night in, low light, no text, no logos."
+          },
+          {
+            "goal": "vibe",
+            "hook": "The night ends at the screen, not at the door.",
+            "title": "Late night clip",
+            "format": "9:16",
+            "output": "video",
+            "prompt": "A slow vertical clip of a room at night: TV glow, curtains, a cup on the table. No people."
+          }
+        ],
+        "caption_idea": "Tonight is a staycation kind of night. Who is watching?",
+        "hashtags": ["#Staycation", "#PBB"],
+        "brand_guard": ["no_likeness", "no_logo", "no_endorsement"],
+        "pinned": false,
+        "manual": false,
+        "rank": 1
+      },
+      {
+        "id": "5eedc002-0000-4000-8000-000000000002",
+        "topic_key": "alexandra-eala",
+        "title": "Alexandra Eala",
+        "summary": "Another big performance for the Filipino athlete.",
+        "category": "sports",
+        "stay_fit": 2,
+        "score": 1.4201,
+        "momentum": "rising",
+        "days_trending": 2,
+        "sources": [
+          {
+            "rank": 5,
+            "views": 5200,
+            "source": "wikimedia_ph",
+            "traffic": null,
+            "newsHeadlines": []
+          }
+        ],
+        "angles": [
+          {
+            "goal": "vibe",
+            "hook": "A game night is better with a room to stay in.",
+            "title": "Game night staycation",
+            "format": "instagram-portrait",
+            "output": "post",
+            "prompt": "A sports-fan mood board for a rental: a screen, a sofa, team colors that are not a brand. No logos."
+          },
+          {
+            "goal": "promo",
+            "hook": "The season runs long. Stay for the whole thing.",
+            "title": "Long weekend post",
+            "format": "facebook-post",
+            "output": "post",
+            "prompt": "A wide banner for a weekend stay near the action. No team logos, no names."
+          }
+        ],
+        "caption_idea": "The season is not over yet. Book the weekend and watch it somewhere comfortable.",
+        "hashtags": ["#Staycation", "#SportsPH"],
+        "brand_guard": ["no_likeness", "no_logo", "no_endorsement"],
+        "pinned": false,
+        "manual": false,
+        "rank": 2
+      },
+      {
+        "id": "5eedc002-0000-4000-8000-000000000003",
+        "topic_key": "christmas-long-weekend",
+        "title": "Christmas long weekend",
+        "summary": "The December holidays start, and so does the long weekend.",
+        "category": "holiday_event",
+        "stay_fit": 3,
+        "score": 1.2876,
+        "momentum": "steady",
+        "days_trending": 3,
+        "sources": [
+          {
+            "rank": 4,
+            "views": null,
+            "source": "google_trends",
+            "traffic": "1K+",
+            "newsHeadlines": []
+          }
+        ],
+        "angles": [
+          {
+            "goal": "amenity-spotlight",
+            "hook": "The best part of the season is eating well.",
+            "title": "Holiday table",
+            "format": "instagram-square",
+            "output": "post",
+            "prompt": "A holiday meal in a bright rental kitchen: a long table, home cooking, warm colours. No brand names."
+          },
+          {
+            "goal": "promo",
+            "hook": "A small gift, a big stay.",
+            "title": "Gift guide card",
+            "format": "instagram-portrait",
+            "output": "post",
+            "prompt": "A gift-guide style card with a wrapped box and a warm room behind it. No logos."
+          }
+        ],
+        "caption_idea": "Long weekend, one address, and nobody has to drive home.",
+        "hashtags": ["#Christmas", "#Staycation"],
+        "brand_guard": [],
+        "pinned": false,
+        "manual": false,
+        "rank": 3
+      },
+      {
+        "id": "5eedc002-0000-4000-8000-000000000004",
+        "topic_key": "na-para-bang",
+        "title": "Na Para Bang",
+        "summary": "The OPM hit on top of the Philippine music chart.",
+        "category": "music",
+        "stay_fit": 1,
+        "score": 0.9812,
+        "momentum": "new",
+        "days_trending": 1,
+        "sources": [
+          {
+            "rank": 1,
+            "views": null,
+            "source": "apple_music",
+            "traffic": null,
+            "newsHeadlines": []
+          }
+        ],
+        "angles": [
+          {
+            "goal": "vibe",
+            "hook": "One song on repeat and nowhere to rush.",
+            "title": "Music night staycation",
+            "format": "instagram-portrait",
+            "output": "post",
+            "prompt": "A music-mood living room: a speaker, low light, a balcony. No track names, no faces."
+          }
+        ],
+        "caption_idea": "One song on repeat, one night booked, no reason to leave the room.",
+        "hashtags": ["#Staycation", "#OPM"],
+        "brand_guard": ["no_likeness", "no_logo", "no_endorsement"],
+        "pinned": false,
+        "manual": false,
+        "rank": 4
+      },
+      {
+        "id": "5eedc002-0000-4000-8000-000000000005",
+        "topic_key": "sinulog-season",
+        "title": "Sinulog season",
+        "summary": "The festival season in Cebu is on.",
+        "category": "holiday_event",
+        "stay_fit": 2,
+        "score": 0.8432,
+        "momentum": "steady",
+        "days_trending": 5,
+        "sources": [
+          {
+            "rank": 9,
+            "views": 106,
+            "source": "wikimedia_tl",
+            "traffic": null,
+            "newsHeadlines": []
+          }
+        ],
+        "angles": [
+          {
+            "goal": "promo",
+            "hook": "The drums start early. Stay close.",
+            "title": "Festival weekend",
+            "format": "facebook-post",
+            "output": "post",
+            "prompt": "A festival-weekend banner for a city stay: warm lights, a street at dawn, no religious imagery, no logos."
+          }
+        ],
+        "caption_idea": "Festival season, and the room is closer than the crowd.",
+        "hashtags": ["#Sinulog", "#TravelPH"],
+        "brand_guard": [],
+        "pinned": false,
+        "manual": false,
+        "rank": 5
+      },
+      {
+        "id": "5eedc002-0000-4000-8000-000000000006",
+        "topic_key": "nintendo-switch-update",
+        "title": "Nintendo update",
+        "summary": "A new console update is what people are searching for.",
+        "category": "gaming",
+        "stay_fit": 1,
+        "score": 0.7215,
+        "momentum": "new",
+        "days_trending": 1,
+        "sources": [
+          {
+            "rank": 1,
+            "views": null,
+            "source": "google_trends",
+            "traffic": "200+",
+            "newsHeadlines": []
+          }
+        ],
+        "angles": [
+          {
+            "goal": "vibe",
+            "hook": "Bring the console, stay the night.",
+            "title": "Game night staycation",
+            "format": "instagram-square",
+            "output": "post",
+            "prompt": "A game-night room with a TV and a sofa. No console branding, no screens with logos."
+          }
+        ],
+        "caption_idea": "Bring the console. The rest of the night is the stay.",
+        "hashtags": ["#Staycation", "#GameNight"],
+        "brand_guard": ["no_logo"],
+        "pinned": false,
+        "manual": false,
+        "rank": 6
+      }
+    ],
+    "overrides": [],
+    "manualTopics": [],
+    "latestRunId": "5eedc001-0000-4000-8000-000000000001"
+  }
+}

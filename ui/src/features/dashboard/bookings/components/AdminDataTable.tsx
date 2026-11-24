@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 
 import { Link } from 'react-router-dom';
 
-import { ArrowUpRight, Car, Dog, PartyPopper, X } from 'lucide-react';
+import { ArrowUpRight, Car, ChevronRight, Dog, PartyPopper, X } from 'lucide-react';
 
 import { GuestAvatar } from '@/features/dashboard/bookings/components/GuestAvatar';
 import { ParkingBroadcastCountdown } from '@/features/dashboard/bookings/components/ParkingBroadcastCountdown';
@@ -145,10 +145,15 @@ export const adminTableCell = {
 } as const;
 
 /** Trailing affordance on clickable rows (Bookings list, Finance stays). */
-export function AdminTableRowAffordance() {
+/**
+ * Row affordance for detail rows. `chevron` is for in-app detail (dialog or route);
+ * the default arrow stays for callers that link out.
+ */
+export function AdminTableRowAffordance({ icon = 'arrow' }: { icon?: 'arrow' | 'chevron' } = {}) {
+  const Icon = icon === 'chevron' ? ChevronRight : ArrowUpRight;
   return (
     <span aria-hidden className={adminTableRowAffordanceClass}>
-      <ArrowUpRight className="size-4" />
+      <Icon className="size-4" />
     </span>
   );
 }

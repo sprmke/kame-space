@@ -87,10 +87,10 @@ export function SuperAdminAnnouncementTable({ announcements, onSelect }: Props) 
                 </Badge>
               </td>
               <td className={cn(adminTableCell.body, 'hidden lg:table-cell')}>
-                <span className={adminTableBodyText.secondary}>{schedule ?? '-'}</span>
+                <span className={adminTableBodyText.secondary}>{schedule ?? 'Always on'}</span>
               </td>
               <td className={adminTableCell.action}>
-                <AdminTableRowAffordance />
+                <AdminTableRowAffordance icon="chevron" />
               </td>
             </tr>
           );

@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 
-import { ChevronDown, ScrollText, Search } from 'lucide-react';
+import { ChevronDown, ScrollText } from 'lucide-react';
 
 import {
   AdminListPagination,
@@ -14,8 +14,10 @@ import {
   useSuperAdminAuditFacets,
   type SuperAdminAuditEvent,
 } from '@/features/dashboard/super-admin/hooks/useSuperAdminAudit';
+import { auditActionLabel, auditTargetLabel } from '@/features/dashboard/super-admin/lib/superAdminAuditLabels';
 import { formatSuperAdminDateTime, parseSuperAdminDate } from '@/features/dashboard/super-admin/lib/superAdminDates';
 
+import { AdminSearchInput } from '@/components/navigation/AdminSearchInput';
 import { SuperAdminAuditBodySkeleton } from '@/components/skeletons/SuperAdminSkeletons';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -50,18 +52,21 @@ function AuditEventCard({ event }: { event: SuperAdminAuditEvent }) {
     <Card padding="sm" className="flex flex-col gap-1">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <p className="text-sm font-medium">{event.summary}</p>
-        <span className="text-muted-foreground shrink-0 text-xs">
+        <span
+          className="text-muted-foreground shrink-0 text-xs"
+          title={formatSuperAdminDateTime(event.createdAt)}
+        >
           {relativeTime(event.createdAt)}
         </span>
       </div>
       <div className="text-muted-foreground flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs">
-        <span className="font-mono break-all">{event.action}</span>
+        <span>{auditActionLabel(event.action)}</span>
         <span aria-hidden>·</span>
         <span className="break-all">{event.actorEmail}</span>
         {event.targetType ? (
           <>
             <span aria-hidden>·</span>
-            <span>{event.targetType}</span>
+            <span>{auditTargetLabel(event.targetType)}</span>
           </>
         ) : null}
       </div>
@@ -79,6 +84,8 @@ function AuditEventCard({ event }: { event: SuperAdminAuditEvent }) {
           <dl className="grid gap-1 sm:grid-cols-[7rem_1fr]">
             <dt className="text-muted-foreground">When</dt>
             <dd>{formatSuperAdminDateTime(event.createdAt)}</dd>
+            <dt className="text-muted-foreground">Action</dt>
+            <dd className="break-all font-mono">{event.action}</dd>
             <dt className="text-muted-foreground">Target</dt>
             <dd className="break-all">
               {event.targetType ?? 'none'}
@@ -162,19 +169,13 @@ export function SuperAdminAuditPage() {
       onRetry={() => void refetch()}
     >
       <div className="flex flex-wrap items-center gap-2">
-        <div className="relative min-w-[min(100%,14rem)] flex-1 sm:max-w-xs">
-          <Search
-            className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2"
-            aria-hidden
-          />
-          <Input
-            value={q}
-            onChange={(event) => patchFilter('q', event.target.value)}
-            placeholder="Search actions…"
-            className="h-10 pl-9"
-            aria-label="Search audit log"
-          />
-        </div>
+        <AdminSearchInput
+          value={q}
+          onChange={(value) => patchFilter('q', value)}
+          placeholder="Search actions…"
+          ariaLabel="Search audit log"
+          className="min-w-[min(100%,14rem)] sm:max-w-xs"
+        />
         <Input
           value={actor}
           onChange={(event) => patchFilter('actor', event.target.value)}
@@ -193,7 +194,7 @@ export function SuperAdminAuditPage() {
             <SelectItem value={ALL}>All actions</SelectItem>
             {actionOptions.map((value) => (
               <SelectItem key={value} value={value}>
-                {value}
+                {auditActionLabel(value)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -209,7 +210,7 @@ export function SuperAdminAuditPage() {
             <SelectItem value={ALL}>All targets</SelectItem>
             {targetTypeOptions.map((value) => (
               <SelectItem key={value} value={value}>
-                {value}
+                {auditTargetLabel(value) ?? value}
               </SelectItem>
             ))}
           </SelectContent>

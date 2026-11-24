@@ -14,9 +14,10 @@ export function SuperAdminPlatformPropertiesSummaryCards({ properties }: Props) 
   return (
     <section
       aria-label="Platform property summary"
-      className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4 lg:gap-4"
+      className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3 lg:gap-4"
     >
       <AdminMetricCard
+        density="responsive"
         title="Total properties"
         value={String(summary.total)}
         icon={Building2}
@@ -24,6 +25,7 @@ export function SuperAdminPlatformPropertiesSummaryCards({ properties }: Props) 
         iconBgClassName="bg-sky-100 dark:bg-sky-900/30"
       />
       <AdminMetricCard
+        density="responsive"
         title="Active"
         value={String(summary.active)}
         icon={Landmark}
@@ -31,6 +33,7 @@ export function SuperAdminPlatformPropertiesSummaryCards({ properties }: Props) 
         iconBgClassName="bg-emerald-100 dark:bg-emerald-900/30"
       />
       <AdminMetricCard
+        density="responsive"
         title="Linked developments"
         value={String(summary.linkedDevelopments)}
         icon={Link2}
@@ -38,6 +41,7 @@ export function SuperAdminPlatformPropertiesSummaryCards({ properties }: Props) 
         iconBgClassName="bg-violet-100 dark:bg-violet-900/30"
       />
       <AdminMetricCard
+        density="responsive"
         title="Organizations"
         value={String(summary.organizations)}
         icon={Users}

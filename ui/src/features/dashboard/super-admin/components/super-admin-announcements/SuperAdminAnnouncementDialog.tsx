@@ -161,7 +161,7 @@ export function SuperAdminAnnouncementDialog({ state, onOpenChange }: Props) {
                 }
               />
             ) : (
-              <p className="text-destructive text-sm">This announcement no longer exists.</p>
+              <p className="text-destructive-strong text-sm">This announcement no longer exists.</p>
             )}
           </div>
 
@@ -171,7 +171,7 @@ export function SuperAdminAnnouncementDialog({ state, onOpenChange }: Props) {
                 type="button"
                 variant="outline"
                 className={cn(
-                  'text-destructive hover:text-destructive sm:mr-auto',
+                  'text-destructive-strong hover:text-destructive-strong sm:mr-auto',
                   superAdminApprovalFooterButtonClass
                 )}
                 disabled={busy}

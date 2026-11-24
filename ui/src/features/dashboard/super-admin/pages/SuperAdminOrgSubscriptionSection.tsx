@@ -51,8 +51,8 @@ export function SuperAdminOrgSubscriptionSection() {
   return (
     <div className="space-y-4">
       <SuperAdminSettingsCard
-        title="Subscription"
-        description="Assign or override this organization's plan. Covers every property the org owns. Billing history and cron runs stay on the platform Subscriptions page."
+        title="Plan and billing"
+        description="Covers every property this organization owns."
       >
         <SuperAdminSettingsRow label="Current plan">
           <span className="text-sm font-medium">

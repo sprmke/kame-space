@@ -355,7 +355,7 @@ export function SuperAdminApprovalReviewDialog({ approval, onOpenChange }: Props
               </div>
             ) : panel === 'reject' ? (
               <div className="flex items-start gap-3">
-                <span className="bg-destructive/10 text-destructive flex size-10 shrink-0 items-center justify-center rounded-full">
+                <span className="bg-destructive/10 text-destructive-strong flex size-10 shrink-0 items-center justify-center rounded-full">
                   <Ban className="size-5" aria-hidden />
                 </span>
                 <div className="min-w-0 space-y-1">
@@ -398,7 +398,7 @@ export function SuperAdminApprovalReviewDialog({ approval, onOpenChange }: Props
               <div className="space-y-5">
                 <fieldset className="space-y-2">
                   <legend className="text-foreground text-xs font-semibold">
-                    Reason <span className="text-destructive">*</span>
+                    Reason <span className="text-destructive-strong">*</span>
                   </legend>
                   <div className="space-y-1.5">
                     {HOST_REQUEST_CHANGES_REASON_OPTIONS.map((option) => {
@@ -525,7 +525,7 @@ export function SuperAdminApprovalReviewDialog({ approval, onOpenChange }: Props
                     htmlFor="reject-reason-select"
                     className="text-foreground text-xs font-semibold"
                   >
-                    Rejection reason <span className="text-destructive">*</span>
+                    Rejection reason <span className="text-destructive-strong">*</span>
                   </label>
                   <Select
                     value={rejectReasonId || undefined}
@@ -773,7 +773,7 @@ export function SuperAdminApprovalReviewDialog({ approval, onOpenChange }: Props
                       'rounded-lg border px-3 py-2.5 text-xs leading-relaxed',
                       rejectionKind === 'changes'
                         ? 'border-orange-500/25 bg-orange-500/5 text-orange-950'
-                        : 'border-destructive/25 bg-destructive/5 text-destructive'
+                        : 'border-destructive/25 bg-destructive/5 text-destructive-strong'
                     )}
                   >
                     <p className="font-semibold">

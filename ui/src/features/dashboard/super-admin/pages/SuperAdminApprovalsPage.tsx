@@ -167,10 +167,10 @@ export function SuperAdminApprovalsPage() {
       <AdminPageHeader title="Approvals" subtitle="Review host verification requests." />
       {isLoading ? (
         <SuperAdminAdminListBodySkeleton
-          metricTitles={['In review', 'Org verifications', 'Listing verifications', 'Reviews']}
+          metricTitles={['Awaiting review', 'Org verifications', 'Listing verifications', 'Reviews']}
         />
       ) : error ? (
-        <p className="text-destructive text-sm">Could not load approvals.</p>
+        <p className="text-destructive-strong text-sm">Could not load approvals.</p>
       ) : (
         <>
           <SuperAdminApprovalsSummaryCards approvals={approvals} summary={approvalsSummary} />

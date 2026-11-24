@@ -189,7 +189,7 @@ export function SuperAdminApprovalsTable({ approvals, onSelect }: Props) {
                 )}
               </td>
               <td className={adminTableCell.action}>
-                <AdminTableRowAffordance />
+                <AdminTableRowAffordance icon="chevron" />
               </td>
             </tr>
           );
@@ -210,13 +210,13 @@ function OrgApprovalQueueStatusCell({
     return (
       <div className="flex flex-col gap-1.5 whitespace-nowrap">
         <div className="flex flex-nowrap items-center gap-1.5">
-          <span className="text-muted-foreground shrink-0 text-[10px] font-semibold uppercase tracking-wide">
+          <span className="text-muted-foreground shrink-0 text-[11px] font-semibold uppercase tracking-wide">
             Verified
           </span>
           <VerificationStatusBadge status={approval.baseStatus} kind={approval.baseRejectionKind} />
         </div>
         <div className="flex flex-nowrap items-center gap-1.5">
-          <span className="text-muted-foreground shrink-0 text-[10px] font-semibold uppercase tracking-wide">
+          <span className="text-muted-foreground shrink-0 text-[11px] font-semibold uppercase tracking-wide">
             Recommended
           </span>
           <VerificationStatusBadge status={approval.enhancedStatus} />
@@ -243,13 +243,13 @@ function ListingApprovalQueueStatusCell({
     return (
       <div className="flex flex-col gap-1.5 whitespace-nowrap">
         <div className="flex flex-nowrap items-center gap-1.5">
-          <span className="text-muted-foreground shrink-0 text-[10px] font-semibold uppercase tracking-wide">
+          <span className="text-muted-foreground shrink-0 text-[11px] font-semibold uppercase tracking-wide">
             Verified
           </span>
           <VerificationStatusBadge status={approval.baseStatus} kind={approval.baseRejectionKind} />
         </div>
         <div className="flex flex-nowrap items-center gap-1.5">
-          <span className="text-muted-foreground shrink-0 text-[10px] font-semibold uppercase tracking-wide">
+          <span className="text-muted-foreground shrink-0 text-[11px] font-semibold uppercase tracking-wide">
             Recommended
           </span>
           <VerificationStatusBadge

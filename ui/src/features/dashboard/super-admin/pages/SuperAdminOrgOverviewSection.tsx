@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 function verificationLabel(status: string): string {
   if (status === 'approved' || status === 'verified') return 'Verified';
-  if (status === 'pending') return 'In review';
+  if (status === 'pending') return 'Awaiting review';
   if (status === 'rejected') return 'Rejected';
   return 'Not submitted';
 }
@@ -22,8 +22,9 @@ export function SuperAdminOrgOverviewSection() {
 
   return (
     <div className="space-y-3 sm:space-y-4">
-      <section className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4 lg:gap-4">
+      <section className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3 lg:gap-4">
         <StatCard
+          density="responsive"
           title="Properties"
           value={String(org.counts.properties)}
           to={superAdminPaths.organizationHubSection(slug, 'listings')}
@@ -32,6 +33,7 @@ export function SuperAdminOrgOverviewSection() {
           iconBgClassName="bg-violet-100 dark:bg-violet-900/30"
         />
         <StatCard
+          density="responsive"
           title="Parkings"
           value={String(org.counts.parkings)}
           to={superAdminPaths.organizationHubSection(slug, 'listings')}
@@ -40,6 +42,7 @@ export function SuperAdminOrgOverviewSection() {
           iconBgClassName="bg-amber-100 dark:bg-amber-900/30"
         />
         <StatCard
+          density="responsive"
           title="Team members"
           value={String(org.counts.members)}
           icon={Users}
@@ -47,6 +50,7 @@ export function SuperAdminOrgOverviewSection() {
           iconBgClassName="bg-sky-100 dark:bg-sky-900/30"
         />
         <StatCard
+          density="responsive"
           title="MRR"
           value={org.plan ? `₱${org.plan.mrrPhp.toLocaleString('en-PH')}` : '₱0'}
           to={superAdminPaths.organizationHubSection(slug, 'subscription')}

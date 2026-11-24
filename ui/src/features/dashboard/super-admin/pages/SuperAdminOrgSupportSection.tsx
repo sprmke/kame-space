@@ -22,7 +22,7 @@ export function SuperAdminOrgSupportSection() {
   const tickets = data?.tickets ?? [];
 
   if (isLoading) return <SuperAdminAdminListBodySkeleton metricCount={0} />;
-  if (error) return <p className="text-destructive text-sm">Could not load support tickets.</p>;
+  if (error) return <p className="text-destructive-strong text-sm">Could not load support tickets.</p>;
 
   return (
     <div className="space-y-3 sm:space-y-4">

@@ -1,0 +1,64 @@
+{
+  "success": true,
+  "data": {
+    "rows": [
+      {
+        "organizationId": "405ea07f-cc21-4bcc-b540-28729be79f0d",
+        "name": "Kame Space",
+        "slug": "kame-homes",
+        "planTier": "pro",
+        "aiEnabled": true,
+        "orgProfileCode": "business_plus",
+        "planProfileCode": "pro",
+        "hasOverrides": true,
+        "overrideReason": null,
+        "limits": {
+          "dailyCallLimit": { "value": 200, "source": "global", "profileCode": null },
+          "monthlyCallLimit": { "value": 5000, "source": "global", "profileCode": null },
+          "dailyCostUsdLimit": { "value": 10, "source": "global", "profileCode": null },
+          "dailyCreditLimit": { "value": 2000, "source": "override", "profileCode": null },
+          "monthlyCreditLimit": { "value": 25000, "source": "override", "profileCode": null },
+          "assistantDailyMessageLimit": { "value": 100, "source": "override", "profileCode": null },
+          "assistantMonthlyMessageLimit": {
+            "value": 2000,
+            "source": "override",
+            "profileCode": null
+          },
+          "assistantDailyWriteActionLimit": {
+            "value": 40,
+            "source": "override",
+            "profileCode": null
+          },
+          "voiceMaxSessionSeconds": { "value": 300, "source": "default", "profileCode": "default" },
+          "voiceMaxSessionsPerGuestPerDay": {
+            "value": 3,
+            "source": "default",
+            "profileCode": "default"
+          },
+          "voiceMaxConcurrentSessions": {
+            "value": 3,
+            "source": "default",
+            "profileCode": "default"
+          },
+          "imageMonthlyCreditCap": { "value": null, "source": "global", "profileCode": null },
+          "videoMonthlyCreditCap": { "value": null, "source": "global", "profileCode": null },
+          "assistantMaxToolRounds": { "value": 8, "source": "global", "profileCode": null },
+          "assistantMaxPlanSteps": { "value": 10, "source": "global", "profileCode": null },
+          "guestRequestDailyLimit": { "value": 3, "source": "global", "profileCode": null },
+          "assistantTurnCreditCeiling": { "value": 100, "source": "global", "profileCode": null }
+        },
+        "usage": {
+          "todayCalls": 1,
+          "todayCostUsd": 0.0009,
+          "monthCalls": 111,
+          "monthCostUsd": 0.6974,
+          "monthCredits": 1463
+        },
+        "breach": false
+      }
+    ],
+    "total": 1,
+    "truncated": false,
+    "planTiers": ["pro"]
+  }
+}

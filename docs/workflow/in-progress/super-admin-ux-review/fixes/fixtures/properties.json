@@ -1,0 +1,153 @@
+{
+  "success": true,
+  "data": {
+    "properties": [
+      {
+        "id": "e5555555-5555-4555-8555-555555555501",
+        "organizationId": "405ea07f-cc21-4bcc-b540-28729be79f0d",
+        "name": "Monaco 2604",
+        "slug": "kame-home",
+        "type": "condo",
+        "status": "ACTIVE",
+        "inactiveReason": null,
+        "archivedAt": null,
+        "pausedAt": null,
+        "address": "Azure North Residences, Jose Abad Santos Ave, San Fernando, Pampanga",
+        "towerAndUnit": "Monaco 2604",
+        "tower": "Monaco",
+        "unitNumber": "2604",
+        "residenceName": "Azure North Residences",
+        "maxGuests": 6,
+        "settings": {
+          "city": "San Fernando",
+          "media": [
+            {
+              "id": "media-01",
+              "url": "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1200&q=85",
+              "type": "image",
+              "order": 0,
+              "caption": "Living area",
+              "isPrimary": true
+            },
+            {
+              "id": "media-02",
+              "url": "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1200&q=85",
+              "type": "image",
+              "order": 1,
+              "caption": "Bedroom"
+            },
+            {
+              "id": "media-03",
+              "url": "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1200&q=85",
+              "type": "image",
+              "order": 2,
+              "caption": "Kitchen"
+            },
+            {
+              "id": "media-04",
+              "url": "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1200&q=85",
+              "type": "image",
+              "order": 3,
+              "caption": "Balcony"
+            },
+            {
+              "id": "media-05",
+              "url": "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=85",
+              "type": "image",
+              "order": 4,
+              "caption": "Lagoon"
+            }
+          ],
+          "floors": 1,
+          "images": [
+            "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1200&q=85",
+            "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1200&q=85",
+            "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1200&q=85"
+          ],
+          "country": "Philippines",
+          "mapsUrl": "https://maps.google.com/?q=Azure+North+Residences+San+Fernando",
+          "zipCode": "2000",
+          "bedrooms": 2,
+          "latitude": 15.0286,
+          "province": "Pampanga",
+          "allowPets": true,
+          "bathrooms": 2,
+          "longitude": 120.6898,
+          "maxAdults": 4,
+          "maxGuests": 6,
+          "coverImage": "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1200&q=85",
+          "unitTypeId": "2br",
+          "checkInTime": "14:00",
+          "contactName": "Demo Host",
+          "contactRole": "unit_owner",
+          "description": "Lagoon-view two-bedroom unit on the 26th floor of Monaco Tower. Fast Wi-Fi, full kitchen, and a balcony facing the resort lagoon.",
+          "maxChildren": 2,
+          "selfCheckIn": true,
+          "allowParking": true,
+          "checkOutTime": "11:00",
+          "contactEmail": "host.demo@example.com",
+          "contactPhone": "0917 555 0101",
+          "customAmenities": [
+            { "id": "amenity-lagoon-view", "name": "Lagoon view", "categoryId": "outdoor" }
+          ],
+          "customHouseRules": [
+            {
+              "id": "rule-shoes-off",
+              "name": "Please remove shoes indoors",
+              "categoryId": "general"
+            }
+          ],
+          "enabledAmenities": [
+            "wifi",
+            "aircon",
+            "tv",
+            "kitchen",
+            "refrigerator",
+            "pool",
+            "parking",
+            "balcony",
+            "smoke_alarm",
+            "security",
+            "gym",
+            "elevator",
+            "keycard_access",
+            "scenic_view",
+            "cctv",
+            "fire_extinguisher",
+            "first_aid",
+            "smart_lock"
+          ],
+          "enabledHouseRules": [
+            "check_in_after",
+            "check_out_before",
+            "no_smoking",
+            "no_parties",
+            "quiet_hours",
+            "pets_allowed",
+            "suitable_for_children",
+            "security_cameras"
+          ],
+          "allowSurpriseDecor": true,
+          "cancellationPolicy": {
+            "tiers": [{ "daysBefore": 3, "refundPercent": 100 }],
+            "version": 2,
+            "presetId": "moderate",
+            "fallbackRefundPercent": 0
+          },
+          "cleaningBufferMinutes": 120,
+          "preferredOwnerParkingId": "c3333333-3333-4333-8333-333333333301",
+          "complimentaryOwnerParking": false
+        },
+        "createdAt": "2026-11-08T05:40:57.297788+00:00",
+        "updatedAt": "2026-11-22T12:04:53.617816+00:00",
+        "organizationSlug": "kame-homes",
+        "organizationName": "Kame Space",
+        "developmentSlug": "azure-north-residences",
+        "developmentName": "Azure North Residences"
+      }
+    ],
+    "total": 1,
+    "page": 1,
+    "limit": 25
+  }
+}

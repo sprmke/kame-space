@@ -395,10 +395,10 @@ function ParkingSettlementPreview({ settings }: { settings: PreviewSettings }) {
               return (
                 <tr key={rate} className="border-border/40 border-t">
                   <td className="py-1 pr-3">{formatPhp(rate)}</td>
-                  <td className={cn('py-1 pr-3', std.platformNetTotal < 0 && 'text-destructive')}>
+                  <td className={cn('py-1 pr-3', std.platformNetTotal < 0 && 'text-destructive-strong')}>
                     {formatPhp(std.platformNetTotal)}
                   </td>
-                  <td className={cn('py-1', direct.platformNetTotal < 0 && 'text-destructive')}>
+                  <td className={cn('py-1', direct.platformNetTotal < 0 && 'text-destructive-strong')}>
                     {formatPhp(direct.platformNetTotal)}
                   </td>
                 </tr>
@@ -408,7 +408,7 @@ function ParkingSettlementPreview({ settings }: { settings: PreviewSettings }) {
         </table>
       </div>
       {loss ? (
-        <p role="alert" className="text-destructive mt-2 text-xs">
+        <p role="alert" className="text-destructive-strong mt-2 text-xs">
           These settings lose money on some bookings. Raise the guest fee or the commission. Saving
           is blocked until every rate from ₱100 up is profitable.
         </p>
@@ -476,7 +476,7 @@ function ParkingSettingsCard() {
     return (
       <SuperAdminSettingsBodySkeleton cards={1} titles={['Commission, guest fee & margin']} />
     );
-  if (error) return <p className="text-destructive text-sm">Could not load parking settings.</p>;
+  if (error) return <p className="text-destructive-strong text-sm">Could not load parking settings.</p>;
 
   return (
     <SuperAdminSettingsCard
@@ -667,7 +667,7 @@ function PayoutsLedger() {
   );
 
   if (isLoading && !data) return <SuperAdminAdminListBodySkeleton metricCount={0} />;
-  if (error) return <p className="text-destructive text-sm">Could not load the payout ledger.</p>;
+  if (error) return <p className="text-destructive-strong text-sm">Could not load the payout ledger.</p>;
 
   const filters = (
     <div className="flex flex-wrap gap-2">
@@ -754,7 +754,7 @@ function PayoutsLedger() {
                       {txn.bookingChannel === 'direct_link' ? ' · Direct link' : ''}
                     </div>
                     {txn.clawbackAmount != null ? (
-                      <div className="text-destructive text-xs">
+                      <div className="text-destructive-strong text-xs">
                         Clawback: {formatPhp(txn.clawbackAmount)}
                       </div>
                     ) : null}
@@ -813,7 +813,7 @@ function PayoutsLedger() {
                 {formatPhp(txn.paymentFeeAmount)} · Platform net {formatPhp(txn.platformNetTotal)}
               </div>
               {txn.clawbackAmount != null ? (
-                <div className="text-destructive text-xs">
+                <div className="text-destructive-strong text-xs">
                   Clawback: {formatPhp(txn.clawbackAmount)}
                 </div>
               ) : null}

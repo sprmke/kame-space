@@ -176,7 +176,7 @@ export function AiProfilesTab() {
       </div>
     );
   }
-  if (error || !data) return <p className="text-destructive text-sm">Could not load profiles.</p>;
+  if (error || !data) return <p className="text-destructive-strong text-sm">Could not load profiles.</p>;
 
   const profileSelect = (
     value: string | null,

@@ -1,0 +1,26 @@
+{
+  "success": true,
+  "data": {
+    "settings": {
+      "defaultPlanCode": "free",
+      "signupsEnabled": true,
+      "maintenanceMode": false,
+      "maintenanceMessage": "",
+      "supportEmail": "support@kamespace.com",
+      "legalTermsUrl": "https://kamespace.com/terms",
+      "legalPrivacyUrl": "https://kamespace.com/privacy",
+      "publicRateLimitPerMin": 600,
+      "authenticatedRateLimitEnforce": false,
+      "authenticatedRateLimitPerMin": 600,
+      "hostRewardEnabled": false,
+      "hostRewardPlanCode": "growth",
+      "hostRewardDurationDays": 30,
+      "hostRewardTrigger": "recommended_verification_approved",
+      "hostRewardCampaignStart": null,
+      "hostRewardCampaignEnd": null,
+      "hostRewardMaxPerOrg": 1,
+      "hostRewardApplyToPaidOrg": "skip",
+      "updatedAt": "2026-11-19T19:21:40.938633+00:00"
+    }
+  }
+}

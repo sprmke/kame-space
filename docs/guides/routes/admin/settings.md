@@ -168,3 +168,7 @@ Independent of Platform AI. Org-level opt-in still lives on organization Setting
 ## Pending / follow-ups
 
 - [ ] No UI yet to edit `default_daily_credit_limit`/`default_monthly_credit_limit` (platform-wide) or an org's `daily_credit_limit`/`monthly_credit_limit` override — settable only via direct API/DB today. Deliberately deferred until real pricing numbers replace the current generous working defaults.
+
+## 2026-11-24 UX pass
+
+Controls show an effective-state summary line (on/off and whether quotas are enforced); the feature switch list is one column; numeric fields hint Inherit or Default.

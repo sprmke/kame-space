@@ -104,7 +104,7 @@ export function SuperAdminDevelopmentsTable({ developments }: Props) {
                 <DevelopmentStatusBadge status={development.status} />
               </td>
               <td className={adminTableCell.action}>
-                <AdminTableRowAffordance />
+                <AdminTableRowAffordance icon="chevron" />
               </td>
             </tr>
           );

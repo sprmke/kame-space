@@ -75,6 +75,17 @@ describe('buildBillingTimeline', () => {
     });
     expect(entry.title).toBe('some new event');
   });
+
+  it('treats a partial payload as empty instead of throwing', () => {
+    // A failed or partially deployed billing endpoint used to crash the org hub
+    // through the router error boundary.
+    const timeline = buildBillingTimeline({
+      events: undefined as never,
+      transactions: undefined as never,
+      ledger: undefined as never,
+    });
+    expect(timeline).toEqual([]);
+  });
 });
 
 describe('findUnappliedPayments', () => {
