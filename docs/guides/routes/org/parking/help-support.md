@@ -2,7 +2,7 @@
 title: 'Parking Help & Support'
 status: active
 tags: [guides, routes, org, parking, help-support]
-updated: 2026-11-16
+updated: 2026-11-24
 ---
 
 # Parking Help & Support
@@ -19,10 +19,13 @@ Announcements: [Announcements](./announcements.md) (`/announcements`). Legacy `/
 | ------------ | --- | ---------- | ---- | -------------------------------------------------- |
 | FAQs         | Yes | N/A        | Yes  | Search + category tiles (parking-scoped)           |
 | All sections | Yes | Yes        | Yes  | Same feature as the property scope, parking-scoped |
+| Mobile       | Yes | N/A        | Yes  | Full-height ticket thread below `lg`               |
 
 ## Overview
 
 Identical feature to [Property Help & Support](../property/help-support.md), mounted for a parking slot instead of a property — tickets filed here carry `parking_id` (and `property_id` null). Visible to every parking team member, not gated behind a specific permission (`bookings:view` baseline, same as Dashboard).
+
+Compact nav tiles, singular/plural topic counts, a **New ticket** escape hatch on an empty search, a single-pane ticket error, and full-height phone ticket detail all match the property mount. The launcher is hidden on `/help-support` routes.
 
 ## FAQs
 
@@ -54,11 +57,12 @@ Same as [Property Help & Support](../property/help-support.md) — parking-scope
 
 ## Testing
 
-| Layer | Path / spec                                                                  | Manual        |
-| ----- | ---------------------------------------------------------------------------- | ------------- |
-| Unit  | `parkingStatusMachine_test.ts`                                               | —             |
-| E2E   | [`parking-playwright.md`](../testing/parking-playwright.md) guest/host specs | PayMongo live |
-| N/A   | Parking host dashboard shell load                                            | —             |
+| Layer | Path / spec                                                                                     | Manual        |
+| ----- | ----------------------------------------------------------------------------------------------- | ------------- |
+| Unit  | `parkingStatusMachine_test.ts`; `help-support/lib/*.test.ts`                                    | —             |
+| E2E   | `ui/e2e/features/help-support/helpSupportModule.spec.ts` (`@ci`) — parking scope + `parking_id` | —             |
+| E2E   | [`parking-playwright.md`](../testing/parking-playwright.md) guest/host specs                    | PayMongo live |
+| Tour  | `helpSupportTour.slowmo.spec.ts` (`@demo`) — parking scope scenario                             | —             |
 
 ## Related docs
 

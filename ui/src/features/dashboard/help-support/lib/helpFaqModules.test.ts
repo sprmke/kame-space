@@ -8,6 +8,7 @@ import {
   faqMatchesAdminScope,
   faqModuleForCategory,
   faqVisibleInGuestHelp,
+  faqQuestionCountLabel,
   faqVisibleInHostHelp,
   FAQ_MODULE_IDS,
   pickCommonFaqs,
@@ -149,5 +150,16 @@ describe('FAQ_MODULE_IDS', () => {
     expect(FAQ_MODULE_IDS).toContain('pricing');
     expect(FAQ_MODULE_IDS).toContain('activity');
     expect(FAQ_MODULE_IDS).toContain('guest');
+  });
+});
+
+describe('faqQuestionCountLabel', () => {
+  it('uses the singular for one question', () => {
+    expect(faqQuestionCountLabel(1)).toBe('1 question');
+  });
+
+  it('uses the plural for zero and many', () => {
+    expect(faqQuestionCountLabel(0)).toBe('0 questions');
+    expect(faqQuestionCountLabel(7)).toBe('7 questions');
   });
 });

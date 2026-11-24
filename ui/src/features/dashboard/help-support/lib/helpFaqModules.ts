@@ -205,6 +205,11 @@ export function isGuestOnlyCategory(category: string): boolean {
   return GUEST_ONLY_CATEGORIES.has(category);
 }
 
+/** Topic tile meta: "1 question" / "3 questions". */
+export function faqQuestionCountLabel(count: number): string {
+  return `${count} ${count === 1 ? 'question' : 'questions'}`;
+}
+
 function scopeFromRouteGuidePath(path: string): HelpSupportAdminScope {
   const normalized = path.replace(/^docs\/guides\/routes\//, '');
   if (normalized.startsWith('org/property/')) return 'property';

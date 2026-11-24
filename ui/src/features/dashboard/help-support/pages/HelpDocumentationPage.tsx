@@ -22,8 +22,8 @@ import {
   type HelpGuideGroup,
 } from '@/features/dashboard/help-support/lib/helpContentDisplay';
 
+import { HelpTopicGridSkeleton } from '@/components/skeletons/HelpSupportSkeleton';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { captureAppEvent } from '@/lib/posthog/capture';
 
 const GUIDE_GROUP_META: Record<HelpGuideGroup, { description: string; Icon: typeof BookOpen }> = {
@@ -129,14 +129,7 @@ export function HelpDocumentationPage() {
 
   let body: React.ReactNode;
   if (isPending) {
-    body = (
-      <div className="divide-border/70 space-y-0 divide-y px-4 sm:px-5">
-        <Skeleton className="my-3 h-12 w-full" />
-        <Skeleton className="my-3 h-12 w-full" />
-        <Skeleton className="my-3 h-12 w-full" />
-        <Skeleton className="my-3 h-12 w-full" />
-      </div>
-    );
+    body = <HelpTopicGridSkeleton />;
   } else if (isError) {
     body = (
       <HelpEmptyState

@@ -1,0 +1,667 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Help &amp; Support — before / after</title>
+<style>
+  :root { color-scheme: light; --teal:#0f766e; --ink:#0f172a; --muted:#64748b; --line:#e2e8f0; --bg:#f8fafc; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 32px 20px 80px; }
+  h1 { font-size: 26px; margin: 0 0 6px; letter-spacing: -0.02em; }
+  .lede { color: var(--muted); margin: 0 0 20px; max-width: 78ch; }
+  .filters { display:flex; flex-wrap:wrap; gap:8px; margin: 0 0 24px; position: sticky; top:0; background:var(--bg); padding: 10px 0; z-index:2; border-bottom:1px solid var(--line); }
+  .filters button { border:1px solid var(--line); background:#fff; color:var(--ink); border-radius:999px; padding:6px 14px; cursor:pointer; font:inherit; }
+  .filters button[aria-pressed="true"] { background:var(--teal); border-color:var(--teal); color:#fff; }
+  .grid { display:flex; flex-direction:column; gap:26px; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:16px; padding:16px; }
+  .card header { display:flex; gap:16px; align-items:flex-start; justify-content:space-between; margin-bottom:12px; }
+  .card h2 { font-size:15px; margin:0; font-variant-numeric: tabular-nums; }
+  .card p { margin:4px 0 0; color:var(--muted); max-width:80ch; }
+  .badge { flex:none; border-radius:999px; background:#ccfbf1; color:#115e59; font-weight:600; font-size:12px; padding:3px 10px; }
+  .frame { position:relative; background:#fff; border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+  .shot { display:block; width:100%; height:auto; }
+  .frame .before { display:none; }
+  .frame[data-state="before"] .before { display:block; }
+  .frame[data-state="before"] .after { display:none; }
+  .tag { position:absolute; top:10px; right:10px; background:rgba(15,23,42,.78); color:#fff; border-radius:6px; padding:2px 8px; font-size:11px; letter-spacing:.02em; }
+  .controls { display:flex; align-items:center; gap:14px; margin-top:10px; }
+  .toggle { font:inherit; padding:6px 12px; border-radius:8px; border:1px solid var(--line); background:#fff; cursor:pointer; }
+  .toggle:hover { border-color:var(--teal); color:var(--teal); }
+  .controls a { color:var(--teal); text-decoration:none; font-size:13px; }
+  .controls a:hover { text-decoration:underline; }
+  .hidden { display:none !important; }
+  .meta { color:var(--muted); font-size:12px; margin-top:40px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Help &amp; Support — before / after</h1>
+  <p class="lede">Property, parking and organization mounts, captured from the same fixtures at each supported width. Every card toggles between the mainline build and this change. Findings are numbered in <code>docs/workflow/in-progress/help-support-ux-review/README.md</code>.</p>
+  <div class="filters" role="group" aria-label="Filter captures">
+    <button type="button" data-filter="All" aria-pressed="true">All (31)</button>
+    <button type="button" data-filter="FAQs" aria-pressed="false">FAQs</button>
+    <button type="button" data-filter="Guides" aria-pressed="false">Guides</button>
+    <button type="button" data-filter="Tickets" aria-pressed="false">Tickets</button>
+  </div>
+  <div class="grid">
+      <article class="card" data-group="FAQs" data-name="faq-category-property-1440">
+        <header>
+          <div>
+            <h2>faq-category-property-1440</h2>
+            <p>Topic view: count meta fixed</p>
+          </div>
+          <span class="badge">F3</span>
+        </header>
+        <div class="frame" data-state="after">
+          <img class="shot before" src="before/faq-category-property-1440.png" alt="Before: faq-category-property-1440" loading="lazy" />
+          <img class="shot after" src="after/faq-category-property-1440.png" alt="After: faq-category-property-1440" loading="lazy" />
+          <span class="tag">After</span>
+        </div>
+        <div class="controls">
+          <button type="button" class="toggle" aria-pressed="false">Show before</button>
+          <a href="before/faq-category-property-1440.png" target="_blank" rel="noreferrer">Before</a>
+          <a href="after/faq-category-property-1440.png" target="_blank" rel="noreferrer">After</a>
+        </div>
+      </article>
+      <article class="card" data-group="FAQs" data-name="faq-search-1440">
+        <header>
+          <div>
+            <h2>faq-search-1440</h2>
+            <p></p>
+          </div>
+          <span class="badge">—</span>
+        </header>
+        <div class="frame" data-state="after">
+          <img class="shot before" src="before/faq-search-1440.png" alt="Before: faq-search-1440" loading="lazy" />
+          <img class="shot after" src="after/faq-search-1440.png" alt="After: faq-search-1440" loading="lazy" />
+          <span class="tag">After</span>
+        </div>
+        <div class="controls">
+          <button type="button" class="toggle" aria-pressed="false">Show before</button>
+          <a href="before/faq-search-1440.png" target="_blank" rel="noreferrer">Before</a>
+          <a href="after/faq-search-1440.png" target="_blank" rel="noreferrer">After</a>
+        </div>
+      </article>
+      <article class="card" data-group="FAQs" data-name="faq-search-empty-1440">
+        <header>
+          <div>
+            <h2>faq-search-empty-1440</h2>
+            <p>No-match search now offers a New ticket escape hatch instead of a dead end</p>
+          </div>
+          <span class="badge">F4</span>
+        </header>
+        <div class="frame" data-state="after">
+          <img class="shot before" src="before/faq-search-empty-1440.png" alt="Before: faq-search-empty-1440" loading="lazy" />
+          <img class="shot after" src="after/faq-search-empty-1440.png" alt="After: faq-search-empty-1440" loading="lazy" />
+          <span class="tag">After</span>
+        </div>
+        <div class="controls">
+          <button type="button" class="toggle" aria-pressed="false">Show before</button>
+          <a href="before/faq-search-empty-1440.png" target="_blank" rel="noreferrer">Before</a>
+          <a href="after/faq-search-empty-1440.png" target="_blank" rel="noreferrer">After</a>
+        </div>
+      </article>
+      <article class="card" data-group="FAQs" data-name="faqs-empty-1440">
+        <header>
+          <div>
+            <h2>faqs-empty-1440</h2>
+            <p>Unchanged reference</p>
+          </div>
+          <span class="badge">—</span>
+        </header>
+        <div class="frame" data-state="after">
+          <img class="shot before" src="before/faqs-empty-1440.png" alt="Before: faqs-empty-1440" loading="lazy" />
+          <img class="shot after" src="after/faqs-empty-1440.png" alt="After: faqs-empty-1440" loading="lazy" />
+          <span class="tag">After</span>
+        </div>
+        <div class="controls">
+          <button type="button" class="toggle" aria-pressed="false">Show before</button>
+          <a href="before/faqs-empty-1440.png" target="_blank" rel="noreferrer">Before</a>
+          <a href="after/faqs-empty-1440.png" target="_blank" rel="noreferrer">After</a>
+        </div>
+      </article>
+      <article class="card" data-group="FAQs" data-name="faqs-error-1440">
+        <header>
+          <div>
+            <h2>faqs-error-1440</h2>
+            <p>Unchanged reference</p>
+          </div>
+          <span class="badge">—</span>
+        </header>
+        <div class="frame" data-state="after">
+          <img class="shot before" src="before/faqs-error-1440.png" alt="Before: faqs-error-1440" loading="lazy" />
+          <img class="shot after" src="after/faqs-error-1440.png" alt="After: faqs-error-1440" loading="lazy" />
+          <span class="tag">After</span>
+        </div>
+        <div class="controls">
+          <button type="button" class="toggle" aria-pressed="false">Show before</button>
+          <a href="before/faqs-error-1440.png" target="_blank" rel="noreferrer">Before</a>
+          <a href="after/faqs-error-1440.png" target="_blank" rel="noreferrer">After</a>
+        </div>
+      </article>
+      <article class="card" data-group="FAQs" data-name="faqs-loading-1440">
+        <header>
+          <div>
+            <h2>faqs-loading-1440</h2>
+            <p>Loading skeleton mirrors the search field and 2-up topic grid</p>
+          </div>
+          <span class="badge">F5</span>
+        </header>
+        <div class="frame" data-state="after">
+          <img class="shot before" src="before/faqs-loading-1440.png" alt="Before: faqs-loading-1440" loading="lazy" />
+          <img class="shot after" src="after/faqs-loading-1440.png" alt="After: faqs-loading-1440" loading="lazy" />
+          <span class="tag">After</span>
+        </div>
+        <div class="controls">
+          <button type="button" class="toggle" aria-pressed="false">Show before</button>
+          <a href="before/faqs-loading-1440.png" target="_blank" rel="noreferrer">Before</a>
+          <a href="after/faqs-loading-1440.png" target="_blank" rel="noreferrer">After</a>
+        </div>
+      </article>
+      <article class="card" data-group="FAQs" data-name="faqs-org-1440">
+        <header>
+          <div>
+            <h2>faqs-org-1440</h2>
+            <p>Org mount: singular counts read &quot;1 question&quot;, not &quot;1 questions&quot;</p>
+          </div>
+          <span class="badge">F3</span>
+        </header>
+        <div class="frame" data-state="after">
+          <img class="shot before" src="before/faqs-org-1440.png" alt="Before: faqs-org-1440" loading="lazy" />
+          <img class="shot after" src="after/faqs-org-1440.png" alt="After: faqs-org-1440" loading="lazy" />
+          <span class="tag">After</span>
+        </div>
+        <div class="controls">
+          <button type="button" class="toggle" aria-pressed="false">Show before</button>
+          <a href="before/faqs-org-1440.png" target="_blank" rel="noreferrer">Before</a>
+          <a href="after/faqs-org-1440.png" target="_blank" rel="noreferrer">After</a>
+        </div>
+      </article>
+      <article class="card" data-group="FAQs" data-name="faqs-parking-1440">
+        <header>
+          <div>
+            <h2>faqs-parking-1440</h2>
+            <p>Parking mount: singular counts fixed</p>
+          </div>
+          <span class="badge">F3</span>
+        </header>
+        <div class="frame" data-state="after">
+          <img class="shot before" src="before/faqs-parking-1440.png" alt="Before: faqs-parking-1440" loading="lazy" />
+          <img class="shot after" src="after/faqs-parking-1440.png" alt="After: faqs-parking-1440" loading="lazy" />
+          <span class="tag">After</span>
+        </div>
+        <div class="controls">
+          <button type="button" class="toggle" aria-pressed="false">Show before</button>
+          <a href="before/faqs-parking-1440.png" target="_blank" rel="noreferrer">Before</a>
+          <a href="after/faqs-parking-1440.png" target="_blank" rel="noreferrer">After</a>
+        </div>
+      </article>
+      <article class="card" data-group="FAQs" data-name="faqs-property-1024">
+        <header>
+          <div>
+            <h2>faqs-property-1024</h2>
+            <p>FAQ content starts higher; tiles readable above the fold</p>
+          </div>
+          <span class="badge">F1</span>
+        </header>
+        <div class="frame" data-state="after">
+          <img class="shot before" src="before/faqs-property-1024.png" alt="Before: faqs-property-1024" loading="lazy" />
+          <img class="shot after" src="after/faqs-property-1024.png" alt="After: faqs-property-1024" loading="lazy" />
+          <span class="tag">After</span>
+        </div>
+        <div class="controls">
+          <button type="button" class="toggle" aria-pressed="false">Show before</button>
+          <a href="before/faqs-property-1024.png" target="_blank" rel="noreferrer">Before</a>
+          <a href="after/faqs-property-1024.png" target="_blank" rel="noreferrer">After</a>
+        </div>
+      </article>
+      <article class="card" data-group="FAQs" data-name="faqs-property-1280">
+        <header>
+          <div>
+            <h2>faqs-property-1280</h2>
+            <p>Same density at the 4-up breakpoint</p>
+          </div>
+          <span class="badge">F1</span>
+        </header>
+        <div class="frame" data-state="after">
+          <img class="shot before" src="before/faqs-property-1280.png" alt="Before: faqs-property-1280" loading="lazy" />
+          <img class="shot after" src="after/faqs-property-1280.png" alt="After: faqs-property-1280" loading="lazy" />
+          <span class="tag">After</span>
+        </div>
+        <div class="controls">
+          <button type="button" class="toggle" aria-pressed="false">Show before</button>
+          <a href="before/faqs-property-1280.png" target="_blank" rel="noreferrer">Before</a>
+          <a href="after/faqs-property-1280.png" target="_blank" rel="noreferrer">After</a>
+        </div>
+      </article>
+      <article class="card" data-group="FAQs" data-name="faqs-property-1440">
+        <header>
+          <div>
+            <h2>faqs-property-1440</h2>
+            <p>Module nav no longer pushes the FAQ search below a tall card row</p>
+          </div>
+          <span class="badge">F1</span>
+        </header>
+        <div class="frame" data-state="after">
+          <img class="shot before" src="before/faqs-property-1440.png" alt="Before: faqs-property-1440" loading="lazy" />
+          <img class="shot after" src="after/faqs-property-1440.png" alt="After: faqs-property-1440" loading="lazy" />
+          <span class="tag">After</span>
+        </div>
+        <div class="controls">
+          <button type="button" class="toggle" aria-pressed="false">Show before</button>
+          <a href="before/faqs-property-1440.png" target="_blank" rel="noreferrer">Before</a>
+          <a href="after/faqs-property-1440.png" target="_blank" rel="noreferrer">After</a>
+        </div>
+      </article>
+      <article class="card" data-group="FAQs" data-name="faqs-property-1920">
+        <header>
+          <div>
+            <h2>faqs-property-1920</h2>
+            <p>Module nav is navigation, not a KPI row: compact cards, no reserved trend row</p>
+          </div>
+          <span class="badge">F1</span>
+        </header>
+        <div class="frame" data-state="after">
+          <img class="shot before" src="before/faqs-property-1920.png" alt="Before: faqs-property-1920" loading="lazy" />
+          <img class="shot after" src="after/faqs-property-1920.png" alt="After: faqs-property-1920" loading="lazy" />
+          <span class="tag">After</span>
+        </div>
+        <div class="controls">
+          <button type="button" class="toggle" aria-pressed="false">Show before</button>
+          <a href="before/faqs-property-1920.png" target="_blank" rel="noreferrer">Before</a>
+          <a href="after/faqs-property-1920.png" target="_blank" rel="noreferrer">After</a>
+        </div>
+      </article>
+      <article class="card" data-group="FAQs" data-name="faqs-property-360">
+        <header>
+          <div>
+            <h2>faqs-property-360</h2>
+            <p>Smallest supported width: compact nav, no clipped labels</p>
+          </div>
+          <span class="badge">F1</span>
+        </header>
+        <div class="frame" data-state="after">
+          <img class="shot before" src="before/faqs-property-360.png" alt="Before: faqs-property-360" loading="lazy" />
+          <img class="shot after" src="after/faqs-property-360.png" alt="After: faqs-property-360" loading="lazy" />
+          <span class="tag">After</span>
+        </div>
+        <div class="controls">
+          <button type="button" class="toggle" aria-pressed="false">Show before</button>
+          <a href="before/faqs-property-360.png" target="_blank" rel="noreferrer">Before</a>
+          <a href="after/faqs-property-360.png" target="_blank" rel="noreferrer">After</a>
+        </div>
+      </article>
+      <article class="card" data-group="FAQs" data-name="faqs-property-390">
+        <header>
+          <div>
+            <h2>faqs-property-390</h2>
+            <p>Phone width: compact nav</p>
+          </div>
+          <span class="badge">F1</span>
+        </header>
+        <div class="frame" data-state="after">
+          <img class="shot before" src="before/faqs-property-390.png" alt="Before: faqs-property-390" loading="lazy" />
+          <img class="shot after" src="after/faqs-property-390.png" alt="After: faqs-property-390" loading="lazy" />
+          <span class="tag">After</span>
+        </div>
+        <div class="controls">
+          <button type="button" class="toggle" aria-pressed="false">Show before</button>
+          <a href="before/faqs-property-390.png" target="_blank" rel="noreferrer">Before</a>
+          <a href="after/faqs-property-390.png" target="_blank" rel="noreferrer">After</a>
+        </div>
+      </article>
+      <article class="card" data-group="FAQs" data-name="faqs-property-430">
+        <header>
+          <div>
+            <h2>faqs-property-430</h2>
+            <p>Phone width: compact nav</p>
+          </div>
+          <span class="badge">F1</span>
+        </header>
+        <div class="frame" data-state="after">
+          <img class="shot before" src="before/faqs-property-430.png" alt="Before: faqs-property-430" loading="lazy" />
+          <img class="shot after" src="after/faqs-property-430.png" alt="After: faqs-property-430" loading="lazy" />
+          <span class="tag">After</span>
+        </div>
+        <div class="controls">
+          <button type="button" class="toggle" aria-pressed="false">Show before</button>
+          <a href="before/faqs-property-430.png" target="_blank" rel="noreferrer">Before</a>
+          <a href="after/faqs-property-430.png" target="_blank" rel="noreferrer">After</a>
+        </div>
+      </article>
+      <article class="card" data-group="FAQs" data-name="faqs-property-768">
+        <header>
+          <div>
+            <h2>faqs-property-768</h2>
+            <p>Tablet: compact 2x2 nav, all four FAQ topics visible without scrolling</p>
+          </div>
+          <span class="badge">F1</span>
+        </header>
+        <div class="frame" data-state="after">
+          <img class="shot before" src="before/faqs-property-768.png" alt="Before: faqs-property-768" loading="lazy" />
+          <img class="shot after" src="after/faqs-property-768.png" alt="After: faqs-property-768" loading="lazy" />
+          <span class="tag">After</span>
+        </div>
+        <div class="controls">
+          <button type="button" class="toggle" aria-pressed="false">Show before</button>
+          <a href="before/faqs-property-768.png" target="_blank" rel="noreferrer">Before</a>
+          <a href="after/faqs-property-768.png" target="_blank" rel="noreferrer">After</a>
+        </div>
+      </article>
+      <article class="card" data-group="Guides" data-name="guides-1440">
+        <header>
+          <div>
+            <h2>guides-1440</h2>
+            <p>Unchanged reference</p>
+          </div>
+          <span class="badge">—</span>
+        </header>
+        <div class="frame" data-state="after">
+          <img class="shot before" src="before/guides-1440.png" alt="Before: guides-1440" loading="lazy" />
+          <img class="shot after" src="after/guides-1440.png" alt="After: guides-1440" loading="lazy" />
+          <span class="tag">After</span>
+        </div>
+        <div class="controls">
+          <button type="button" class="toggle" aria-pressed="false">Show before</button>
+          <a href="before/guides-1440.png" target="_blank" rel="noreferrer">Before</a>
+          <a href="after/guides-1440.png" target="_blank" rel="noreferrer">After</a>
+        </div>
+      </article>
+      <article class="card" data-group="Guides" data-name="guides-group-open-1440">
+        <header>
+          <div>
+            <h2>guides-group-open-1440</h2>
+            <p>Unchanged reference</p>
+          </div>
+          <span class="badge">—</span>
+        </header>
+        <div class="frame" data-state="after">
+          <img class="shot before" src="before/guides-group-open-1440.png" alt="Before: guides-group-open-1440" loading="lazy" />
+          <img class="shot after" src="after/guides-group-open-1440.png" alt="After: guides-group-open-1440" loading="lazy" />
+          <span class="tag">After</span>
+        </div>
+        <div class="controls">
+          <button type="button" class="toggle" aria-pressed="false">Show before</button>
+          <a href="before/guides-group-open-1440.png" target="_blank" rel="noreferrer">Before</a>
+          <a href="after/guides-group-open-1440.png" target="_blank" rel="noreferrer">After</a>
+        </div>
+      </article>
+      <article class="card" data-group="Tickets" data-name="tickets-closed-1440">
+        <header>
+          <div>
+            <h2>tickets-closed-1440</h2>
+            <p>Closed ticket reference</p>
+          </div>
+          <span class="badge">—</span>
+        </header>
+        <div class="frame" data-state="after">
+          <img class="shot before" src="before/tickets-closed-1440.png" alt="Before: tickets-closed-1440" loading="lazy" />
+          <img class="shot after" src="after/tickets-closed-1440.png" alt="After: tickets-closed-1440" loading="lazy" />
+          <span class="tag">After</span>
+        </div>
+        <div class="controls">
+          <button type="button" class="toggle" aria-pressed="false">Show before</button>
+          <a href="before/tickets-closed-1440.png" target="_blank" rel="noreferrer">Before</a>
+          <a href="after/tickets-closed-1440.png" target="_blank" rel="noreferrer">After</a>
+        </div>
+      </article>
+      <article class="card" data-group="Tickets" data-name="tickets-empty-1440">
+        <header>
+          <div>
+            <h2>tickets-empty-1440</h2>
+            <p>Empty list is single pane</p>
+          </div>
+          <span class="badge">F8</span>
+        </header>
+        <div class="frame" data-state="after">
+          <img class="shot before" src="before/tickets-empty-1440.png" alt="Before: tickets-empty-1440" loading="lazy" />
+          <img class="shot after" src="after/tickets-empty-1440.png" alt="After: tickets-empty-1440" loading="lazy" />
+          <span class="tag">After</span>
+        </div>
+        <div class="controls">
+          <button type="button" class="toggle" aria-pressed="false">Show before</button>
+          <a href="before/tickets-empty-1440.png" target="_blank" rel="noreferrer">Before</a>
+          <a href="after/tickets-empty-1440.png" target="_blank" rel="noreferrer">After</a>
+        </div>
+      </article>
+      <article class="card" data-group="Tickets" data-name="tickets-empty-390">
+        <header>
+          <div>
+            <h2>tickets-empty-390</h2>
+            <p>Phone empty state</p>
+          </div>
+          <span class="badge">F7</span>
+        </header>
+        <div class="frame" data-state="after">
+          <img class="shot before" src="before/tickets-empty-390.png" alt="Before: tickets-empty-390" loading="lazy" />
+          <img class="shot after" src="after/tickets-empty-390.png" alt="After: tickets-empty-390" loading="lazy" />
+          <span class="tag">After</span>
+        </div>
+        <div class="controls">
+          <button type="button" class="toggle" aria-pressed="false">Show before</button>
+          <a href="before/tickets-empty-390.png" target="_blank" rel="noreferrer">Before</a>
+          <a href="after/tickets-empty-390.png" target="_blank" rel="noreferrer">After</a>
+        </div>
+      </article>
+      <article class="card" data-group="Tickets" data-name="tickets-error-1440">
+        <header>
+          <div>
+            <h2>tickets-error-1440</h2>
+            <p>List failure is a single-pane error, no hollow &quot;Pick a ticket&quot; pane</p>
+          </div>
+          <span class="badge">F8</span>
+        </header>
+        <div class="frame" data-state="after">
+          <img class="shot before" src="before/tickets-error-1440.png" alt="Before: tickets-error-1440" loading="lazy" />
+          <img class="shot after" src="after/tickets-error-1440.png" alt="After: tickets-error-1440" loading="lazy" />
+          <span class="tag">After</span>
+        </div>
+        <div class="controls">
+          <button type="button" class="toggle" aria-pressed="false">Show before</button>
+          <a href="before/tickets-error-1440.png" target="_blank" rel="noreferrer">Before</a>
+          <a href="after/tickets-error-1440.png" target="_blank" rel="noreferrer">After</a>
+        </div>
+      </article>
+      <article class="card" data-group="Tickets" data-name="tickets-list-390">
+        <header>
+          <div>
+            <h2>tickets-list-390</h2>
+            <p>Phone: module tiles stay, but the list no longer sits under the floating launcher</p>
+          </div>
+          <span class="badge">F7</span>
+        </header>
+        <div class="frame" data-state="after">
+          <img class="shot before" src="before/tickets-list-390.png" alt="Before: tickets-list-390" loading="lazy" />
+          <img class="shot after" src="after/tickets-list-390.png" alt="After: tickets-list-390" loading="lazy" />
+          <span class="tag">After</span>
+        </div>
+        <div class="controls">
+          <button type="button" class="toggle" aria-pressed="false">Show before</button>
+          <a href="before/tickets-list-390.png" target="_blank" rel="noreferrer">Before</a>
+          <a href="after/tickets-list-390.png" target="_blank" rel="noreferrer">After</a>
+        </div>
+      </article>
+      <article class="card" data-group="Tickets" data-name="tickets-new-modal-1440">
+        <header>
+          <div>
+            <h2>tickets-new-modal-1440</h2>
+            <p>Compose: submitting no longer bounces back to the list</p>
+          </div>
+          <span class="badge">F9</span>
+        </header>
+        <div class="frame" data-state="after">
+          <img class="shot before" src="before/tickets-new-modal-1440.png" alt="Before: tickets-new-modal-1440" loading="lazy" />
+          <img class="shot after" src="after/tickets-new-modal-1440.png" alt="After: tickets-new-modal-1440" loading="lazy" />
+          <span class="tag">After</span>
+        </div>
+        <div class="controls">
+          <button type="button" class="toggle" aria-pressed="false">Show before</button>
+          <a href="before/tickets-new-modal-1440.png" target="_blank" rel="noreferrer">Before</a>
+          <a href="after/tickets-new-modal-1440.png" target="_blank" rel="noreferrer">After</a>
+        </div>
+      </article>
+      <article class="card" data-group="Tickets" data-name="tickets-new-modal-390">
+        <header>
+          <div>
+            <h2>tickets-new-modal-390</h2>
+            <p>Phone compose sheet (reference)</p>
+          </div>
+          <span class="badge">F9</span>
+        </header>
+        <div class="frame" data-state="after">
+          <img class="shot before" src="before/tickets-new-modal-390.png" alt="Before: tickets-new-modal-390" loading="lazy" />
+          <img class="shot after" src="after/tickets-new-modal-390.png" alt="After: tickets-new-modal-390" loading="lazy" />
+          <span class="tag">After</span>
+        </div>
+        <div class="controls">
+          <button type="button" class="toggle" aria-pressed="false">Show before</button>
+          <a href="before/tickets-new-modal-390.png" target="_blank" rel="noreferrer">Before</a>
+          <a href="after/tickets-new-modal-390.png" target="_blank" rel="noreferrer">After</a>
+        </div>
+      </article>
+      <article class="card" data-group="Tickets" data-name="tickets-resolved-1440">
+        <header>
+          <div>
+            <h2>tickets-resolved-1440</h2>
+            <p>Resolved ticket reference</p>
+          </div>
+          <span class="badge">—</span>
+        </header>
+        <div class="frame" data-state="after">
+          <img class="shot before" src="before/tickets-resolved-1440.png" alt="Before: tickets-resolved-1440" loading="lazy" />
+          <img class="shot after" src="after/tickets-resolved-1440.png" alt="After: tickets-resolved-1440" loading="lazy" />
+          <span class="tag">After</span>
+        </div>
+        <div class="controls">
+          <button type="button" class="toggle" aria-pressed="false">Show before</button>
+          <a href="before/tickets-resolved-1440.png" target="_blank" rel="noreferrer">Before</a>
+          <a href="after/tickets-resolved-1440.png" target="_blank" rel="noreferrer">After</a>
+        </div>
+      </article>
+      <article class="card" data-group="Tickets" data-name="tickets-thread-1440">
+        <header>
+          <div>
+            <h2>tickets-thread-1440</h2>
+            <p>Desktop thread (reference)</p>
+          </div>
+          <span class="badge">F7</span>
+        </header>
+        <div class="frame" data-state="after">
+          <img class="shot before" src="before/tickets-thread-1440.png" alt="Before: tickets-thread-1440" loading="lazy" />
+          <img class="shot after" src="after/tickets-thread-1440.png" alt="After: tickets-thread-1440" loading="lazy" />
+          <span class="tag">After</span>
+        </div>
+        <div class="controls">
+          <button type="button" class="toggle" aria-pressed="false">Show before</button>
+          <a href="before/tickets-thread-1440.png" target="_blank" rel="noreferrer">Before</a>
+          <a href="after/tickets-thread-1440.png" target="_blank" rel="noreferrer">After</a>
+        </div>
+      </article>
+      <article class="card" data-group="Tickets" data-name="tickets-thread-360">
+        <header>
+          <div>
+            <h2>tickets-thread-360</h2>
+            <p>360: full-height thread, readable messages, composer clear of the tab bar</p>
+          </div>
+          <span class="badge">F7</span>
+        </header>
+        <div class="frame" data-state="after">
+          <img class="shot before" src="before/tickets-thread-360.png" alt="Before: tickets-thread-360" loading="lazy" />
+          <img class="shot after" src="after/tickets-thread-360.png" alt="After: tickets-thread-360" loading="lazy" />
+          <span class="tag">After</span>
+        </div>
+        <div class="controls">
+          <button type="button" class="toggle" aria-pressed="false">Show before</button>
+          <a href="before/tickets-thread-360.png" target="_blank" rel="noreferrer">Before</a>
+          <a href="after/tickets-thread-360.png" target="_blank" rel="noreferrer">After</a>
+        </div>
+      </article>
+      <article class="card" data-group="Tickets" data-name="tickets-thread-390">
+        <header>
+          <div>
+            <h2>tickets-thread-390</h2>
+            <p>Phone ticket detail is full height: the conversation is visible above the reply box</p>
+          </div>
+          <span class="badge">F7</span>
+        </header>
+        <div class="frame" data-state="after">
+          <img class="shot before" src="before/tickets-thread-390.png" alt="Before: tickets-thread-390" loading="lazy" />
+          <img class="shot after" src="after/tickets-thread-390.png" alt="After: tickets-thread-390" loading="lazy" />
+          <span class="tag">After</span>
+        </div>
+        <div class="controls">
+          <button type="button" class="toggle" aria-pressed="false">Show before</button>
+          <a href="before/tickets-thread-390.png" target="_blank" rel="noreferrer">Before</a>
+          <a href="after/tickets-thread-390.png" target="_blank" rel="noreferrer">After</a>
+        </div>
+      </article>
+      <article class="card" data-group="Tickets" data-name="tickets-thread-org-1440">
+        <header>
+          <div>
+            <h2>tickets-thread-org-1440</h2>
+            <p>Org mount reference</p>
+          </div>
+          <span class="badge">—</span>
+        </header>
+        <div class="frame" data-state="after">
+          <img class="shot before" src="before/tickets-thread-org-1440.png" alt="Before: tickets-thread-org-1440" loading="lazy" />
+          <img class="shot after" src="after/tickets-thread-org-1440.png" alt="After: tickets-thread-org-1440" loading="lazy" />
+          <span class="tag">After</span>
+        </div>
+        <div class="controls">
+          <button type="button" class="toggle" aria-pressed="false">Show before</button>
+          <a href="before/tickets-thread-org-1440.png" target="_blank" rel="noreferrer">Before</a>
+          <a href="after/tickets-thread-org-1440.png" target="_blank" rel="noreferrer">After</a>
+        </div>
+      </article>
+      <article class="card" data-group="Tickets" data-name="tickets-thread-parking-1440">
+        <header>
+          <div>
+            <h2>tickets-thread-parking-1440</h2>
+            <p>Parking mount reference</p>
+          </div>
+          <span class="badge">—</span>
+        </header>
+        <div class="frame" data-state="after">
+          <img class="shot before" src="before/tickets-thread-parking-1440.png" alt="Before: tickets-thread-parking-1440" loading="lazy" />
+          <img class="shot after" src="after/tickets-thread-parking-1440.png" alt="After: tickets-thread-parking-1440" loading="lazy" />
+          <span class="tag">After</span>
+        </div>
+        <div class="controls">
+          <button type="button" class="toggle" aria-pressed="false">Show before</button>
+          <a href="before/tickets-thread-parking-1440.png" target="_blank" rel="noreferrer">Before</a>
+          <a href="after/tickets-thread-parking-1440.png" target="_blank" rel="noreferrer">After</a>
+        </div>
+      </article>
+  </div>
+  <p class="meta">Captured with Playwright against a mocked Supabase, Asia/Manila, light theme. Toggle a card, or open the two images directly.</p>
+</div>
+<script>
+  document.querySelectorAll('.card').forEach((card) => {
+    const frame = card.querySelector('.frame');
+    const tag = card.querySelector('.tag');
+    const button = card.querySelector('.toggle');
+    button.addEventListener('click', () => {
+      const showBefore = frame.dataset.state !== 'before';
+      frame.dataset.state = showBefore ? 'before' : 'after';
+      tag.textContent = showBefore ? 'Before' : 'After';
+      button.textContent = showBefore ? 'Show after' : 'Show before';
+      button.setAttribute('aria-pressed', String(showBefore));
+    });
+  });
+  const filters = document.querySelectorAll('.filters button');
+  filters.forEach((button) => {
+    button.addEventListener('click', () => {
+      filters.forEach((other) => other.setAttribute('aria-pressed', String(other === button)));
+      const filter = button.dataset.filter;
+      document.querySelectorAll('.card').forEach((card) => {
+        const show = filter === 'All' || card.dataset.group === filter;
+        card.classList.toggle('hidden', !show);
+      });
+    });
+  });
+</script>
+</body>
+</html>

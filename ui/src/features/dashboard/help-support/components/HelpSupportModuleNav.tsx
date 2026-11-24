@@ -20,6 +20,9 @@ const VALUE_CLASS =
   'text-foreground line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-snug sm:min-h-[2.75rem] sm:text-base';
 const CARD_CLASS = 'h-full';
 
+/** Navigation tiles, not KPIs: tighter padding and no reserved trend row. */
+const NAV_CARD_PROPS = { density: 'compact' as const, reserveTrendRow: false };
+
 /** Four-up nav: 4 columns on xl; 2×2 centered rows below. */
 function HelpSupportModuleNavGrid({ children }: { children: ReactNode }) {
   return (
@@ -52,6 +55,7 @@ export function HelpSupportModuleNav() {
       <HelpSupportModuleNavGrid>
         <StatCard
           title="FAQs"
+          {...NAV_CARD_PROPS}
           value="Common Q&As"
           valueClassName={VALUE_CLASS}
           className={CARD_CLASS}
@@ -61,6 +65,7 @@ export function HelpSupportModuleNav() {
         />
         <StatCard
           title="Guides"
+          {...NAV_CARD_PROPS}
           value="How each page works"
           valueClassName={VALUE_CLASS}
           className={CARD_CLASS}
@@ -70,6 +75,7 @@ export function HelpSupportModuleNav() {
         />
         <StatCard
           title="Tickets"
+          {...NAV_CARD_PROPS}
           value="Write to our team"
           valueClassName={VALUE_CLASS}
           className={CARD_CLASS}
@@ -79,6 +85,7 @@ export function HelpSupportModuleNav() {
         />
         <StatCard
           title="Ask AI"
+          {...NAV_CARD_PROPS}
           value="Answers from your data"
           valueClassName={VALUE_CLASS}
           className={CARD_CLASS}

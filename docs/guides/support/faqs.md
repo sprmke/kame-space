@@ -2,7 +2,7 @@
 title: 'Curated support FAQs'
 status: active
 tags: [guides, support, faqs, help-center]
-updated: 2026-11-15
+updated: 2026-11-24
 ---
 
 # Curated support FAQs
@@ -1851,3 +1851,12 @@ Yes. After you pick your check-in and check-out, choose ± 1 day, ± 2 days, ± 
 - source: docs/guides/routes/search.md
 
 Tap Map at the bottom of the list on search results, Properties or Developments. The map fills the screen and you can move or zoom it to update the results. To go back to the list, drag the bar at the bottom up or tap it.
+
+### I searched Help & Support and nothing matched. What now?
+
+- category: Property Settings
+- audience: host
+- source: docs/guides/routes/org/property/help-support.md
+- order: 90
+
+Choose **New ticket** under the empty result, or open Tickets and tap New. Ask AI can answer questions about your own bookings and property data, and a ticket reaches our team when you need a person.

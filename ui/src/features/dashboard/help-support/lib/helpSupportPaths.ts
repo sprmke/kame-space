@@ -62,6 +62,17 @@ export function isSupportTicketId(value: string): boolean {
   return SUPPORT_TICKET_ID_RE.test(value);
 }
 
+/**
+ * True for a URL that already points at one ticket's thread, e.g.
+ * `/org/acme/property/villa/help-support/tickets/<uuid>`. Used to keep the
+ * phone ticket workspace full-height and to stop a compose-close from
+ * navigating away from the ticket a submit just opened.
+ */
+export function isHelpSupportTicketDetailPath(pathname: string): boolean {
+  const match = /\/help-support\/tickets\/([^/]+)\/?$/.exec(pathname);
+  return Boolean(match?.[1] && isSupportTicketId(match[1]));
+}
+
 /** First segment after `{basePath}/tickets/` — prefers router splat, falls back to pathname. */
 export function resolveTicketsRouteSegment(
   basePath: string | null,

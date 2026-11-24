@@ -2,7 +2,7 @@
 title: 'Org Help & Support'
 status: active
 tags: [guides, routes, org, help-support]
-updated: 2026-11-16
+updated: 2026-11-24
 ---
 
 # Org Help & Support
@@ -15,14 +15,17 @@ Announcements live on the org hub — see [Org Announcements](./announcements.md
 
 ## Progress overview
 
-| Section      | E2E | Validation | Docs | Notes                                                      |
-| ------------ | --- | ---------- | ---- | ---------------------------------------------------------- |
-| FAQs         | Yes | N/A        | Yes  | Search + category tiles (org-scoped); open a topic for Q&A |
-| All sections | Yes | Yes        | Yes  | Same feature as the property scope, org-wide               |
+| Section      | E2E | Validation | Docs | Notes                                                          |
+| ------------ | --- | ---------- | ---- | -------------------------------------------------------------- |
+| FAQs         | Yes | N/A        | Yes  | Search + category tiles (org-scoped); open a topic for Q&A     |
+| All sections | Yes | Yes        | Yes  | Same feature as the property scope, org-wide                   |
+| Mobile       | Yes | N/A        | Yes  | Ticket detail is full height below `lg`; 7 widths, no overflow |
 
 ## Overview
 
 Identical feature to [Property Help & Support](./property/help-support.md), mounted at the org level instead — tickets filed here have `property_id`/`parking_id` left null (org-level). Visible to every org team member, not gated behind a specific permission (`org:dashboard:view` baseline, same as Dashboard).
+
+Nav tiles are compact (no KPI trend row), topic counts are singular/plural, an empty search offers **New ticket**, and a failed ticket list is a single-pane error. Below `lg`, opening a ticket hides the tiles and intro so the thread fills the screen; the Quick Access launcher is hidden on `/help-support` routes.
 
 **Loading:** the route skeleton shows the hero, module tiles, section intro, and the active section's content. Switching FAQs / Guides / Tickets keeps the layout mounted; only the section body shows a skeleton while its chunk loads.
 
@@ -58,9 +61,13 @@ Same as [Property Help & Support](./property/help-support.md) — org-scoped cal
 
 ## Testing
 
-| Layer | Path / spec            | Manual                      |
-| ----- | ---------------------- | --------------------------- |
-| N/A   | Help docs + tickets UI | Manual QA when copy changes |
+| Layer   | Path / spec                                                                                 | Manual                |
+| ------- | ------------------------------------------------------------------------------------------- | --------------------- |
+| Unit    | `help-support/lib/{helpSupportPaths,helpFaqModules}.test.ts`                                | —                     |
+| E2E     | `ui/e2e/features/help-support/helpSupportModule.spec.ts` (`@ci`) — org mount + scope params | —                     |
+| Tour    | `helpSupportTour.slowmo.spec.ts` (`@demo`)                                                  | —                     |
+| Screens | `helpSupportScreens.spec.ts` (`@demo`)                                                      | —                     |
+| Manual  | Org ticket email notify recipient                                                           | When providers change |
 
 ## Related docs
 
