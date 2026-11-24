@@ -227,7 +227,7 @@ export function MaintenancePage() {
           telegramEnabled={summary.telegramEnabled}
           completed={summary.completed}
           pending={summary.pending}
-          overdue={summary.overdue}
+          overdue={summary.overdue ?? 0}
         />
       ) : (
         <div className="surface-card flex flex-col items-center justify-center gap-3 px-4 py-8 text-center sm:py-20">
