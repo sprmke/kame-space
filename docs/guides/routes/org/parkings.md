@@ -52,7 +52,7 @@ This is your parking inventory hub, showing every slot your organization offers,
 
 ## Save path
 
-- **Add parking** → `POST create-parking` → seeds parking settings → backfills empty/invalid **`properties.settings.preferredOwnerParkingId`** to the earliest ACTIVE org listing → redirects to parking settings. The New listing dialog states that a platform fee applies per booking and points to Pricing for the payout split.
+- **Add parking** → `POST create-parking` → seeds parking settings → backfills empty/invalid **`properties.settings.preferredOwnerParkingId`** to the earliest ACTIVE org listing → redirects to parking settings. The **Add parking** dialog states that a platform fee applies per booking and points to Pricing for the payout split. Slot number reads as an example (`Ex. 27`), and Code plus Display name stay read-only until the slot is valid.
 
 ---
 
@@ -77,4 +77,4 @@ This is your parking inventory hub, showing every slot your organization offers,
 | ----- | ------------------------------------------------------------ | ------ |
 | Unit  | `orgListingViewMode.test.ts`, `orgListingPagination.test.ts` | —      |
 | E2E   | `orgHubSmoke.spec.ts` + parking marketplace specs            | —      |
-| N/A   | Org parkings inventory dedicated smoke                       | —      |
+| E2E   | `newListing.spec.ts` parking create flow (`@ci`)             | —      |
