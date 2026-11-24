@@ -35,7 +35,7 @@ actions. That is the right call for this module, and it works.
 
 Two remediation batches shipped in this branch. The screenshots below are the **pre-fix**
 evidence that documents the findings; the recordings were re-captured after the fixes, and
-[`after/`](./after) holds the post-fix captures. [`before-after.jpg`](./before-after.jpg) is the ten-pair comparison sheet (property: KPI and
+[`after/`](./after) holds the post-fix captures at 375 / 768 / 1024 / 1280 / 1440 plus dark mode, all on the real seed. [`before-after.jpg`](./before-after.jpg) is the ten-pair comparison sheet (property: KPI and
 deltas, booking sources, pace chart, AI review, 1024 KPI, phone tabs, PDF; org: KPI money, 1024
 rows, phone KPIs).
 
