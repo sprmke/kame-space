@@ -12,6 +12,7 @@ import { useCreateParking } from '@/features/dashboard/org/hooks/useCreateParkin
 import { useCreateProperty } from '@/features/dashboard/org/hooks/useCreateProperty';
 import { useParkingSlotConflict } from '@/features/dashboard/org/hooks/useParkingSlotConflict';
 import { useTowerUnitConflict } from '@/features/dashboard/org/hooks/useTowerUnitConflict';
+import { newListingDialogTitle } from '@/features/dashboard/org/lib/newListingCopy';
 import {
   DEFAULT_DEVELOPMENT_NAME,
   getOrgDevelopmentNames,
@@ -188,7 +189,7 @@ export function AddEntityDialog({
     isChecking: towerUnitChecking,
     hasConflict: propertyListed,
   });
-  const propertyCanSubmit = towerUnitReady && !propertyNameBlocked;
+  const propertyCanSubmit = towerUnitReady && !propertyNameBlocked && !propertyNameCheck.isChecking;
 
   const [parkingTower, setParkingTower] = useState(DEFAULT_PARKING_TOWER);
   const [level, setLevel] = useState(DEFAULT_PARKING_LEVEL);
@@ -220,7 +221,11 @@ export function AddEntityDialog({
   const activeKind: AssetKind = showKindToggle ? kind : canAddProperty ? 'property' : 'parking';
   const canSubmit = activeKind === 'property' ? propertyCanSubmit : parkingCanSubmit;
   // What this property adds to the bill (paid plans), fetched fresh each time the dialog opens.
-  const { data: addPreview } = useAddPropertyPreview(orgId, open && activeKind === 'property');
+  const {
+    data: addPreview,
+    isError: addPreviewError,
+    refetch: retryAddPreview,
+  } = useAddPropertyPreview(orgId, open && activeKind === 'property');
 
   useEffect(() => {
     if (!open) return;
@@ -368,7 +373,7 @@ export function AddEntityDialog({
       <AdminDialogShell
         open={open}
         onOpenChange={guardedOpenChange}
-        title="New listing"
+        title={newListingDialogTitle(activeKind, showKindToggle)}
         description={`Add to ${orgName}`}
         headerClassName="gap-0.5 space-y-0"
         sizeClassName="max-w-[min(calc(100vw-1.5rem),32rem)] sm:max-w-[min(92vw,36rem)]"
@@ -491,7 +496,11 @@ export function AddEntityDialog({
                   ) : null}
                 </div>
 
-                <AddPropertyBillingNote preview={addPreview} />
+                <AddPropertyBillingNote
+                  preview={addPreview}
+                  isError={addPreviewError}
+                  onRetry={() => void retryAddPreview()}
+                />
               </>
             ) : (
               <>
@@ -542,7 +551,7 @@ export function AddEntityDialog({
                     autoComplete="off"
                     value={slotNumber}
                     onChange={(e) => setSlotNumber(sanitizeParkingSlotNumber(e.target.value))}
-                    placeholder="26"
+                    placeholder="Ex. 27"
                     maxLength={4}
                     className={cn('h-11 tabular-nums', parkingDuplicate && 'border-destructive')}
                     aria-invalid={Boolean(parkingDuplicate)}

@@ -10,7 +10,7 @@ type Props = {
   onCreated?: (property: Property) => void;
 };
 
-/** @deprecated Prefer AddEntityDialog — kept for org properties page entry point */
+/** Property-only entry point for the Properties page. */
 export function AddPropertyDialog({
   open,
   onOpenChange,
