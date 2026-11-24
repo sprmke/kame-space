@@ -237,7 +237,6 @@ out of the click target, and put `aria-sort` on the `<th>` instead of the button
   `teamRbacPaths.bookings`, but that harness's `list-bookings` returns rows only when a template
   fixture is seeded, so the route renders the empty state and none of the rules P1-6 fails on ever
   run. The gate reads green while the populated page has a critical violation.
-
 - **P2-12. The detail payload ships more than the page shows.** `get-booking?format=row` returns
   `select('*')`, so every `bookings:view` caller receives the guest's bank account
   (`sd_refund_account_number`, `sd_refund_account_name`), the door code
